@@ -1160,39 +1160,42 @@
         </div>
     </footer>
 
-document.addEventListener('DOMContentLoaded', () => {
-    const dropdownButtons = document.querySelectorAll('.btn-export, .btn-import');
+
     
-    dropdownButtons.forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            const container = btn.closest('.dropdown-container');
-            container.classList.toggle('active');
-            
-            // Close other dropdowns
-            document.querySelectorAll('.dropdown-container.active').forEach(other => {
-                if (other !== container) {
-                    other.classList.remove('active');
-                }
-            });
+    // Dropdown toggle handler – place this after DOM is loaded
+document.addEventListener('DOMContentLoaded', function() {
+    // Find all export & import buttons
+    const dropdownBtns = document.querySelectorAll('.btn-export, .btn-import');
+
+    dropdownBtns.forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.stopPropagation(); // prevent closing immediately
+
+            const container = this.closest('.dropdown-container');
+            if (!container) return;
+
+            const willBeOpen = !container.classList.contains('active');
+
+            // Close all other dropdowns first
+            document.querySelectorAll('.dropdown-container.active')
+                .forEach(el => el.classList.remove('active'));
+
+            // Toggle current one
+            if (willBeOpen) {
+                container.classList.add('active');
+            }
         });
     });
-    
-    // Close dropdowns when clicking outside
-    document.addEventListener('click', (e) => {
+
+    // Close when clicking anywhere outside
+    document.addEventListener('click', function(e) {
         if (!e.target.closest('.dropdown-container')) {
-            document.querySelectorAll('.dropdown-container.active').forEach(container => {
-                container.classList.remove('active');
-            });
+            document.querySelectorAll('.dropdown-container.active')
+                .forEach(el => el.classList.remove('active'));
         }
     });
-    
-    // Prevent menu items from closing the dropdown on click (if needed for imports)
-    document.querySelectorAll('.dropdown-menu .dropdown-item').forEach(item => {
-        item.addEventListener('click', (e) => {
-            e.stopPropagation();
-        });
-    });
+
+    console.log("Dropdown system initialized – found", dropdownBtns.length, "buttons");
 });
 
 <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
