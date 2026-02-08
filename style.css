@@ -1150,6 +1150,67 @@ body.modal-open {
     overflow: auto !important;
 }
 
+.dropdown-container {
+    position: relative;
+    display: inline-block;
+}
+
+.dropdown-menu {
+    display: none !important;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    z-index: 2000;
+    background-color: var(--primary-color);
+    min-width: 280px;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+    border-radius: var(--border-radius-lg);
+    padding: 8px 0;
+    margin-top: 4px;
+    opacity: 0;
+    transform: translateY(-10px);
+    transition: opacity var(--transition-normal), transform var(--transition-normal);
+    pointer-events: none;
+}
+
+.dropdown-container.active .dropdown-menu {
+    display: block !important;
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+}
+
+/* Desktop hover support */
+@media (min-width: 768px) {
+    .dropdown-container:hover .dropdown-menu {
+        display: block !important;
+        opacity: 1;
+        transform: translateY(0);
+        pointer-events: auto;
+    }
+}
+
+/* Button styling with arrow indicator */
+.btn-export, .btn-import {
+    position: relative;
+    padding-right: 2rem !important;
+}
+
+.btn-export::after, .btn-import::after {
+    content: '▼';
+    position: absolute;
+    right: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: white;
+    font-size: 0.8rem;
+    transition: transform var(--transition-fast);
+}
+
+.dropdown-container.active .btn-export::after,
+.dropdown-container.active .btn-import::after {
+    transform: translateY(-50%) rotate(180deg);
+}
 /* ========================================
    END OF STYLESHEET
    ========================================
