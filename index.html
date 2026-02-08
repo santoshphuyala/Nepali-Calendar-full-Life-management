@@ -1161,5 +1161,40 @@
             </div>
         </div>
     </footer>
+
+document.addEventListener('DOMContentLoaded', () => {
+    const dropdownButtons = document.querySelectorAll('.btn-export, .btn-import');
+    
+    dropdownButtons.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const container = btn.closest('.dropdown-container');
+            container.classList.toggle('active');
+            
+            // Close other dropdowns
+            document.querySelectorAll('.dropdown-container.active').forEach(other => {
+                if (other !== container) {
+                    other.classList.remove('active');
+                }
+            });
+        });
+    });
+    
+    // Close dropdowns when clicking outside
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.dropdown-container')) {
+            document.querySelectorAll('.dropdown-container.active').forEach(container => {
+                container.classList.remove('active');
+            });
+        }
+    });
+    
+    // Prevent menu items from closing the dropdown on click (if needed for imports)
+    document.querySelectorAll('.dropdown-menu .dropdown-item').forEach(item => {
+        item.addEventListener('click', (e) => {
+            e.stopPropagation();
+        });
+    });
+});
 </body>
 </html>
