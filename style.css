@@ -540,63 +540,115 @@ body {
     }
 }
 
-/* ✅ FIX: Dropdown menu items */
+
+    
+    /* ========================================
+   DROPDOWN MENU FIX - EXPORT/IMPORT
+   ======================================== */
+.export-dropdown,
+.import-dropdown {
+    position: relative;
+    display: inline-block;
+    margin-right: 10px; /* Add spacing between buttons */
+    vertical-align: middle;
+}
+
+/* ✅ FIX: Force hide by default and ensure absolute positioning */
+.export-dropdown-menu,
+.import-dropdown-menu {
+    display: none !important; /* Force hidden unless .active is added */
+    visibility: hidden;
+    opacity: 0;
+    
+    position: absolute; /* Take out of document flow */
+    top: 100%;
+    left: 0;
+    z-index: 2000; /* Ensure it sits on top of calendar grid */
+    
+    background-color: var(--primary-color);
+    min-width: 220px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+    border-radius: var(--border-radius);
+    padding: 0.5rem 0;
+    margin-top: 0.5rem;
+    
+    transform: translateY(-10px);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+/* ✅ FIX: Only show when parent has 'active' class */
+.export-dropdown.active .export-dropdown-menu,
+.import-dropdown.active .import-dropdown-menu {
+    display: block !important;
+    visibility: visible;
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+}
+
+/* Desktop Hover Support (Optional - remove if you want click-only on desktop) */
+@media (min-width: 768px) {
+    .export-dropdown:hover .export-dropdown-menu,
+    .import-dropdown:hover .import-dropdown-menu {
+        display: block !important;
+        visibility: visible;
+        opacity: 1;
+        transform: translateY(0);
+        pointer-events: auto;
+    }
+}
+
+/* Menu Item Styling */
 .export-dropdown-menu button,
 .import-dropdown-menu button {
-    color: white;
-    padding: 14px 20px;
-    text-decoration: none;
     display: block;
     width: 100%;
+    padding: 10px 16px;
+    clear: both;
+    font-weight: 500;
+    color: #fff;
     text-align: left;
-    border: none;
     background: transparent;
+    border: none;
     cursor: pointer;
-    font-size: 0.95rem;
-    border-radius: 4px;
-    margin: 2px 8px;
-    width: calc(100% - 16px);
-    transition: all var(--transition-fast);
+    font-size: 0.9rem;
+    transition: background 0.2s ease;
     white-space: nowrap;
 }
 
-/* ✅ FIX: Hover effect for menu items */
 .export-dropdown-menu button:hover,
 .import-dropdown-menu button:hover {
-    background-color: rgba(255, 255, 255, 0.15);
-    transform: translateX(4px);
+    background-color: rgba(255, 255, 255, 0.2);
 }
 
 .export-dropdown-menu button:active,
 .import-dropdown-menu button:active {
-    background-color: rgba(255, 255, 255, 0.25);
-    transform: scale(0.98);
+    background-color: rgba(255, 255, 255, 0.3);
 }
 
-/* ✅ FIX: Trigger button styling */
+/* Dropdown Arrow Indicator */
 .export-btn,
 .import-btn {
+    padding-right: 24px !important; /* Make room for arrow */
     position: relative;
+    z-index: 10;
 }
 
 .export-btn::after,
 .import-btn::after {
     content: '';
     position: absolute;
-    right: 12px;
+    right: 10px;
     top: 50%;
-    transform: translateY(-50%);
-    width: 0;
-    height: 0;
-    border-left: 5px solid transparent;
-    border-right: 5px solid transparent;
-    border-top: 5px solid white;
-    transition: transform var(--transition-fast);
+    transform: translateY(-40%);
+    border: 5px solid transparent;
+    border-top-color: white;
+    transition: transform 0.2s ease;
 }
 
 .export-dropdown.active .export-btn::after,
 .import-dropdown.active .import-btn::after {
-    transform: translateY(-50%) rotate(180deg);
+    transform: translateY(-60%) rotate(180deg);
 }
 
 /* ========================================
