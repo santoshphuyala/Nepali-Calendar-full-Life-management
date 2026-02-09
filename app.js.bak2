@@ -1599,56 +1599,18 @@ function initializeYearMonthSelectors() {
 
 function toggleDropdown(menuId) {
     const menu = document.getElementById(menuId);
-    if (!menu) {
-        console.warn(`Dropdown menu with ID '${menuId}' not found`);
-        return;
-    }
+    if (!menu) return;
 
     const isOpening = !menu.classList.contains('show');
     closeAllDropdowns();
-    
-    if (isOpening) {
-        menu.classList.add('show');
-        // Ensure proper positioning and visibility
-        menu.style.opacity = '1';
-        menu.style.visibility = 'visible';
-        menu.style.transform = 'translateY(0)';
-        menu.style.pointerEvents = 'auto';
-        
-        // Ensure z-index is high enough to be visible
-        const highestZIndex = Math.max(
-            ...Array.from(document.querySelectorAll('*'))
-                .map(el => parseInt(window.getComputedStyle(el).zIndex) || 0)
-        );
-        menu.style.zIndex = Math.max(9999, highestZIndex + 1);
-    } else {
-        menu.classList.remove('show');
-    }
+    menu.classList.toggle('show', isOpening);
 }
 
 function closeAllDropdowns() {
-    document.querySelectorAll('.dropdown-menu').forEach(menu => {
+    document.querySelectorAll('.dropdown-menu.show').forEach(menu => {
         menu.classList.remove('show');
-        menu.style.opacity = '0';
-        menu.style.visibility = 'hidden';
-        menu.style.transform = 'translateY(-10px)';
-        menu.style.pointerEvents = 'none';
     });
 }
-
-// Close dropdowns when clicking outside
-document.addEventListener('click', function(event) {
-    if (!event.target.closest('.dropdown-container')) {
-        closeAllDropdowns();
-    }
-});
-
-// Close dropdowns when pressing Escape
-document.addEventListener('keydown', function(event) {
-    if (event.key === 'Escape') {
-        closeAllDropdowns();
-    }
-});
 
 async function backupData() {
     if (typeof exportAllData === 'function') {
@@ -6246,21 +6208,12 @@ function clearTestSMS() {
 
 // UI Helpers
 function showModal(content) {
-    const modal = document.getElementById('modal');
-    const modalBody = document.getElementById('modalBody');
-    if (!modal || !modalBody) return;
-
-    modalBody.innerHTML = content;
-    modal.classList.add('active');
-    modal.style.display = 'block';
+    document.getElementById('modalBody').innerHTML = content;
+    document.getElementById('modal').classList.add('active');
 }
 
 function closeModal() {
-    const modal = document.getElementById('modal');
-    if (!modal) return;
-
-    modal.classList.remove('active');
-    modal.style.display = 'none';
+    document.getElementById('modal').classList.remove('active');
 }
 
 function downloadFile(content, filename, type) {
@@ -7331,8 +7284,10 @@ document.addEventListener('DOMContentLoaded', function() {
         if (medicineExportBtn) {
             medicineExportBtn.addEventListener('click', function(e) {
                 e.preventDefault();
-                e.stopPropagation();
-                toggleDropdown('medicineExportMenu');
+                const menu = document.getElementById('medicineExportMenu');
+                if (menu) {
+                    menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+                }
             });
         }
         
@@ -7340,37 +7295,49 @@ document.addEventListener('DOMContentLoaded', function() {
         if (medicineImportBtn) {
             medicineImportBtn.addEventListener('click', function(e) {
                 e.preventDefault();
-                toggleDropdown('medicineImportMenu');
+                const menu = document.getElementById('medicineImportMenu');
+                if (menu) {
+                    menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+                }
             });
         }
+        
+        // Close dropdowns when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.dropdown-container')) {
+                document.querySelectorAll('.dropdown-menu').forEach(menu => {
+                    menu.style.display = 'none';
+                });
+            }
+        });
         
         console.log('🔧 Medicine tracker buttons initialized');
     }, 500);
 });
 
 // Make functions globally accessible
-if (typeof parseAndPreviewSMS === 'function') window.parseAndPreviewSMS = parseAndPreviewSMS;
-if (typeof addParsedTransaction === 'function') window.addParsedTransaction = addParsedTransaction;
-if (typeof clearSMSInput === 'function') window.clearSMSInput = clearSMSInput;
-if (typeof readClipboardSMS === 'function') window.readClipboardSMS = readClipboardSMS;
+window.parseAndPreviewSMS = parseAndPreviewSMS;
+window.addParsedTransaction = addParsedTransaction;
+window.clearSMSInput = clearSMSInput;
+window.readClipboardSMS = readClipboardSMS;
 
 // Enhanced SMS Parser functions
-if (typeof switchSMSTab === 'function') window.switchSMSTab = switchSMSTab;
-if (typeof previewSMS === 'function') window.previewSMS = previewSMS;
-if (typeof loadTestExample === 'function') window.loadTestExample = loadTestExample;
-if (typeof testParseSMS === 'function') window.testParseSMS = testParseSMS;
-if (typeof addTestTransaction === 'function') window.addTestTransaction = addTestTransaction;
-if (typeof clearTestSMS === 'function') window.clearTestSMS = clearTestSMS;
-if (typeof selectTrainingField === 'function') window.selectTrainingField = selectTrainingField;
-if (typeof markTrainingWord === 'function') window.markTrainingWord = markTrainingWord;
-if (typeof saveTrainingPattern === 'function') window.saveTrainingPattern = saveTrainingPattern;
-if (typeof clearTraining === 'function') window.clearTraining = clearTraining;
-if (typeof processBulkSMS === 'function') window.processBulkSMS = processBulkSMS;
-if (typeof clearBulkSMS === 'function') window.clearBulkSMS = clearBulkSMS;
-if (typeof exportSMSData === 'function') window.exportSMSData = exportSMSData;
-if (typeof importSMSData === 'function') window.importSMSData = importSMSData;
-if (typeof clearAllSMSData === 'function') window.clearAllSMSData = clearAllSMSData;
-if (typeof updateSMSStats === 'function') window.updateSMSStats = updateSMSStats;
+window.switchSMSTab = switchSMSTab;
+window.previewSMS = previewSMS;
+window.loadTestExample = loadTestExample;
+window.testParseSMS = testParseSMS;
+window.addTestTransaction = addTestTransaction;
+window.clearTestSMS = clearTestSMS;
+window.selectTrainingField = selectTrainingField;
+window.markTrainingWord = markTrainingWord;
+window.saveTrainingPattern = saveTrainingPattern;
+window.clearTraining = clearTraining;
+window.processBulkSMS = processBulkSMS;
+window.clearBulkSMS = clearBulkSMS;
+window.exportSMSData = exportSMSData;
+window.importSMSData = importSMSData;
+window.clearAllSMSData = clearAllSMSData;
+window.updateSMSStats = updateSMSStats;
 
 // ============================================
 // ADVANCED SMS PARSER FUNCTIONALITY

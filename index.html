@@ -9,7 +9,7 @@
     <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="style.css">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='75' font-size='80'>📅</text></svg>">
-</head
+</head>
 <body>
     <!-- Header -->
     <header class="app-header">
@@ -29,6 +29,7 @@
         <button class="nav-tab" data-view="tracker">💰 Finance Tracker</button>
         <button class="nav-tab" data-view="financial">💳 Financial Manager</button>
         <button class="nav-tab" data-view="assets">🛡️ Asset Manager</button>
+        <button class="nav-tab" data-view="medicine">💊 Medicine Tracker</button>
         <button class="nav-tab" data-view="notes">📝 Notes</button>
         <button class="nav-tab" data-view="settings">⚙️ Settings</button>
     </nav>
@@ -356,6 +357,7 @@
             <div class="module-tabs">
                 <button class="module-tab active" data-module="transactions">💰 Transactions</button>
                 <button class="module-tab" data-module="budget">📊 Budget</button>
+                <button class="module-tab" data-module="smsParser">📱 SMS Parser</button>
             </div>
 
             <!-- Transactions Module -->
@@ -407,6 +409,237 @@
                 <div class="budget-chart-container">
                     <h3>Budget vs Actual</h3>
                     <canvas id="budgetChart"></canvas>
+                </div>
+
+            <!-- SMS Parser Module -->
+            <div id="smsParserModule" class="finance-module">
+                <div class="sms-parser-header">
+                    <h3>📱 Advanced SMS Transaction Parser</h3>
+                    <p>Parse bank SMS messages with AI-powered learning and automatically add them as income/expense transactions</p>
+                </div>
+
+                <!-- SMS Parser Tabs -->
+                <div class="sms-tabs-container">
+                    <button class="sms-tab-btn active" onclick="switchSMSTab(this, 'tab-sms-parse')">
+                        <i class="fas fa-paste"></i> Parse SMS
+                    </button>
+                    <button class="sms-tab-btn" onclick="switchSMSTab(this, 'tab-sms-bulk')">
+                        <i class="fas fa-layer-group"></i> Bulk Process
+                    </button>
+                    <button class="sms-tab-btn" onclick="switchSMSTab(this, 'tab-sms-test')">
+                        <i class="fas fa-flask"></i> Test Examples
+                    </button>
+                    <button class="sms-tab-btn" onclick="switchSMSTab(this, 'tab-sms-train')">
+                        <i class="fas fa-brain"></i> Train Parser
+                    </button>
+                    <button class="sms-tab-btn" onclick="switchSMSTab(this, 'tab-sms-manage')">
+                        <i class="fas fa-cog"></i> Manage
+                    </button>
+                </div>
+
+                <!-- Parse SMS Tab -->
+                <div id="tab-sms-parse" class="sms-tab-content active">
+                    <div class="sms-input-section">
+                        <div class="form-group">
+                            <label for="smsInput">Paste Bank SMS Message:</label>
+                            <textarea id="smsInput" class="form-control" rows="4" placeholder="Paste your bank SMS message here..." oninput="previewSMS()"></textarea>
+                        </div>
+                        
+                        <div class="sms-parse-preview" id="smsParsePreview" style="display: none;">
+                            <h4>📊 Parsed Transaction Details:</h4>
+                            <div class="parsed-details" id="parsedDetails"></div>
+                        </div>
+
+                        <div class="sms-actions">
+                            <button class="btn btn-primary" onclick="parseAndPreviewSMS()">
+                                <i class="fas fa-search"></i> Parse SMS
+                            </button>
+                            <button class="btn btn-success" id="addParsedTransactionBtn" onclick="addParsedTransaction()" style="display: none;">
+                                <i class="fas fa-plus"></i> Add as Transaction
+                            </button>
+                            <button class="btn btn-secondary" onclick="clearSMSInput()">
+                                <i class="fas fa-eraser"></i> Clear
+                            </button>
+                            <button class="btn btn-info" onclick="readClipboardSMS()">
+                                <i class="fas fa-clipboard"></i> Read from Clipboard
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bulk Process Tab -->
+                <div id="tab-sms-bulk" class="sms-tab-content">
+                    <div class="bulk-sms-section">
+                        <div class="form-group">
+                            <label for="bulkSmsInput">Multiple SMS Messages (one per line):</label>
+                            <textarea id="bulkSmsInput" class="form-control" rows="8" placeholder="Paste multiple SMS messages, each on a new line..."></textarea>
+                        </div>
+                        
+                        <div class="bulk-sms-actions">
+                            <button class="btn btn-warning" onclick="processBulkSMS()">
+                                <i class="fas fa-bolt"></i> Process All SMS
+                            </button>
+                            <button class="btn btn-secondary" onclick="clearBulkSMS()">
+                                <i class="fas fa-eraser"></i> Clear
+                            </button>
+                        </div>
+                        
+                        <div class="bulk-progress" id="bulkProgress" style="display: none;">
+                            <h4>📊 Processing Progress:</h4>
+                            <div class="progress-info" id="bulkProgressInfo"></div>
+                            <div class="progress-bar">
+                                <div class="progress-fill" id="bulkProgressFill"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Test Examples Tab -->
+                <div id="tab-sms-test" class="sms-tab-content">
+                    <div class="sms-test-section">
+                        <div class="form-group">
+                            <label for="testExample">Select Test Example:</label>
+                            <select id="testExample" class="form-control" onchange="loadTestExample()">
+                                <option value="">Select an example...</option>
+                                <option value="nabil-credit">Nabil Bank - Credit</option>
+                                <option value="nic-debit">NIC Asia - Debit</option>
+                                <option value="esewa-payment">eSewa - Payment</option>
+                                <option value="khalti-transfer">Khalti - Transfer</option>
+                                <option value="global-deposit">Global IME - Deposit</option>
+                                <option value="sanima-withdraw">Sanima - Withdrawal</option>
+                                <option value="himalayan-transfer">Himalayan - Transfer</option>
+                                <option value="nmb-purchase">NMB - Purchase</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="testSmsInput">Test SMS Message:</label>
+                            <textarea id="testSmsInput" class="form-control" rows="4" placeholder="Or paste your own SMS to test..." oninput="testParseSMS()"></textarea>
+                        </div>
+                        
+                        <div class="sms-test-preview" id="smsTestPreview" style="display: none;">
+                            <h4>🧪 Test Result:</h4>
+                            <div class="test-details" id="testDetails"></div>
+                        </div>
+
+                        <div class="sms-test-actions">
+                            <button class="btn btn-primary" onclick="testParseSMS()">
+                                <i class="fas fa-search"></i> Test Parse
+                            </button>
+                            <button class="btn btn-success" id="addTestTransactionBtn" onclick="addTestTransaction()" style="display: none;">
+                                <i class="fas fa-plus"></i> Add Test Transaction
+                            </button>
+                            <button class="btn btn-secondary" onclick="clearTestSMS()">
+                                <i class="fas fa-eraser"></i> Clear
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Train Parser Tab -->
+                <div id="tab-sms-train" class="sms-tab-content">
+                    <div class="sms-train-section">
+                        <div class="form-group">
+                            <label for="trainSmsInput">SMS Message for Training:</label>
+                            <textarea id="trainSmsInput" class="form-control" rows="4" placeholder="Paste SMS message to train the parser..."></textarea>
+                        </div>
+                        
+                        <div class="training-controls">
+                            <h4>🧠 Select what to train:</h4>
+                            <div class="training-fields">
+                                <button class="training-field-btn" onclick="selectTrainingField('amount', this)" data-field="amount">
+                                    💰 Amount
+                                </button>
+                                <button class="training-field-btn" onclick="selectTrainingField('credit', this)" data-field="credit">
+                                    ⬇️ Credit
+                                </button>
+                                <button class="training-field-btn" onclick="selectTrainingField('debit', this)" data-field="debit">
+                                    ⬆️ Debit
+                                </button>
+                                <button class="training-field-btn" onclick="selectTrainingField('bank', this)" data-field="bank">
+                                    🏦 Bank
+                                </button>
+                                <button class="training-field-btn" onclick="selectTrainingField('date', this)" data-field="date">
+                                    📅 Date
+                                </button>
+                                <button class="training-field-btn" onclick="selectTrainingField('remarks', this)" data-field="remarks">
+                                    📝 Remarks
+                                </button>
+                                <button class="training-field-btn" onclick="selectTrainingField('account', this)" data-field="account">
+                                    🏦 Account
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="training-preview" id="trainingPreview" style="display: none;">
+                            <h4>📝 Training Preview:</h4>
+                            <div class="training-words" id="trainingWords"></div>
+                        </div>
+                        
+                        <div class="training-actions">
+                            <div class="form-group">
+                                <label for="patternName">Pattern Name:</label>
+                                <input type="text" id="patternName" class="form-control" placeholder="e.g., Nabil Credit Pattern">
+                            </div>
+                            <button class="btn btn-success" onclick="saveTrainingPattern()">
+                                <i class="fas fa-save"></i> Save Pattern
+                            </button>
+                            <button class="btn btn-secondary" onclick="clearTraining()">
+                                <i class="fas fa-eraser"></i> Clear
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Manage Tab -->
+                <div id="tab-sms-manage" class="sms-tab-content">
+                    <div class="sms-manage-section">
+                        <div class="manage-stats">
+                            <h4>📊 SMS Parser Statistics</h4>
+                            <div class="stats-grid">
+                                <div class="stat-item">
+                                    <span class="stat-label">Total Transactions</span>
+                                    <span class="stat-value" id="totalSmsTransactions">0</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-label">Saved Patterns</span>
+                                    <span class="stat-value" id="totalPatterns">0</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-label">Parse Accuracy</span>
+                                    <span class="stat-value" id="parseAccuracy">0%</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="manage-actions">
+                            <button class="btn btn-warning" onclick="exportSMSData()">
+                                <i class="fas fa-download"></i> Export SMS Data
+                            </button>
+                            <button class="btn btn-info" onclick="importSMSData()">
+                                <i class="fas fa-upload"></i> Import SMS Data
+                            </button>
+                            <button class="btn btn-danger" onclick="clearAllSMSData()">
+                                <i class="fas fa-trash"></i> Clear All Data
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="sms-instructions">
+                    <h4>📖 Instructions:</h4>
+                    <ul>
+                        <li>Paste any bank SMS message containing transaction details</li>
+                        <li>The parser will automatically extract amount, type, bank, date, and description</li>
+                        <li>Review parsed details and click "Add as Transaction" to save</li>
+                        <li>Use the Train tab to improve parsing accuracy for your bank's SMS format</li>
+                        <li>Supported banks: Nabil, Global IME, Sanima, NIC Asia, Himalayan, eSewa, Khalti, and more</li>
+                    </ul>
+                </div>
+
+                <div class="recent-sms-transactions" id="recentSmsTransactions">
+                    <h4>📋 Recent SMS Transactions</h4>
+                    <div id="recentSmsList"></div>
                 </div>
             </div>
         </section>
@@ -880,6 +1113,125 @@
             <div class="notes-list" id="notesList"></div>
         </section>
 
+        <!-- Medicine Tracker View -->
+        <section id="medicineView" class="view">
+            <div class="medicine-header">
+                <h2>💊 Medicine Tracker</h2>
+                <div class="medicine-actions">
+                    <div class="action-group">
+                        <button class="btn-primary" id="addMedicineBtn">+ Add Medicine</button>
+                        <button class="btn-info" id="addFamilyMemberBtn">+ Add Family Member</button>
+                    </div>
+                    
+                    <!-- Import and Export Buttons -->
+                    <div class="import-export-buttons">
+                        <!-- Export Dropdown -->
+                        <div class="dropdown-container">
+                            <button class="btn-export" id="medicineExportBtn">
+                                📤 Export
+                            </button>
+                            <div class="dropdown-menu" id="medicineExportMenu">
+                                <div class="dropdown-section">
+                                    <h5>💊 Medicine Data</h5>
+                                    <button class="dropdown-item" onclick="exportMedicineData('medicines')">
+                                        📄 Export Medicines as JSON
+                                    </button>
+                                    <button class="dropdown-item" onclick="exportMedicineData('medicines', 'excel')">
+                                        📊 Export Medicines as Excel
+                                    </button>
+                                    <button class="dropdown-item" onclick="exportMedicineData('family')">
+                                        👨‍👩‍👧‍👦 Export Family Members as JSON
+                                    </button>
+                                    <button class="dropdown-item" onclick="exportMedicineData('complete')">
+                                        📦 Export Complete Medicine Data
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Import Dropdown -->
+                        <div class="dropdown-container">
+                            <button class="btn-import" id="medicineImportBtn">
+                                📥 Import
+                            </button>
+                            <div class="dropdown-menu" id="medicineImportMenu">
+                                <button class="dropdown-item" onclick="document.getElementById('medicineImportFile').click()">
+                                    📄 Import Medicines from JSON
+                                </button>
+                                <button class="dropdown-item" onclick="document.getElementById('medicineImportExcel').click()">
+                                    📊 Import Medicines from Excel
+                                </button>
+                                <input type="file" id="medicineImportFile" accept=".json" style="display: none;" onchange="importMedicineData('json', this)">
+                                <input type="file" id="medicineImportExcel" accept=".xlsx,.xls" style="display: none;" onchange="importMedicineData('excel', this)">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Module Tabs -->
+            <div class="module-tabs">
+                <button class="module-tab active" data-module="medicines">💊 Medicines</button>
+                <button class="module-tab" data-module="family">👨‍👩‍👧‍👦 Family Members</button>
+                <button class="module-tab" data-module="schedule">⏰ Schedule</button>
+                <button class="module-tab" data-module="prescriptions">📋 Prescriptions</button>
+            </div>
+
+            <!-- Medicines Module -->
+            <div id="medicinesModule" class="medicine-module active">
+                <div class="medicine-filters">
+                    <select id="medicineFilter">
+                        <option value="all">All Medicines</option>
+                        <option value="active">Active</option>
+                        <option value="completed">Completed</option>
+                        <option value="expired">Expired</option>
+                    </select>
+                    <select id="memberFilter">
+                        <option value="all">All Family Members</option>
+                    </select>
+                    <input type="text" id="medicineSearch" placeholder="Search medicines...">
+                </div>
+
+                <div class="medicine-stats">
+                    <div class="stat-card">
+                        <h4>Active Medicines</h4>
+                        <span id="activeMedicinesCount">0</span>
+                    </div>
+                    <div class="stat-card">
+                        <h4>Today's Doses</h4>
+                        <span id="todayDosesCount">0</span>
+                    </div>
+                    <div class="stat-card">
+                        <h4>Expiring Soon</h4>
+                        <span id="expiringCount">0</span>
+                    </div>
+                </div>
+
+                <div class="medicine-list" id="medicineList"></div>
+            </div>
+
+            <!-- Family Members Module -->
+            <div id="familyModule" class="medicine-module">
+                <div class="family-members-list" id="familyMembersList"></div>
+            </div>
+
+            <!-- Schedule Module -->
+            <div id="scheduleModule" class="medicine-module">
+                <div class="schedule-view">
+                    <div class="schedule-header">
+                        <h3>Today's Medicine Schedule</h3>
+                        <div class="schedule-date" id="scheduleDate"></div>
+                    </div>
+                    <div class="schedule-list" id="scheduleList"></div>
+                </div>
+            </div>
+
+            <!-- Prescriptions Module -->
+            <div id="prescriptionsModule" class="medicine-module">
+                <div class="prescriptions-list" id="prescriptionsList"></div>
+            </div>
+        </section>
+
         <!-- Settings View -->
         <section id="settingsView" class="view">
             <div class="settings-container">
@@ -1054,7 +1406,8 @@
     <!-- Modal Container -->
     <div class="modal" id="modal">
         <div class="modal-content">
-            <span class="modal-close">&times;</span>
+            <span class="modal-close" onclick="closeModal()">&times;</span>
+            <h3 id="modalTitle"></h3>
             <div id="modalBody"></div>
         </div>
     </div>
@@ -1082,6 +1435,7 @@
     <script src="subscription.js"></script>
     <script src="custom.js"></script>
     <script src="import-export.js"></script>
+    <script src="medicine-tracker.js"></script>
     <script src="nepali-date-picker.js"></script>
     <script src="app.js"></script>
     
@@ -1159,46 +1513,5 @@
             </div>
         </div>
     </footer>
-
-
-    
-    // Dropdown toggle handler – place this after DOM is loaded
-document.addEventListener('DOMContentLoaded', function() {
-    // Find all export & import buttons
-    const dropdownBtns = document.querySelectorAll('.btn-export, .btn-import');
-
-    dropdownBtns.forEach(btn => {
-        btn.addEventListener('click', function(e) {
-            e.stopPropagation(); // prevent closing immediately
-
-            const container = this.closest('.dropdown-container');
-            if (!container) return;
-
-            const willBeOpen = !container.classList.contains('active');
-
-            // Close all other dropdowns first
-            document.querySelectorAll('.dropdown-container.active')
-                .forEach(el => el.classList.remove('active'));
-
-            // Toggle current one
-            if (willBeOpen) {
-                container.classList.add('active');
-            }
-        });
-    });
-
-    // Close when clicking anywhere outside
-    document.addEventListener('click', function(e) {
-        if (!e.target.closest('.dropdown-container')) {
-            document.querySelectorAll('.dropdown-container.active')
-                .forEach(el => el.classList.remove('active'));
-        }
-    });
-
-    console.log("Dropdown system initialized – found", dropdownBtns.length, "buttons");
-});
-
-<script src="https://cdn.jsdelivr.net/npm/eruda"></script>
-<script>eruda.init();</script>
 </body>
 </html>

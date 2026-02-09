@@ -43,6 +43,10 @@ class ImportExportManager {
         this.initEventListeners();
     }
 
+    isFallbackGlobal(fn) {
+        return !!(fn && fn.__ie_fallback);
+    }
+
     initEventListeners() {
         // Dropdown toggle handlers
         document.addEventListener('click', (e) => {
@@ -87,6 +91,9 @@ class ImportExportManager {
     // Export Functions
     async exportData(module, format) {
         try {
+            if (typeof window.exportData === 'function' && !this.isFallbackGlobal(window.exportData)) {
+                return await window.exportData(module, format);
+            }
             showNotification('📤 Preparing export...', 'info');
             
             const data = await this.collectModuleData(module);
@@ -113,6 +120,9 @@ class ImportExportManager {
 
     async exportAllData(format) {
         try {
+            if (typeof window.exportAllData === 'function' && !this.isFallbackGlobal(window.exportAllData)) {
+                return await window.exportAllData(format);
+            }
             showNotification('📤 Preparing complete export...', 'info');
             
             const allData = await this.collectAllData();
@@ -313,9 +323,13 @@ class ImportExportManager {
     }
 
     // Import Functions
-    async importData(module, format, fileInput) {
+    async importData(module, format, fileInputOrFile) {
         try {
-            const file = fileInput.files[0];
+            if (typeof window.importData === 'function' && !this.isFallbackGlobal(window.importData)) {
+                return await window.importData(module, format, fileInputOrFile);
+            }
+            const isFileInput = !!(fileInputOrFile && typeof fileInputOrFile === 'object' && 'files' in fileInputOrFile);
+            const file = isFileInput ? fileInputOrFile.files[0] : fileInputOrFile;
             if (!file) return;
             
             showNotification('📥 Reading file...', 'info');
@@ -342,12 +356,18 @@ class ImportExportManager {
         }
         
         // Reset file input
-        fileInput.value = '';
+        if (isFileInput && fileInputOrFile && typeof fileInputOrFile.value === 'string') {
+            fileInputOrFile.value = '';
+        }
     }
 
-    async importAllData(format, fileInput) {
+    async importAllData(format, fileInputOrFile) {
         try {
-            const file = fileInput.files[0];
+            if (typeof window.importAllData === 'function' && !this.isFallbackGlobal(window.importAllData)) {
+                return await window.importAllData(format, fileInputOrFile);
+            }
+            const isFileInput = !!(fileInputOrFile && typeof fileInputOrFile === 'object' && 'files' in fileInputOrFile);
+            const file = isFileInput ? fileInputOrFile.files[0] : fileInputOrFile;
             if (!file) return;
             
             showNotification('📥 Reading complete data...', 'info');
@@ -374,7 +394,9 @@ class ImportExportManager {
         }
         
         // Reset file input
-        fileInput.value = '';
+        if (isFileInput && fileInputOrFile && typeof fileInputOrFile.value === 'string') {
+            fileInputOrFile.value = '';
+        }
     }
 
     async readJSONFile(file) {
@@ -419,6 +441,7 @@ class ImportExportManager {
     }
 
     async showImportPreview(data, module) {
+        this.importPreview = data;
         const analysis = this.analyzeImportData(data, module);
         
         // Create preview modal
@@ -486,7 +509,7 @@ class ImportExportManager {
                 
                 <div class="import-preview-actions">
                     <button class="btn-secondary" onclick="this.closest('.import-preview-modal').remove()">Cancel</button>
-                    <button class="btn-primary" onclick="importExportManager.executeImport('${module}', this)">Import Data</button>
+                    <button class="btn-primary" onclick="window.importExportManager.executeImport('${module}', this)">Import Data</button>
                 </div>
             </div>
         `;
@@ -741,15 +764,39 @@ class ImportExportManager {
 const importExportManager = new ImportExportManager();
 
 // Export functions for global access
-window.exportData = (module, format) => importExportManager.exportData(module, format);
-window.exportAllData = (format) => importExportManager.exportAllData(format);
-window.exportModuleData = (module, format) => importExportManager.exportData(module, format);
-window.importData = (module, format, fileInput) => importExportManager.importData(module, format, fileInput);
-window.importAllData = (format, fileInput) => importExportManager.importAllData(format, fileInput);
-window.importModuleData = (module, fileInput) => {
-    const format = fileInput.files[0]?.name.endsWith('.json') ? 'json' : 'excel';
-    importExportManager.importData(module, format, fileInput);
-};
+if (typeof window.exportData !== 'function') {
+    const exportDataFn = (module, format) => importExportManager.exportData(module, format);
+    exportDataFn.__ie_fallback = true;
+    window.exportData = exportDataFn;
+}
+if (typeof window.exportAllData !== 'function') {
+    const exportAllDataFn = (format) => importExportManager.exportAllData(format);
+    exportAllDataFn.__ie_fallback = true;
+    window.exportAllData = exportAllDataFn;
+}
+if (typeof window.exportModuleData !== 'function') {
+    const exportModuleDataFn = (module, format) => importExportManager.exportData(module, format);
+    exportModuleDataFn.__ie_fallback = true;
+    window.exportModuleData = exportModuleDataFn;
+}
+if (typeof window.importData !== 'function') {
+    const importDataFn = (module, format, fileInputOrFile) => importExportManager.importData(module, format, fileInputOrFile);
+    importDataFn.__ie_fallback = true;
+    window.importData = importDataFn;
+}
+if (typeof window.importAllData !== 'function') {
+    const importAllDataFn = (format, fileInputOrFile) => importExportManager.importAllData(format, fileInputOrFile);
+    importAllDataFn.__ie_fallback = true;
+    window.importAllData = importAllDataFn;
+}
+if (typeof window.importModuleData !== 'function') {
+    const importModuleDataFn = (module, fileInput) => {
+        const format = fileInput.files[0]?.name.endsWith('.json') ? 'json' : 'excel';
+        importExportManager.importData(module, format, fileInput);
+    };
+    importModuleDataFn.__ie_fallback = true;
+    window.importModuleData = importModuleDataFn;
+}
 
 // Make importExportManager globally available for testing
 window.importExportManager = importExportManager;
