@@ -1459,6 +1459,12 @@ document.addEventListener('DOMContentLoaded', async () => {
             return;
         }
         
+        try {
+            await loadSMSParserPersistedData();
+        } catch (smsInitError) {
+            window.debugError(smsInitError, 'SMS Parser Data Load');
+        }
+        
         // Debug: Check database connections
         window.debugLog('Checking database connections...');
         const dbStatus = await window.debugCheckDatabase();
@@ -1805,10 +1811,17 @@ async function importCalendarData(scope, fileInput) {
 
         const text = await file.text();
         const payload = JSON.parse(text);
-        const importData = payload?.data;
+        
+        // Handle both wrapped payload format and direct data format
+        let importData = payload?.data;
         if (!importData) {
-            showNotification('❌ Invalid calendar import file', 'error');
-            return;
+            // Check if data is at root level (like user's JSON)
+            if (payload.type && (payload.holidays || payload.notes || payload.income || payload.expenses)) {
+                importData = payload;
+            } else {
+                showNotification('❌ Invalid calendar import file', 'error');
+                return;
+            }
         }
 
         const confirmed = confirm('This will import items and skip duplicates. Continue?');
@@ -1922,10 +1935,17 @@ async function importTrackerData(scope, fileInput) {
 
         const text = await file.text();
         const payload = JSON.parse(text);
-        const importData = payload?.data;
+        
+        // Handle both wrapped payload format and direct data format
+        let importData = payload?.data;
         if (!importData) {
-            showNotification('❌ Invalid tracker import file', 'error');
-            return;
+            // Check if data is at root level (like user's JSON)
+            if (payload.type && (payload.income || payload.expenses || payload.recurring)) {
+                importData = payload;
+            } else {
+                showNotification('❌ Invalid tracker import file', 'error');
+                return;
+            }
         }
 
         const confirmed = confirm('This will import items and skip duplicates. Continue?');
@@ -5752,8 +5772,20 @@ async function importAllData(format, fileInputOrFile) {
                 try {
                     const importData = JSON.parse(e.target.result);
 
+                    // Handle both wrapped payload format and direct data format
+                    let dataToImport = importData?.data;
+                    if (!dataToImport) {
+                        // Check if data is at root level (like user's JSON)
+                        if (importData.type && (importData.holidays || importData.notes || importData.income || importData.expenses)) {
+                            dataToImport = importData;
+                        } else {
+                            showNotification('❌ Invalid import file format', 'error');
+                            return;
+                        }
+                    }
+
                     // Validate import structure
-                    if (!importData.data) {
+                    if (!dataToImport) {
                         showNotification('❌ Invalid import file format', 'error');
                         return;
                     }
@@ -5781,92 +5813,92 @@ async function importAllData(format, fileInputOrFile) {
                     await customItemDB.clear();
 
                     // Restore data by store
-                    if (importData.data.holidays) {
-                        for (const holiday of importData.data.holidays) {
+                    if (dataToImport.holidays) {
+                        for (const holiday of dataToImport.holidays) {
                             await holidayDB.add(holiday);
                         }
                     }
 
-                    if (importData.data.income) {
-                        for (const income of importData.data.income) {
+                    if (dataToImport.income) {
+                        for (const income of dataToImport.income) {
                             await incomeDB.add(income);
                         }
                     }
 
-                    if (importData.data.expenses) {
-                        for (const expense of importData.data.expenses) {
+                    if (dataToImport.expenses) {
+                        for (const expense of dataToImport.expenses) {
                             await expenseDB.add(expense);
                         }
                     }
 
-                    if (importData.data.notes) {
-                        for (const note of importData.data.notes) {
+                    if (dataToImport.notes) {
+                        for (const note of dataToImport.notes) {
                             await noteDB.add(note);
                         }
                     }
 
-                    if (importData.data.shopping) {
-                        for (const item of importData.data.shopping) {
+                    if (dataToImport.shopping) {
+                        for (const item of dataToImport.shopping) {
                             await shoppingDB.add(item);
                         }
                     }
 
-                    if (importData.data.budgets) {
-                        for (const budget of importData.data.budgets) {
+                    if (dataToImport.budgets) {
+                        for (const budget of dataToImport.budgets) {
                             await budgetDB.add(budget);
                         }
                     }
 
-                    if (importData.data.bills) {
-                        for (const bill of importData.data.bills) {
+                    if (dataToImport.bills) {
+                        for (const bill of dataToImport.bills) {
                             await billDB.add(bill);
                         }
                     }
 
-                    if (importData.data.goals) {
-                        for (const goal of importData.data.goals) {
+                    if (dataToImport.goals) {
+                        for (const goal of dataToImport.goals) {
                             await goalDB.add(goal);
                         }
                     }
 
-                    if (importData.data.recurring) {
-                        for (const recurring of importData.data.recurring) {
+                    if (dataToImport.recurring) {
+                        for (const recurring of dataToImport.recurring) {
                             await recurringDB.add(recurring);
                         }
                     }
 
-                    if (importData.data.insurance) {
-                        for (const insurance of importData.data.insurance) {
+                    if (dataToImport.insurance) {
+                        for (const insurance of dataToImport.insurance) {
                             await insuranceDB.add(insurance);
                         }
                     }
 
-                    if (importData.data.vehicles) {
-                        for (const vehicle of importData.data.vehicles) {
+                    if (dataToImport.vehicles) {
+                        for (const vehicle of dataToImport.vehicles) {
                             await vehicleDB.add(vehicle);
                         }
                     }
 
-                    if (importData.data.vehicleServices) {
-                        for (const service of importData.data.vehicleServices) {
+                    if (dataToImport.vehicleServices) {
+                        for (const service of dataToImport.vehicleServices) {
                             await vehicleServiceDB.add(service);
                         }
                     }
 
-                    if (importData.data.subscriptions) {
-                        for (const subscription of importData.data.subscriptions) {
+                    if (dataToImport.subscriptions) {
+                        for (const subscription of dataToImport.subscriptions) {
                             await subscriptionDB.add(subscription);
                         }
                     }
 
-                    if (importData.data.customTypes) {
-                        for (const customType of importData.data.customTypes) {
+                    if (dataToImport.customTypes) {
+                        for (const customType of dataToImport.customTypes) {
                             await customTypeDB.add(customType);
                         }
                     }
 
-                    if (importData.data.customItems) {
-                        for (const customItem of importData.data.customItems) {
+                    if (dataToImport.customItems) {
+                        for (const customItem of dataToImport.customItems) {
                             await customItemDB.add(customItem);
                         }
                     }
@@ -7256,12 +7288,258 @@ async function readClipboardSMS() {
     }
 }
 
+// SMS Parser Training Functions
+function selectTrainingField(field, btn) {
+    smsParserState.training.active = true;
+    smsParserState.training.field = field;
+    smsParserState.training.tokens = [];
+
+    document.querySelectorAll('.training-field-btn').forEach(b => b.classList.remove('active'));
+    if (btn && btn.classList) btn.classList.add('active');
+
+    const smsText = (document.getElementById('trainSmsInput')?.value || '').trim();
+    if (!smsText) {
+        showNotification('Please paste an SMS message to train', 'warning');
+        return;
+    }
+
+    smsParserState.training.tokens = smsText.split(/\s+/).filter(Boolean);
+
+    const preview = document.getElementById('trainingPreview');
+    const wordsContainer = document.getElementById('trainingWords');
+    if (!preview || !wordsContainer) return;
+
+    wordsContainer.innerHTML = smsParserState.training.tokens
+        .map((w, i) => `<span class="training-word" data-index="${i}" onclick="markTrainingWord(${i})">${w}</span>`)
+        .join(' ');
+    preview.style.display = 'block';
+}
+
+function markTrainingWord(index) {
+    const field = smsParserState.training.field;
+    const tokens = smsParserState.training.tokens || [];
+    if (!field || !tokens[index]) return;
+
+    const word = String(tokens[index]).trim();
+    const arr = smsParserState.training.marks[field] || (smsParserState.training.marks[field] = []);
+    if (!arr.includes(word)) arr.push(word);
+
+    const el = document.querySelector(`#trainingWords .training-word[data-index="${index}"]`);
+    if (el) el.classList.add('marked');
+}
+
+async function saveTrainingPattern() {
+    const name = (document.getElementById('patternName')?.value || '').trim() || 'Custom Pattern';
+    const marks = smsParserState.training.marks;
+
+    const pattern = {
+        name,
+        bank: (marks.bank && marks.bank[0]) ? marks.bank[0] : null,
+        credit: marks.credit || [],
+        debit: marks.debit || [],
+        date: marks.date || [],
+        remarks: marks.remarks || [],
+        account: marks.account || []
+    };
+
+    if (!pattern.credit.length && !pattern.debit.length && !pattern.date.length && !pattern.remarks.length && !pattern.account.length && !pattern.bank) {
+        showNotification('Please mark at least one word to save a pattern', 'warning');
+        return;
+    }
+
+    if (!window.smsParserDB || typeof window.smsParserDB.add !== 'function') {
+        showNotification('SMS Parser database not available', 'error');
+        return;
+    }
+
+    await window.smsParserDB.add({
+        type: 'pattern',
+        createdAt: new Date().toISOString(),
+        pattern
+    });
+
+    smsParserState.patterns.push(pattern);
+    showNotification('Pattern saved successfully', 'success');
+    clearTraining();
+    updateSMSStats();
+}
+
+function clearTraining() {
+    smsParserState.training.active = false;
+    smsParserState.training.field = null;
+    smsParserState.training.tokens = [];
+    smsParserState.training.marks = { amount: [], credit: [], debit: [], bank: [], date: [], remarks: [], account: [] };
+
+    document.querySelectorAll('.training-field-btn').forEach(b => b.classList.remove('active'));
+
+    const preview = document.getElementById('trainingPreview');
+    const wordsContainer = document.getElementById('trainingWords');
+    const nameInput = document.getElementById('patternName');
+    if (preview) preview.style.display = 'none';
+    if (wordsContainer) wordsContainer.innerHTML = '';
+    if (nameInput) nameInput.value = '';
+}
+
+function clearBulkSMS() {
+    const input = document.getElementById('bulkSmsInput');
+    const progress = document.getElementById('bulkProgress');
+    if (input) input.value = '';
+    if (progress) progress.style.display = 'none';
+}
+
+async function processBulkSMS() {
+    const textarea = document.getElementById('bulkSmsInput');
+    const lines = (textarea?.value || '').split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+    if (lines.length === 0) {
+        showNotification('Please paste SMS messages (one per line)', 'warning');
+        return;
+    }
+
+    const progress = document.getElementById('bulkProgress');
+    const info = document.getElementById('bulkProgressInfo');
+    const fill = document.getElementById('bulkProgressFill');
+    if (progress) progress.style.display = 'block';
+
+    let ok = 0;
+    let failed = 0;
+
+    for (let i = 0; i < lines.length; i++) {
+        const parsed = parseSMS(lines[i]);
+        if (parsed && parsed.amount && parsed.type) {
+            ok++;
+
+            if (window.smsParserDB && typeof window.smsParserDB.add === 'function') {
+                await window.smsParserDB.add({
+                    type: 'transaction',
+                    createdAt: new Date().toISOString(),
+                    transaction: {
+                        amount: parsed.amount,
+                        type: parsed.type,
+                        bank: parsed.bank,
+                        date: parsed.date?.toISOString ? parsed.date.toISOString() : String(parsed.date),
+                        remarks: parsed.remarks,
+                        account: parsed.account,
+                        rawSMS: parsed.rawSMS,
+                        confidence: parsed.confidence
+                    }
+                });
+            }
+        } else {
+            failed++;
+        }
+
+        const pct = Math.round(((i + 1) / lines.length) * 100);
+        if (info) info.textContent = `Processed ${i + 1} / ${lines.length} (Success: ${ok}, Failed: ${failed})`;
+        if (fill) fill.style.width = `${pct}%`;
+    }
+
+    showNotification(`Bulk processing complete. Success: ${ok}, Failed: ${failed}`, failed ? 'warning' : 'success');
+    updateSMSStats();
+}
+
+async function exportSMSData() {
+    if (!window.smsParserDB || typeof window.smsParserDB.getAll !== 'function') {
+        showNotification('SMS Parser database not available', 'error');
+        return;
+    }
+
+    const data = await window.smsParserDB.getAll();
+    downloadFile(JSON.stringify({ version: '1.0', exportDate: new Date().toISOString(), records: data || [] }, null, 2), 'sms-parser-data.json', 'application/json');
+}
+
+async function importSMSData() {
+    if (!window.smsParserDB || typeof window.smsParserDB.clear !== 'function') {
+        showNotification('SMS Parser database not available', 'error');
+        return;
+    }
+
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json,application/json';
+    input.onchange = async () => {
+        const file = input.files && input.files[0];
+        if (!file) return;
+        const text = await file.text();
+        const parsed = JSON.parse(text);
+        const records = Array.isArray(parsed?.records) ? parsed.records : [];
+
+        await window.smsParserDB.clear();
+
+        for (const r of records) {
+            if (!r) continue;
+            const { id, ...rest } = r;
+            await window.smsParserDB.add(rest);
+        }
+
+        await loadSMSParserPersistedData();
+        showNotification('SMS Parser data imported successfully', 'success');
+    };
+    input.click();
+}
+
+async function clearAllSMSData() {
+    if (!confirm('Are you sure you want to clear all SMS Parser data?')) return;
+
+    if (window.smsParserDB && typeof window.smsParserDB.clear === 'function') {
+        await window.smsParserDB.clear();
+    }
+
+    smsParserState.patterns = [];
+    smsParserState.corrections = [];
+    clearTraining();
+    updateSMSStats();
+    showNotification('SMS Parser data cleared', 'success');
+}
+
+async function updateSMSStats() {
+    const txEl = document.getElementById('totalSmsTransactions');
+    const patEl = document.getElementById('totalPatterns');
+    const accEl = document.getElementById('parseAccuracy');
+
+    let totalTx = 0;
+    let totalPat = smsParserState.patterns.length;
+    let avgConfidence = 0;
+
+    if (window.smsParserDB && typeof window.smsParserDB.getAll === 'function') {
+        const records = await window.smsParserDB.getAll();
+        const tx = (records || []).filter(r => r && r.type === 'transaction' && r.transaction);
+        totalTx = tx.length;
+        if (tx.length) {
+            avgConfidence = Math.round(tx.reduce((s, r) => s + (Number(r.transaction.confidence) || 0), 0) / tx.length);
+        }
+        totalPat = (records || []).filter(r => r && r.type === 'pattern' && r.pattern).length;
+    }
+
+    if (txEl) txEl.textContent = String(totalTx);
+    if (patEl) patEl.textContent = String(totalPat);
+    if (accEl) accEl.textContent = `${avgConfidence}%`;
+}
+
+async function loadSMSParserPersistedData() {
+    if (!window.smsParserDB || typeof window.smsParserDB.getAll !== 'function') return;
+
+    const records = await window.smsParserDB.getAll();
+    const patterns = [];
+    const corrections = [];
+
+    for (const r of (records || [])) {
+        if (!r || !r.type) continue;
+        if (r.type === 'pattern' && r.pattern) patterns.push(r.pattern);
+        if (r.type === 'correction' && r.correction) corrections.push(r.correction);
+    }
+
+    smsParserState.patterns = patterns;
+    smsParserState.corrections = corrections;
+
+    updateSMSStats();
+}
+
 function updateRecentSMSTransactions() {
     const recentSmsList = document.getElementById('recentSmsList');
     if (!recentSmsList) return;
     
     // Get recent transactions from SMS parser
-    // This would ideally query the database for recent SMS-sourced transactions
+    // This would ideally query database for recent SMS-sourced transactions
     // For now, show a placeholder
     recentSmsList.innerHTML = `
         <div class="empty-state">
@@ -7271,40 +7549,8 @@ function updateRecentSMSTransactions() {
 }
 
 // Module tab switching for tracker
-document.addEventListener('click', function(e) {
-    if (e.target.classList.contains('module-tab')) {
-        const module = e.target.dataset.module;
-        
-        // Update active tab
-        document.querySelectorAll('.module-tab').forEach(tab => tab.classList.remove('active'));
-        e.target.classList.add('active');
-        
-        // Show corresponding module
-        document.querySelectorAll('.finance-module').forEach(mod => mod.classList.remove('active'));
-        document.getElementById(module + 'Module').classList.add('active');
-        
-        // Initialize SMS parser module if selected
-        if (module === 'smsParser') {
-            // Initialize SMS parser module
-            console.log('SMS parser module initialized');
-        }
-    }
-});
 
-// Initialize medicine tracker when view is shown
-document.addEventListener('click', function(e) {
-    if (e.target.classList.contains('nav-tab') && e.target.dataset.view === 'medicine') {
-        setTimeout(() => {
-            if (typeof renderMedicineList === 'function') renderMedicineList();
-            if (typeof updateMedicineStats === 'function') updateMedicineStats();
-            if (typeof updateMemberFilter === 'function') updateMemberFilter();
-            if (typeof renderFamilyMembersList === 'function') renderFamilyMembersList();
-            if (typeof renderScheduleList === 'function') renderScheduleList();
-        }, 100);
-    }
-});
-
-// Additional event listener setup for medicine tracker buttons
+// Remove duplicate DOMContentLoaded listener for medicine tracker (moved to main listener)
 document.addEventListener('DOMContentLoaded', function() {
     // Add event listeners for medicine tracker buttons
     setTimeout(() => {
