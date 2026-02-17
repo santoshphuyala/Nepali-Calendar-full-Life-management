@@ -29,7 +29,7 @@
         <button class="nav-tab" data-view="tracker">💰 Finance Tracker</button>
         <button class="nav-tab" data-view="financial">💳 Financial Manager</button>
         <button class="nav-tab" data-view="assets">🛡️ Asset Manager</button>
-        <button class="nav-tab" data-view="medicine" onclick="if(typeof initMedicineTracker==='function' && !this.dataset.initialized){initMedicineTracker();this.dataset.initialized='1';}">💊 Medicine Tracker</button>
+        <button class="nav-tab" data-view="medicine">💊 Medicine Tracker</button>
         <button class="nav-tab" data-view="notes">📝 Notes</button>
         <button class="nav-tab" data-view="settings">⚙️ Settings</button>
     </nav>
@@ -1202,7 +1202,7 @@
                     <p><strong>Version:</strong> 2.0.0</p>
                     <p><strong>Modules:</strong> Calendar, Finance, Insurance, Vehicle, Subscriptions, Custom Data</p>
                     <p><strong>Developer:</strong> Santosh Phuyal</p>
-                    <p><strong>Email:</strong> <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="9df5f4eefcf3e9f2eef5edf5e8e4fcf1ddfaf0fcf4f1b3fef2f0">[email&#160;protected]</a></p>
+                    <p><strong>Email:</strong> hisantoshphuyal@gmail.com</p>
                 </div>
             </div>
         </section>
@@ -1243,7 +1243,7 @@
     </div>
 
         <!-- Scripts -->
-    <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="conversion.js"></script>
     <script src="db.js"></script>
@@ -1255,24 +1255,6 @@
     <script src="custom.js"></script>
     <script src="import-export.js"></script>
     <script src="medicine-tracker.js"></script>
-    <script>
-        // Wire medicine tracker buttons as soon as the script is loaded.
-        // Works regardless of which nav-tab is active on load.
-        document.addEventListener('DOMContentLoaded', function () {
-            // Patch the nav-tab click so initMedicineTracker runs on first activation
-            const medicineNavTab = document.querySelector('[data-view="medicine"]');
-            if (medicineNavTab) {
-                const _orig = medicineNavTab.onclick;
-                medicineNavTab.onclick = function (e) {
-                    if (_orig) _orig.call(this, e);
-                    if (typeof initMedicineTracker === 'function' && !this._medInit) {
-                        this._medInit = true;
-                        initMedicineTracker();
-                    }
-                };
-            }
-        });
-    </script>
     <script src="nepali-date-picker.js"></script>
     <script src="app.js"></script>
     
@@ -1337,7 +1319,6 @@
         console.log('=== END LOAD CHECK ===');
     </script>
 
-    
     <!-- Developer Footer -->
     <footer class="developer-footer">
         <div class="developer-info">

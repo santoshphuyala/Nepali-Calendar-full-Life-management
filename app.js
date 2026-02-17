@@ -2536,6 +2536,12 @@ function switchView(viewName) {
         case 'settings':
             renderHolidayList();
             break;
+        case 'medicine':
+            // Initialize medicine tracker when medicine view is accessed
+            if (typeof initMedicineTracker === 'function') {
+                initMedicineTracker();
+            }
+            break;
     }
 }
 
@@ -7085,18 +7091,53 @@ document.addEventListener('DOMContentLoaded', function() {
         const medicineExportBtn = document.getElementById('medicineExportBtn');
         const medicineImportBtn = document.getElementById('medicineImportBtn');
         
+        console.log('🔧 Medicine tracker buttons setup:', {
+            addMedicineBtn: !!addMedicineBtn,
+            addFamilyMemberBtn: !!addFamilyMemberBtn,
+            medicineExportBtn: !!medicineExportBtn,
+            medicineImportBtn: !!medicineImportBtn,
+            showMedicineForm: typeof showMedicineForm,
+            showFamilyMemberForm: typeof showFamilyMemberForm
+        });
+        
         if (addMedicineBtn) {
             addMedicineBtn.addEventListener('click', function(e) {
                 e.preventDefault();
-                if (typeof showMedicineForm === 'function') showMedicineForm();
+                console.log('📋 Add Medicine button clicked');
+                try {
+                    if (typeof showMedicineForm === 'function') {
+                        showMedicineForm();
+                    } else {
+                        console.error('❌ showMedicineForm function not available');
+                        showNotification('Medicine form function not available', 'error');
+                    }
+                } catch (error) {
+                    console.error('❌ Error opening medicine form:', error);
+                    showNotification('Error opening medicine form', 'error');
+                }
             });
+        } else {
+            console.error('❌ Add Medicine button not found');
         }
         
         if (addFamilyMemberBtn) {
             addFamilyMemberBtn.addEventListener('click', function(e) {
                 e.preventDefault();
-                if (typeof showFamilyMemberForm === 'function') showFamilyMemberForm();
+                console.log('👪 Add Family Member button clicked');
+                try {
+                    if (typeof showFamilyMemberForm === 'function') {
+                        showFamilyMemberForm();
+                    } else {
+                        console.error('❌ showFamilyMemberForm function not available');
+                        showNotification('Family member form function not available', 'error');
+                    }
+                } catch (error) {
+                    console.error('❌ Error opening family member form:', error);
+                    showNotification('Error opening family member form', 'error');
+                }
             });
+        } else {
+            console.error('❌ Add Family Member button not found');
         }
         
         // Export dropdown toggle

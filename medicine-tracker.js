@@ -15,7 +15,7 @@ async function showMedicineForm(existingMedicine = null) {
     
     const familyMembers = await familyMembersDB.getAll();
     const familyMemberOptions = familyMembers.map(member => 
-        `<option value="${member.id}">${member.name}</option>`
+        `<option value="${member.id}">${member.name}</option>` 
     ).join('');
     
     modalTitle.textContent = existingMedicine ? 'Edit Medicine' : 'Add New Medicine';
@@ -128,12 +128,14 @@ async function showMedicineForm(existingMedicine = null) {
         document.getElementById('familyMemberId').value = existingMedicine.familyMemberId || '';
         document.getElementById('medicineCategory').value = existingMedicine.category || 'general';
         document.getElementById('frequency').value = existingMedicine.frequency || 'once';
+        document.getElementById('startDate').value = existingMedicine.startDate || '';
+        document.getElementById('endDate').value = existingMedicine.endDate || '';
     }
     
-    document.getElementById('medicineForm').addEventListener('submit', async (e) => {
+    document.getElementById('medicineForm').onsubmit = async (e) => {
         e.preventDefault();
         await saveMedicine(existingMedicine?.id);
-    });
+    };
 }
 
 async function saveMedicine(medicineId = null) {
@@ -222,7 +224,7 @@ async function renderMedicineList() {
         }
         
         medicineList.innerHTML = medicines.map(medicine => {
-            const memberName = memberMap[medicine.familyMemberId] || 'Unknown';
+            const memberName = medicine.familyMemberId ? (memberMap[medicine.familyMemberId] || 'Unknown') : 'General';
             const isExpired = new Date(medicine.expiryDate) < new Date();
             const isExpiringSoon = new Date(medicine.expiryDate) <= new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
             const isLowStock = medicine.stockQuantity <= 7 && medicine.stockQuantity > 0;
@@ -249,7 +251,7 @@ async function renderMedicineList() {
                             <button class="btn btn-sm btn-info" onclick="markDoseTaken(${medicine.id})">
                                 <i class="fas fa-check"></i>
                             </button>
-                            <button class="btn btn-sm btn-success" onclick="buyMedicine(${medicine.id}, '${medicine.name}', ${medicine.stockQuantity || 0})">
+                            <button class="btn btn-sm btn-success" onclick="buyMedicine(${medicine.id}, '${(medicine.name || '').replace(/'/g, "\\'").replace(/"/g, '\\"')}', ${medicine.stockQuantity || 0})">
                                 <i class="fas fa-shopping-cart"></i>
                             </button>
                         </div>
@@ -408,10 +410,10 @@ async function showFamilyMemberForm(existingMember = null) {
         document.getElementById('bloodGroup').value = existingMember.bloodGroup || '';
     }
     
-    document.getElementById('familyMemberForm').addEventListener('submit', async (e) => {
+    document.getElementById('familyMemberForm').onsubmit = async (e) => {
         e.preventDefault();
         await saveFamilyMember(existingMember?.id);
-    });
+    };
 }
 
 async function saveFamilyMember(memberId = null) {
@@ -497,7 +499,7 @@ async function renderFamilyMembersList() {
                             </div>
                             <div class="member-info">
                                 <h4>${member.name}</h4>
-                                <p class="relationship">${member.relationship}</p>
+                                <p class="relationship">${member.relationship || 'Not specified'}</p>
                             </div>
                             <div class="member-actions">
                                 <button class="btn btn-sm btn-primary" onclick="showFamilyMemberForm(${JSON.stringify(member).replace(/"/g, '&quot;')})">
@@ -570,6 +572,13 @@ async function markDoseTaken(medicineId) {
         };
         
         await dosageScheduleDB.add(doseData);
+        
+        // Decrement stock quantity
+        const medicine = await medicineDB.get(medicineId);
+        if (medicine && medicine.stockQuantity > 0) {
+            await medicineDB.update({ ...medicine, stockQuantity: medicine.stockQuantity - 1, updatedAt: new Date().toISOString() });
+        }
+        
         showNotification('Dose marked as taken', 'success');
         
         await renderMedicineList();
@@ -603,11 +612,14 @@ async function renderScheduleList() {
             return;
         }
         
-        scheduleList.innerHTML = schedules.map(schedule => {
+        const scheduleHtml = await Promise.all(schedules.map(async schedule => {
+            const medicine = await medicineDB.get(schedule.medicineId);
+            const medicineName = medicine ? medicine.name : 'Unknown Medicine';
+            
             return `
                 <div class="dose-card ${schedule.status}">
                     <div class="dose-time">${schedule.time}</div>
-                    <div class="dose-medicine">Medicine ID: ${schedule.medicineId}</div>
+                    <div class="dose-medicine">${medicineName}</div>
                     <div class="dose-status">
                         ${schedule.status === 'taken' ? 
                             '<span class="status-taken">✓ Taken</span>' : 
@@ -616,7 +628,9 @@ async function renderScheduleList() {
                     </div>
                 </div>
             `;
-        }).join('');
+        }));
+        
+        scheduleList.innerHTML = scheduleHtml.join('');
         
     } catch (error) {
         console.error('Error rendering schedule list:', error);
@@ -642,24 +656,174 @@ async function renderPrescriptionsList() {
             return;
         }
         
-        prescriptionsList.innerHTML = prescriptions.map(prescription => `
-            <div class="prescription-card">
-                <div class="prescription-header">
-                    <h4>${prescription.doctorName || 'Unknown Doctor'}</h4>
-                    <span class="prescription-date">${prescription.issueDate || 'No date'}</span>
+        const prescriptionHtml = await Promise.all(prescriptions.map(async prescription => {
+            const medicine = await medicineDB.get(prescription.medicineId);
+            const medicineName = medicine ? medicine.name : 'Unknown Medicine';
+            const memberName = prescription.familyMemberId ? (memberMap[prescription.familyMemberId] || 'Unknown') : 'General';
+            
+            return `
+                <div class="prescription-card">
+                    <div class="prescription-header">
+                        <h4>${prescription.doctorName || 'Unknown Doctor'}</h4>
+                        <span class="prescription-date">${prescription.issueDate || 'No date'}</span>
+                    </div>
+                    <div class="prescription-details">
+                        <div class="detail"><strong>Medicine:</strong> ${medicineName}</div>
+                        <div class="detail"><strong>Patient:</strong> ${memberName}</div>
+                        ${prescription.dosage ? `<div class="detail"><strong>Dosage:</strong> ${prescription.dosage}</div>` : ''}
+                        ${prescription.notes ? `<div class="detail"><strong>Notes:</strong> ${prescription.notes}</div>` : ''}
+                    </div>
                 </div>
-                <div class="prescription-details">
-                    <div class="detail"><strong>Medicine ID:</strong> ${prescription.medicineId}</div>
-                    <div class="detail"><strong>Patient ID:</strong> ${prescription.familyMemberId}</div>
-                    ${prescription.dosage ? `<div class="detail"><strong>Dosage:</strong> ${prescription.dosage}</div>` : ''}
-                    ${prescription.notes ? `<div class="detail"><strong>Notes:</strong> ${prescription.notes}</div>` : ''}
-                </div>
-            </div>
-        `).join('');
+            `;
+        }));
+        
+        prescriptionsList.innerHTML = prescriptionHtml.join('');
         
     } catch (error) {
         console.error('Error rendering prescriptions list:', error);
         prescriptionsList.innerHTML = '<p class="error">Error loading prescriptions</p>';
+    }
+}
+
+// Prescription Management Functions
+async function showPrescriptionForm(existingPrescription = null) {
+    const modal = document.getElementById('modal');
+    const modalTitle = document.getElementById('modalTitle');
+    const modalBody = document.getElementById('modalBody');
+    
+    if (!modal || !modalTitle || !modalBody) {
+        showNotification('Modal not found', 'error');
+        return;
+    }
+    
+    const medicines = await medicineDB.getAll();
+    const familyMembers = await familyMembersDB.getAll();
+    
+    const medicineOptions = medicines.map(medicine => 
+        `<option value="${medicine.id}">${medicine.name}</option>`
+    ).join('');
+    
+    const memberOptions = familyMembers.map(member => 
+        `<option value="${member.id}">${member.name}</option>`
+    ).join('');
+    
+    modalTitle.textContent = existingPrescription ? 'Edit Prescription' : 'Add New Prescription';
+    modalBody.innerHTML = `
+        <form id="prescriptionForm">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="doctorName">Doctor Name *</label>
+                    <input type="text" id="doctorName" class="form-control" required 
+                           value="${existingPrescription?.doctorName || ''}" placeholder="e.g., Dr. Smith">
+                </div>
+                <div class="form-group">
+                    <label for="issueDate">Issue Date *</label>
+                    <input type="date" id="issueDate" class="form-control" required 
+                           value="${existingPrescription?.issueDate || ''}">
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="prescriptionMedicineId">Medicine *</label>
+                    <select id="prescriptionMedicineId" class="form-control" required>
+                        <option value="">Select Medicine</option>
+                        ${medicineOptions}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="prescriptionFamilyMemberId">Patient *</label>
+                    <select id="prescriptionFamilyMemberId" class="form-control" required>
+                        <option value="">Select Family Member</option>
+                        ${memberOptions}
+                    </select>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="prescriptionDosage">Dosage Instructions</label>
+                <input type="text" id="prescriptionDosage" class="form-control" 
+                       value="${existingPrescription?.dosage || ''}" placeholder="e.g., 1 tablet twice daily">
+            </div>
+            
+            <div class="form-group">
+                <label for="prescriptionNotes">Notes</label>
+                <textarea id="prescriptionNotes" class="form-control" rows="3" 
+                          placeholder="Additional notes about this prescription">${existingPrescription?.notes || ''}</textarea>
+            </div>
+            
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">
+                    ${existingPrescription ? 'Update Prescription' : 'Add Prescription'}
+                </button>
+                <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+                ${existingPrescription ? `<button type="button" class="btn btn-danger" onclick="deletePrescription(${existingPrescription.id})">Delete</button>` : ''}
+            </div>
+        </form>
+    `;
+    
+    modal.style.display = 'block';
+    
+    if (existingPrescription) {
+        document.getElementById('prescriptionMedicineId').value = existingPrescription.medicineId || '';
+        document.getElementById('prescriptionFamilyMemberId').value = existingPrescription.familyMemberId || '';
+        document.getElementById('prescriptionDosage').value = existingPrescription.dosage || '';
+    }
+    
+    document.getElementById('prescriptionForm').onsubmit = async (e) => {
+        e.preventDefault();
+        await savePrescription(existingPrescription?.id);
+    };
+}
+
+async function savePrescription(prescriptionId = null) {
+    try {
+        const prescriptionData = {
+            doctorName: document.getElementById('doctorName').value.trim(),
+            issueDate: document.getElementById('issueDate').value,
+            medicineId: document.getElementById('prescriptionMedicineId').value,
+            familyMemberId: document.getElementById('prescriptionFamilyMemberId').value,
+            dosage: document.getElementById('prescriptionDosage').value.trim(),
+            notes: document.getElementById('prescriptionNotes').value.trim(),
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+        };
+        
+        if (!prescriptionData.doctorName || !prescriptionData.issueDate || 
+            !prescriptionData.medicineId || !prescriptionData.familyMemberId) {
+            showNotification('Please fill all required fields', 'error');
+            return;
+        }
+        
+        if (prescriptionId) {
+            await prescriptionsDB.update({ ...prescriptionData, id: prescriptionId });
+            showNotification('Prescription updated successfully', 'success');
+        } else {
+            await prescriptionsDB.add(prescriptionData);
+            showNotification('Prescription added successfully', 'success');
+        }
+        
+        closeModal();
+        await renderPrescriptionsList();
+    } catch (error) {
+        console.error('Error saving prescription:', error);
+        showNotification('Error saving prescription', 'error');
+    }
+}
+
+async function deletePrescription(prescriptionId) {
+    if (!confirm('Are you sure you want to delete this prescription? This action cannot be undone.')) {
+        return;
+    }
+    
+    try {
+        await prescriptionsDB.delete(prescriptionId);
+        showNotification('Prescription deleted successfully', 'success');
+        closeModal();
+        await renderPrescriptionsList();
+    } catch (error) {
+        console.error('Error deleting prescription:', error);
+        showNotification('Error deleting prescription', 'error');
     }
 }
 
@@ -736,7 +900,7 @@ async function importMedicineData(format, fileInput) {
                 try {
                     const importData = JSON.parse(e.target.result);
                     
-                    if (!importData.data) {
+                    if (!importData.medicines && !importData.familyMembers) {
                         showNotification('Invalid import file format', 'error');
                         return;
                     }
@@ -839,7 +1003,7 @@ async function buyMedicine(medicineId, medicineName, currentStock) {
                 </div>
                 
                 <div class="form-group">
-                    <label for="familyMemberId">Purchased For</label>
+                    <label for="purchaseFamilyMemberId">Purchased For</label>
                     <select id="purchaseFamilyMemberId" class="form-control">
                         <option value="">Select Family Member</option>
                         ${familyMemberOptions}
@@ -871,7 +1035,7 @@ async function buyMedicine(medicineId, medicineName, currentStock) {
         document.getElementById('purchaseQuantity').addEventListener('input', updateTotalPrice);
         document.getElementById('purchasePrice').addEventListener('input', updateTotalPrice);
         
-        document.getElementById('buyMedicineForm').addEventListener('submit', async (e) => {
+        document.getElementById('buyMedicineForm').onsubmit = async (e) => {
             e.preventDefault();
             
             const quantity = parseInt(document.getElementById('purchaseQuantity').value);
@@ -927,9 +1091,79 @@ async function buyMedicine(medicineId, medicineName, currentStock) {
             await renderMedicineList();
             await updateMedicineStats();
             await renderShoppingList();
-        });
+        };
     } catch (error) {
         console.error('Error in buy medicine:', error);
         showNotification('Error processing medicine purchase', 'error');
     }
 }
+
+// ============================================
+// INITIALISATION
+// ============================================
+
+function initMedicineTracker() {
+    // Wire the header action buttons
+    const addMedicineBtn = document.getElementById('addMedicineBtn');
+    if (addMedicineBtn) {
+        addMedicineBtn.onclick = () => showMedicineForm();
+    }
+
+    const addFamilyMemberBtn = document.getElementById('addFamilyMemberBtn');
+    if (addFamilyMemberBtn) {
+        addFamilyMemberBtn.onclick = () => showFamilyMemberForm();
+    }
+
+    // Wire the module tabs (Medicines / Family / Schedule / Prescriptions)
+    const medicineView = document.getElementById('medicineView');
+    if (medicineView) {
+        medicineView.querySelectorAll('.module-tab').forEach(tab => {
+            tab.onclick = () => {
+                medicineView.querySelectorAll('.module-tab').forEach(t => t.classList.remove('active'));
+                medicineView.querySelectorAll('.medicine-module').forEach(m => m.classList.remove('active'));
+                tab.classList.add('active');
+                const moduleId = tab.dataset.module + 'Module';
+                const moduleEl = document.getElementById(moduleId);
+                if (moduleEl) moduleEl.classList.add('active');
+            };
+        });
+    }
+
+    // Load initial data
+    renderMedicineList();
+    updateMedicineStats();
+    updateMemberFilter();
+    renderFamilyMembersList();
+    renderScheduleList();
+    renderPrescriptionsList();
+}
+
+// ============================================
+// GLOBAL FUNCTION EXPORTS
+// ============================================
+
+// Make medicine tracker functions globally available
+window.showMedicineForm = showMedicineForm;
+window.saveMedicine = saveMedicine;
+window.deleteMedicine = deleteMedicine;
+window.renderMedicineList = renderMedicineList;
+window.updateMedicineStats = updateMedicineStats;
+
+window.showFamilyMemberForm = showFamilyMemberForm;
+window.saveFamilyMember = saveFamilyMember;
+window.deleteFamilyMember = deleteFamilyMember;
+window.renderFamilyMembersList = renderFamilyMembersList;
+window.updateMemberFilter = updateMemberFilter;
+
+window.markDoseTaken = markDoseTaken;
+window.renderScheduleList = renderScheduleList;
+
+window.showPrescriptionForm = showPrescriptionForm;
+window.savePrescription = savePrescription;
+window.deletePrescription = deletePrescription;
+window.renderPrescriptionsList = renderPrescriptionsList;
+
+window.buyMedicine = buyMedicine;
+window.exportMedicineData = exportMedicineData;
+window.importMedicineData = importMedicineData;
+window.initMedicineTracker = initMedicineTracker;
