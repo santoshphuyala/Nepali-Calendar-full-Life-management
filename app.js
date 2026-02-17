@@ -2431,29 +2431,8 @@ function initializeEventListeners() {
     
     // Close dropdowns when clicking outside
     document.addEventListener('click', (e) => {
-        if (calendarDataMenu && !calendarDataBtn.contains(e.target) && !calendarDataMenu.contains(e.target)) {
-            calendarDataMenu.classList.remove('show');
-        }
-        if (trackerDataMenu && !trackerDataBtn.contains(e.target) && !trackerDataMenu.contains(e.target)) {
-            trackerDataMenu.classList.remove('show');
-        }
-        if (budgetDataMenu && !budgetDataBtn.contains(e.target) && !budgetDataMenu.contains(e.target)) {
-            budgetDataMenu.classList.remove('show');
-        }
-        if (billsDataMenu && !billsDataBtn.contains(e.target) && !billsDataMenu.contains(e.target)) {
-            billsDataMenu.classList.remove('show');
-        }
-        if (goalsDataMenu && !goalsDataBtn.contains(e.target) && !goalsDataMenu.contains(e.target)) {
-            goalsDataMenu.classList.remove('show');
-        }
-        if (insuranceDataMenu && !insuranceDataBtn.contains(e.target) && !insuranceDataMenu.contains(e.target)) {
-            insuranceDataMenu.classList.remove('show');
-        }
-        if (vehicleDataMenu && !vehicleDataBtn.contains(e.target) && !vehicleDataMenu.contains(e.target)) {
-            vehicleDataMenu.classList.remove('show');
-        }
-        if (subscriptionDataMenu && !subscriptionDataBtn.contains(e.target) && !subscriptionDataMenu.contains(e.target)) {
-            subscriptionDataMenu.classList.remove('show');
+        if (!e.target.closest('.dropdown-container')) {
+            closeAllDropdowns();
         }
     });
 
@@ -7124,10 +7103,8 @@ document.addEventListener('DOMContentLoaded', function() {
         if (medicineExportBtn) {
             medicineExportBtn.addEventListener('click', function(e) {
                 e.preventDefault();
-                const menu = document.getElementById('medicineExportMenu');
-                if (menu) {
-                    menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
-                }
+                e.stopPropagation();
+                toggleDropdown('medicineExportMenu');
             });
         }
         
@@ -7135,27 +7112,15 @@ document.addEventListener('DOMContentLoaded', function() {
         if (medicineImportBtn) {
             medicineImportBtn.addEventListener('click', function(e) {
                 e.preventDefault();
-                const menu = document.getElementById('medicineImportMenu');
-                if (menu) {
-                    menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
-                }
+                e.stopPropagation();
+                toggleDropdown('medicineImportMenu');
             });
         }
-        
-        // Close dropdowns when clicking outside
-        document.addEventListener('click', function(e) {
-            if (!e.target.closest('.dropdown-container')) {
-                document.querySelectorAll('.dropdown-menu').forEach(menu => {
-                    menu.style.display = 'none';
-                });
-            }
-        });
         
         console.log('🔧 Medicine tracker buttons initialized');
     }, 500);
 });
 
-// Make functions globally accessible
 window.parseAndPreviewSMS = parseAndPreviewSMS;
 window.addParsedTransaction = addParsedTransaction;
 window.clearSMSInput = clearSMSInput;
