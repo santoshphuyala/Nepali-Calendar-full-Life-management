@@ -122,7 +122,7 @@ async function showMedicineForm(existingMedicine = null) {
         </form>
     `;
     
-    modal.style.display = 'block';
+    modal.classList.add('active');
     
     if (existingMedicine) {
         document.getElementById('familyMemberId').value = existingMedicine.familyMemberId || '';
@@ -130,6 +130,7 @@ async function showMedicineForm(existingMedicine = null) {
         document.getElementById('frequency').value = existingMedicine.frequency || 'once';
         document.getElementById('startDate').value = existingMedicine.startDate || '';
         document.getElementById('endDate').value = existingMedicine.endDate || '';
+        document.getElementById('expiryDate').value = existingMedicine.expiryDate || '';
     }
     
     document.getElementById('medicineForm').onsubmit = async (e) => {
@@ -154,7 +155,7 @@ async function saveMedicine(medicineId = null) {
             instructions: document.getElementById('instructions').value.trim(),
             notes: document.getElementById('notes').value.trim(),
             status: 'active',
-            createdAt: new Date().toISOString(),
+            ...(medicineId ? {} : { createdAt: new Date().toISOString() }),
             updatedAt: new Date().toISOString()
         };
         
@@ -317,9 +318,15 @@ async function updateMedicineStats() {
         
         const activeCount = document.getElementById('activeMedicinesCount');
         const expiringCount = document.getElementById('expiringCount');
+        const todayCount = document.getElementById('todayDosesCount');
         
         if (activeCount) activeCount.textContent = activeMedicines.length;
         if (expiringCount) expiringCount.textContent = expiringSoon.length;
+        
+        if (todayCount) {
+            const todayDoses = await dosageScheduleDB.getByIndex('date', today);
+            todayCount.textContent = todayDoses.length;
+        }
         
     } catch (error) {
         console.error('Error updating medicine stats:', error);
@@ -403,7 +410,7 @@ async function showFamilyMemberForm(existingMember = null) {
         </form>
     `;
     
-    modal.style.display = 'block';
+    modal.classList.add('active');
     
     if (existingMember) {
         document.getElementById('relationship').value = existingMember.relationship || '';
@@ -425,7 +432,7 @@ async function saveFamilyMember(memberId = null) {
             bloodGroup: document.getElementById('bloodGroup').value,
             allergies: document.getElementById('allergies').value.trim(),
             medicalConditions: document.getElementById('medicalConditions').value.trim(),
-            createdAt: new Date().toISOString(),
+            ...(memberId ? {} : { createdAt: new Date().toISOString() }),
             updatedAt: new Date().toISOString()
         };
         
@@ -656,6 +663,10 @@ async function renderPrescriptionsList() {
             return;
         }
         
+        const allFamilyMembers = await familyMembersDB.getAll();
+        const memberMap = {};
+        allFamilyMembers.forEach(m => { memberMap[m.id] = m.name; });
+
         const prescriptionHtml = await Promise.all(prescriptions.map(async prescription => {
             const medicine = await medicineDB.get(prescription.medicineId);
             const medicineName = medicine ? medicine.name : 'Unknown Medicine';
@@ -762,7 +773,7 @@ async function showPrescriptionForm(existingPrescription = null) {
         </form>
     `;
     
-    modal.style.display = 'block';
+    modal.classList.add('active');
     
     if (existingPrescription) {
         document.getElementById('prescriptionMedicineId').value = existingPrescription.medicineId || '';
@@ -785,7 +796,7 @@ async function savePrescription(prescriptionId = null) {
             familyMemberId: document.getElementById('prescriptionFamilyMemberId').value,
             dosage: document.getElementById('prescriptionDosage').value.trim(),
             notes: document.getElementById('prescriptionNotes').value.trim(),
-            createdAt: new Date().toISOString(),
+            ...(prescriptionId ? {} : { createdAt: new Date().toISOString() }),
             updatedAt: new Date().toISOString()
         };
         
@@ -1023,7 +1034,7 @@ async function buyMedicine(medicineId, medicineName, currentStock) {
             </form>
         `;
         
-        modal.style.display = 'block';
+        modal.classList.add('active');
         
         const updateTotalPrice = () => {
             const quantity = parseInt(document.getElementById('purchaseQuantity').value) || 0;
