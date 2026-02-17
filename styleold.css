@@ -6332,5 +6332,664 @@ color: var(--primary-color);
 }
 
 /* ========================================
+   SMS PARSER MODULE STYLES
+   ======================================== */
+
+.sms-parser-header {
+    background: var(--gradient-secondary);
+    color: white;
+    padding: 1.5rem;
+    border-radius: var(--border-radius);
+    margin-bottom: 1.5rem;
+    text-align: center;
+}
+
+.sms-parser-header h3 {
+    margin: 0 0 0.5rem 0;
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+.sms-parser-header p {
+    margin: 0;
+    opacity: 0.9;
+    font-size: 0.95rem;
+}
+
+.sms-input-section {
+    background: var(--card-bg);
+    padding: 1.5rem;
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow);
+    margin-bottom: 1.5rem;
+}
+
+.sms-input-section .form-group {
+    margin-bottom: 1rem;
+}
+
+.sms-input-section .form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.sms-input-section .form-control {
+    width: 100%;
+    padding: 0.75rem;
+    border: 2px solid var(--border-color);
+    border-radius: var(--border-radius);
+    font-family: 'Monaco', 'Consolas', monospace;
+    font-size: 0.9rem;
+    resize: vertical;
+    transition: border-color 0.3s ease;
+}
+
+.sms-input-section .form-control:focus {
+    outline: none;
+    border-color: var(--secondary-color);
+    box-shadow: 0 0 0 3px rgba(78, 205, 196, 0.1);
+}
+
+.sms-parse-preview {
+    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+    border: 2px dashed var(--secondary-color);
+    border-radius: var(--border-radius);
+    padding: 1rem;
+    margin: 1rem 0;
+    animation: slideDown 0.3s ease;
+}
+
+.sms-parse-preview h4 {
+    margin: 0 0 1rem 0;
+    color: var(--text-primary);
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.parsed-details {
+    display: grid;
+    gap: 0.75rem;
+}
+
+.parsed-item {
+    background: white;
+    padding: 0.75rem;
+    border-radius: calc(var(--border-radius) - 2px);
+    border-left: 4px solid var(--secondary-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: transform 0.2s ease;
+}
+
+.parsed-item:hover {
+    transform: translateX(4px);
+}
+
+.parsed-item strong {
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+.sms-actions {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    margin-top: 1rem;
+}
+
+.sms-actions .btn {
+    padding: 0.75rem 1.25rem;
+    border: none;
+    border-radius: var(--border-radius);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    text-decoration: none;
+    font-size: 0.9rem;
+}
+
+.sms-actions .btn-primary {
+    background: var(--gradient-primary);
+    color: white;
+}
+
+.sms-actions .btn-success {
+    background: var(--success-color);
+    color: white;
+}
+
+.sms-actions .btn-secondary {
+    background: var(--bg-color);
+    color: var(--text-primary);
+    border: 2px solid var(--border-color);
+}
+
+.sms-actions .btn-info {
+    background: var(--info-color);
+    color: white;
+}
+
+.sms-actions .btn:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.sms-instructions {
+    background: var(--card-bg);
+    padding: 1.5rem;
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow);
+    margin-bottom: 1.5rem;
+    border-left: 4px solid var(--warning-color);
+}
+
+.sms-instructions h4 {
+    margin: 0 0 1rem 0;
+    color: var(--text-primary);
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.sms-instructions ul {
+    margin: 0;
+    padding-left: 1.5rem;
+    color: var(--text-secondary);
+}
+
+.sms-instructions li {
+    margin-bottom: 0.5rem;
+    line-height: 1.5;
+}
+
+.recent-sms-transactions {
+    background: var(--card-bg);
+    padding: 1.5rem;
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow);
+}
+
+.recent-sms-transactions h4 {
+    margin: 0 0 1rem 0;
+    color: var(--text-primary);
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.recent-sms-transactions .empty-state {
+    text-align: center;
+    padding: 2rem;
+    color: var(--text-secondary);
+}
+
+.recent-sms-transactions .empty-state p {
+    margin: 0;
+    font-style: italic;
+}
+
+/* Animation for slide down effect */
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+        max-height: 0;
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+        max-height: 500px;
+    }
+}
+
+/* Responsive design for SMS parser */
+@media (max-width: 768px) {
+    .sms-parser-header {
+        padding: 1rem;
+    }
+    
+    .sms-parser-header h3 {
+        font-size: 1.3rem;
+    }
+    
+    .sms-input-section,
+    .sms-instructions,
+    .recent-sms-transactions {
+        padding: 1rem;
+    }
+    
+    .sms-actions {
+        flex-direction: column;
+    }
+    
+    .sms-actions .btn {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .parsed-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.25rem;
+    }
+}
+
+/* ========================================
+   MEDICINE TRACKER MODULE STYLES
+   ======================================== */
+
+.medicine-header {
+    background: var(--gradient-primary);
+    color: white;
+    padding: 1.5rem;
+    border-radius: var(--border-radius);
+    margin-bottom: 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.medicine-header h2 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+.medicine-actions {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.medicine-module {
+    display: none;
+}
+
+.medicine-module.active {
+    display: block;
+    animation: fadeIn 0.3s ease;
+}
+
+.medicine-filters {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+}
+
+.medicine-filters select,
+.medicine-filters input {
+    padding: 0.5rem;
+    border: 2px solid var(--border-color);
+    border-radius: var(--border-radius);
+    background: white;
+    min-width: 150px;
+}
+
+.medicine-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.stat-card {
+    background: var(--card-bg);
+    padding: 1rem;
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow);
+    text-align: center;
+    border-left: 4px solid var(--primary-color);
+}
+
+.stat-card h4 {
+    margin: 0 0 0.5rem 0;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.stat-card span {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--primary-color);
+}
+
+.medicine-list {
+    display: grid;
+    gap: 1rem;
+}
+
+.medicine-card {
+    background: var(--card-bg);
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow);
+    padding: 1rem;
+    border-left: 4px solid var(--primary-color);
+    transition: transform 0.2s ease;
+}
+
+.medicine-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.medicine-card.expired {
+    border-left-color: var(--danger-color);
+    opacity: 0.8;
+}
+
+.medicine-card.expiring {
+    border-left-color: var(--warning-color);
+}
+
+.medicine-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+}
+
+.medicine-info h4 {
+    margin: 0 0 0.25rem 0;
+    color: var(--text-primary);
+    font-size: 1.1rem;
+}
+
+.medicine-brand {
+    margin: 0 0 0.5rem 0;
+    color: var(--text-secondary);
+    font-style: italic;
+}
+
+.medicine-meta {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.member-badge,
+.category-badge,
+.status-badge {
+    padding: 0.25rem 0.5rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.member-badge {
+    background: rgba(59, 130, 246, 0.1);
+    color: #3b82f6;
+}
+
+.category-badge {
+    background: rgba(16, 185, 129, 0.1);
+    color: #10b981;
+}
+
+.status-badge {
+    background: rgba(245, 158, 11, 0.1);
+    color: #f59e0b;
+}
+
+.medicine-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.medicine-details {
+    display: grid;
+    gap: 0.5rem;
+}
+
+.detail-row {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+.detail-row strong {
+    color: var(--text-primary);
+}
+
+.family-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1rem;
+}
+
+.family-member-card {
+    background: var(--card-bg);
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow);
+    padding: 1rem;
+    border-left: 4px solid var(--secondary-color);
+}
+
+.member-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.member-avatar {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: var(--gradient-secondary);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    font-weight: 700;
+}
+
+.member-info h4 {
+    margin: 0 0 0.25rem 0;
+    color: var(--text-primary);
+}
+
+.member-info .relationship {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.member-details {
+    margin-bottom: 1rem;
+}
+
+.member-details .detail {
+    font-size: 0.9rem;
+    margin-bottom: 0.25rem;
+    color: var(--text-secondary);
+}
+
+.member-details .detail strong {
+    color: var(--text-primary);
+}
+
+.member-medicines h5 {
+    margin: 0 0 0.5rem 0;
+    color: var(--text-primary);
+    font-size: 0.9rem;
+}
+
+.medicine-count {
+    color: var(--primary-color);
+    font-weight: 600;
+}
+
+.schedule-view {
+    background: var(--card-bg);
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow);
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.schedule-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid var(--border-color);
+}
+
+.schedule-header h3 {
+    margin: 0;
+    color: var(--text-primary);
+}
+
+.schedule-date {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.schedule-list {
+    display: grid;
+    gap: 0.75rem;
+}
+
+.dose-card {
+    display: grid;
+    grid-template-columns: 80px 1fr auto auto;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.75rem;
+    background: var(--light-bg);
+    border-radius: var(--border-radius);
+    border-left: 3px solid var(--border-color);
+}
+
+.dose-card.taken {
+    border-left-color: var(--success-color);
+    background: rgba(16, 185, 129, 0.05);
+}
+
+.dose-time {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.dose-medicine {
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.dose-member {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.dose-status .status-taken {
+    color: var(--success-color);
+    font-weight: 600;
+}
+
+.prescription-card {
+    background: var(--card-bg);
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow);
+    padding: 1rem;
+    margin-bottom: 1rem;
+    border-left: 4px solid var(--info-color);
+}
+
+.prescription-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.prescription-header h4 {
+    margin: 0;
+    color: var(--text-primary);
+}
+
+.prescription-date {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.prescription-details {
+    display: grid;
+    gap: 0.5rem;
+}
+
+.prescription-details .detail {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+.prescription-details .detail strong {
+    color: var(--text-primary);
+}
+
+/* Responsive design for medicine tracker */
+@media (max-width: 768px) {
+    .medicine-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .medicine-actions {
+        width: 100%;
+        justify-content: stretch;
+    }
+    
+    .medicine-actions .btn {
+        flex: 1;
+    }
+    
+    .medicine-stats {
+        grid-template-columns: 1fr;
+    }
+    
+    .medicine-filters {
+        flex-direction: column;
+    }
+    
+    .medicine-filters select,
+    .medicine-filters input {
+        width: 100%;
+    }
+    
+    .family-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .dose-card {
+        grid-template-columns: 1fr;
+        gap: 0.5rem;
+        text-align: left;
+    }
+    
+    .dose-card > * {
+        justify-self: start;
+    }
+    
+    .member-header {
+        flex-direction: column;
+        text-align: center;
+    }
+}
+
+/* ========================================
    END OF STYLESHEET
    ======================================== */

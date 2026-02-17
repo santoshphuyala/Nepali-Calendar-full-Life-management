@@ -7,48 +7,6 @@
  * ========================================
  */
 
-// SMS Parser Constants - Initialize at the top to avoid initialization errors
-const CREDIT_KW = [
-    'credited', 'deposited', 'received', 'credit', 'added', 'cr', 'inward', 'refund', 
-    'cashback', 'bonus', 'reward', 'salary', 'income', 'transfer in', 'received from'
-];
-
-const DEBIT_KW = [
-    'debited', 'withdrawn', 'debit', 'paid', 'dr', 'deducted', 'charged', 'expense',
-    'purchase', 'payment', 'sent', 'transfer out', 'billed', 'outward', 'spent'
-];
-
-// SMS Parser State - Initialize at the top to avoid initialization errors
-let smsParserState = {
-    patterns: [],
-    corrections: [],
-    training: {
-        active: false,
-        field: null,
-        marks: { amount: [], credit: [], debit: [], bank: [], date: [], remarks: [], account: [] }
-    }
-};
-
-// Store current parsed SMS globally
-let currentParsedSMS = null;
-let currentTestParsedSMS = null;
-
-// Bank definitions and keywords
-const BANKS = [
-    { id: 'sanima', name: 'Sanima Bank', keywords: ['sanima', 'sbl'] },
-    { id: 'global', name: 'Global IME', keywords: ['global', 'gibl'] },
-    { id: 'nabil', name: 'Nabil Bank', keywords: ['nabil', 'nabilbank'] },
-    { id: 'nic', name: 'NIC Asia', keywords: ['nic', 'nicasia', 'nicasiabank'] },
-    { id: 'everest', name: 'Everest Bank', keywords: ['everest', 'ebl'] },
-    { id: 'himalayan', name: 'Himalayan Bank', keywords: ['himalayan', 'hbl'] },
-    { id: 'nmb', name: 'NMB Bank', keywords: ['nmb', 'nmbbank'] },
-    { id: 'prabhu', name: 'Prabhu Bank', keywords: ['prabhu', 'pbl'] },
-    { id: 'kumari', name: 'Kumari Bank', keywords: ['kumari', 'kbl'] },
-    { id: 'esewa', name: 'eSewa', keywords: ['esewa', 'esewa.com'] },
-    { id: 'khalti', name: 'Khalti', keywords: ['khalti', 'khalti.com'] },
-    { id: 'imepay', name: 'IME Pay', keywords: ['imepay', 'ime', 'imepay.com'] }
-];
-
 // Debug: Comprehensive Error Logging
 window.debugLog = function(message, data = null) {
     const timestamp = new Date().toISOString();
@@ -1459,12 +1417,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             return;
         }
         
-        try {
-            await loadSMSParserPersistedData();
-        } catch (smsInitError) {
-            window.debugError(smsInitError, 'SMS Parser Data Load');
-        }
-        
         // Debug: Check database connections
         window.debugLog('Checking database connections...');
         const dbStatus = await window.debugCheckDatabase();
@@ -1605,56 +1557,18 @@ function initializeYearMonthSelectors() {
 
 function toggleDropdown(menuId) {
     const menu = document.getElementById(menuId);
-    if (!menu) {
-        console.warn(`Dropdown menu with ID '${menuId}' not found`);
-        return;
-    }
+    if (!menu) return;
 
     const isOpening = !menu.classList.contains('show');
     closeAllDropdowns();
-    
-    if (isOpening) {
-        menu.classList.add('show');
-        // Ensure proper positioning and visibility
-        menu.style.opacity = '1';
-        menu.style.visibility = 'visible';
-        menu.style.transform = 'translateY(0)';
-        menu.style.pointerEvents = 'auto';
-        
-        // Ensure z-index is high enough to be visible
-        const highestZIndex = Math.max(
-            ...Array.from(document.querySelectorAll('*'))
-                .map(el => parseInt(window.getComputedStyle(el).zIndex) || 0)
-        );
-        menu.style.zIndex = Math.max(9999, highestZIndex + 1);
-    } else {
-        menu.classList.remove('show');
-    }
+    menu.classList.toggle('show', isOpening);
 }
 
 function closeAllDropdowns() {
-    document.querySelectorAll('.dropdown-menu').forEach(menu => {
+    document.querySelectorAll('.dropdown-menu.show').forEach(menu => {
         menu.classList.remove('show');
-        menu.style.opacity = '0';
-        menu.style.visibility = 'hidden';
-        menu.style.transform = 'translateY(-10px)';
-        menu.style.pointerEvents = 'none';
     });
 }
-
-// Close dropdowns when clicking outside
-document.addEventListener('click', function(event) {
-    if (!event.target.closest('.dropdown-container')) {
-        closeAllDropdowns();
-    }
-});
-
-// Close dropdowns when pressing Escape
-document.addEventListener('keydown', function(event) {
-    if (event.key === 'Escape') {
-        closeAllDropdowns();
-    }
-});
 
 async function backupData() {
     if (typeof exportAllData === 'function') {
@@ -1811,17 +1725,10 @@ async function importCalendarData(scope, fileInput) {
 
         const text = await file.text();
         const payload = JSON.parse(text);
-        
-        // Handle both wrapped payload format and direct data format
-        let importData = payload?.data;
+        const importData = payload?.data;
         if (!importData) {
-            // Check if data is at root level (like user's JSON)
-            if (payload.type && (payload.holidays || payload.notes || payload.income || payload.expenses)) {
-                importData = payload;
-            } else {
-                showNotification('❌ Invalid calendar import file', 'error');
-                return;
-            }
+            showNotification('❌ Invalid calendar import file', 'error');
+            return;
         }
 
         const confirmed = confirm('This will import items and skip duplicates. Continue?');
@@ -1935,17 +1842,10 @@ async function importTrackerData(scope, fileInput) {
 
         const text = await file.text();
         const payload = JSON.parse(text);
-        
-        // Handle both wrapped payload format and direct data format
-        let importData = payload?.data;
+        const importData = payload?.data;
         if (!importData) {
-            // Check if data is at root level (like user's JSON)
-            if (payload.type && (payload.income || payload.expenses || payload.recurring)) {
-                importData = payload;
-            } else {
-                showNotification('❌ Invalid tracker import file', 'error');
-                return;
-            }
+            showNotification('❌ Invalid tracker import file', 'error');
+            return;
         }
 
         const confirmed = confirm('This will import items and skip duplicates. Continue?');
@@ -5772,20 +5672,8 @@ async function importAllData(format, fileInputOrFile) {
                 try {
                     const importData = JSON.parse(e.target.result);
 
-                    // Handle both wrapped payload format and direct data format
-                    let dataToImport = importData?.data;
-                    if (!dataToImport) {
-                        // Check if data is at root level (like user's JSON)
-                        if (importData.type && (importData.holidays || importData.notes || importData.income || importData.expenses)) {
-                            dataToImport = importData;
-                        } else {
-                            showNotification('❌ Invalid import file format', 'error');
-                            return;
-                        }
-                    }
-
                     // Validate import structure
-                    if (!dataToImport) {
+                    if (!importData.data) {
                         showNotification('❌ Invalid import file format', 'error');
                         return;
                     }
@@ -5813,92 +5701,92 @@ async function importAllData(format, fileInputOrFile) {
                     await customItemDB.clear();
 
                     // Restore data by store
-                    if (dataToImport.holidays) {
-                        for (const holiday of dataToImport.holidays) {
+                    if (importData.data.holidays) {
+                        for (const holiday of importData.data.holidays) {
                             await holidayDB.add(holiday);
                         }
                     }
 
-                    if (dataToImport.income) {
-                        for (const income of dataToImport.income) {
+                    if (importData.data.income) {
+                        for (const income of importData.data.income) {
                             await incomeDB.add(income);
                         }
                     }
 
-                    if (dataToImport.expenses) {
-                        for (const expense of dataToImport.expenses) {
+                    if (importData.data.expenses) {
+                        for (const expense of importData.data.expenses) {
                             await expenseDB.add(expense);
                         }
                     }
 
-                    if (dataToImport.notes) {
-                        for (const note of dataToImport.notes) {
+                    if (importData.data.notes) {
+                        for (const note of importData.data.notes) {
                             await noteDB.add(note);
                         }
                     }
 
-                    if (dataToImport.shopping) {
-                        for (const item of dataToImport.shopping) {
+                    if (importData.data.shopping) {
+                        for (const item of importData.data.shopping) {
                             await shoppingDB.add(item);
                         }
                     }
 
-                    if (dataToImport.budgets) {
-                        for (const budget of dataToImport.budgets) {
+                    if (importData.data.budgets) {
+                        for (const budget of importData.data.budgets) {
                             await budgetDB.add(budget);
                         }
                     }
 
-                    if (dataToImport.bills) {
-                        for (const bill of dataToImport.bills) {
+                    if (importData.data.bills) {
+                        for (const bill of importData.data.bills) {
                             await billDB.add(bill);
                         }
                     }
 
-                    if (dataToImport.goals) {
-                        for (const goal of dataToImport.goals) {
+                    if (importData.data.goals) {
+                        for (const goal of importData.data.goals) {
                             await goalDB.add(goal);
                         }
                     }
 
-                    if (dataToImport.recurring) {
-                        for (const recurring of dataToImport.recurring) {
+                    if (importData.data.recurring) {
+                        for (const recurring of importData.data.recurring) {
                             await recurringDB.add(recurring);
                         }
                     }
 
-                    if (dataToImport.insurance) {
-                        for (const insurance of dataToImport.insurance) {
+                    if (importData.data.insurance) {
+                        for (const insurance of importData.data.insurance) {
                             await insuranceDB.add(insurance);
                         }
                     }
 
-                    if (dataToImport.vehicles) {
-                        for (const vehicle of dataToImport.vehicles) {
+                    if (importData.data.vehicles) {
+                        for (const vehicle of importData.data.vehicles) {
                             await vehicleDB.add(vehicle);
                         }
                     }
 
-                    if (dataToImport.vehicleServices) {
-                        for (const service of dataToImport.vehicleServices) {
+                    if (importData.data.vehicleServices) {
+                        for (const service of importData.data.vehicleServices) {
                             await vehicleServiceDB.add(service);
                         }
                     }
 
-                    if (dataToImport.subscriptions) {
-                        for (const subscription of dataToImport.subscriptions) {
+                    if (importData.data.subscriptions) {
+                        for (const subscription of importData.data.subscriptions) {
                             await subscriptionDB.add(subscription);
                         }
                     }
 
-                    if (dataToImport.customTypes) {
-                        for (const customType of dataToImport.customTypes) {
+                    if (importData.data.customTypes) {
+                        for (const customType of importData.data.customTypes) {
                             await customTypeDB.add(customType);
                         }
                     }
 
-                    if (dataToImport.customItems) {
-                        for (const customItem of dataToImport.customItems) {
+                    if (importData.data.customItems) {
+                        for (const customItem of importData.data.customItems) {
                             await customItemDB.add(customItem);
                         }
                     }
@@ -6168,131 +6056,14 @@ function handleFabAction(action) {
     }
 }
 
-// Preview SMS function
-function previewSMS() {
-    const text = document.getElementById('smsInput').value;
-    const preview = document.getElementById('smsParsePreview');
-    
-    if (!text.trim()) {
-        preview.style.display = 'none';
-        return;
-    }
-    
-    const parsed = parseSMS(text);
-    if (!parsed?.amount) {
-        preview.style.display = 'none';
-        return;
-    }
-    
-    preview.style.display = 'block';
-    displaySMSPreview(parsed);
-}
-
-// Tab switching for SMS parser
-function switchSMSTab(btn, tabId) {
-    document.querySelectorAll('.sms-tab-btn').forEach(b => b.classList.remove('active'));
-    document.querySelectorAll('.sms-tab-content').forEach(c => c.classList.remove('active'));
-    btn.classList.add('active');
-    document.getElementById(tabId).classList.add('active');
-}
-
-// Test functions
-function loadTestExample() {
-    const select = document.getElementById('testExample');
-    const textarea = document.getElementById('testSmsInput');
-    
-    if (select.value && TEST_EXAMPLES[select.value]) {
-        textarea.value = TEST_EXAMPLES[select.value];
-        testParseSMS();
-    }
-}
-
-function testParseSMS() {
-    const text = document.getElementById('testSmsInput').value;
-    const preview = document.getElementById('smsTestPreview');
-    
-    if (!text.trim()) {
-        preview.classList.remove('show');
-        return;
-    }
-    
-    const parsed = parseSMS(text);
-    if (!parsed?.amount) {
-        preview.classList.remove('show');
-        return;
-    }
-    
-    preview.classList.add('show');
-    
-    const detailsDiv = document.getElementById('testDetails');
-    const typeColor = parsed.type === 'credit' ? '#10b981' : '#ef4444';
-    const typeIcon = parsed.type === 'credit' ? '⬇️' : '⬆️';
-    const typeText = parsed.type === 'credit' ? 'Income' : 'Expense';
-    
-    detailsDiv.innerHTML = `
-        <div class="test-item">
-            <strong>Amount:</strong> Rs. ${parsed.amount?.toLocaleString() || '0'}
-        </div>
-        <div class="test-item">
-            <strong>Type:</strong> <span style="color: ${typeColor};">${typeIcon} ${typeText}</span>
-        </div>
-        <div class="test-item">
-            <strong>Bank:</strong> ${parsed.bank}
-        </div>
-        <div class="test-item">
-            <strong>Date:</strong> ${parsed.date.toLocaleDateString()}
-        </div>
-        <div class="test-item">
-            <strong>Description:</strong> ${parsed.remarks || 'Bank Transaction'}
-        </div>
-        <div class="test-item">
-            <strong>Confidence:</strong> ${parsed.confidence}%
-        </div>
-        <div class="test-item">
-            <strong>Source:</strong> ${parsed.source}
-        </div>
-    `;
-    
-    document.getElementById('addTestTransactionBtn').style.display = 'inline-flex';
-    currentTestParsedSMS = parsed;
-}
-
-function addTestTransaction() {
-    if (!currentTestParsedSMS) {
-        showNotification('No test SMS data available', 'error');
-        return;
-    }
-    
-    currentParsedSMS = currentTestParsedSMS;
-    addParsedTransaction();
-    document.getElementById('addTestTransactionBtn').style.display = 'none';
-    currentTestParsedSMS = null;
-}
-
-function clearTestSMS() {
-    document.getElementById('testSmsInput').value = '';
-    document.getElementById('smsTestPreview').classList.remove('show');
-    document.getElementById('addTestTransactionBtn').style.display = 'none';
-    currentTestParsedSMS = null;
-}
-
 // UI Helpers
 function showModal(content) {
-    const modal = document.getElementById('modal');
-    const modalBody = document.getElementById('modalBody');
-    if (!modal || !modalBody) return;
-
-    modalBody.innerHTML = content;
-    modal.classList.add('active');
-    modal.style.display = 'block';
+    document.getElementById('modalBody').innerHTML = content;
+    document.getElementById('modal').classList.add('active');
 }
 
 function closeModal() {
-    const modal = document.getElementById('modal');
-    if (!modal) return;
-
-    modal.classList.remove('active');
-    modal.style.display = 'none';
+    document.getElementById('modal').classList.remove('active');
 }
 
 function downloadFile(content, filename, type) {
@@ -7156,7 +6927,7 @@ function displaySMSPreview(parsed) {
     
     detailsDiv.innerHTML = `
         <div class="parsed-item">
-            <strong>Amount:</strong> Rs. ${parsed.amount?.toLocaleString() || '0'}
+            <strong>Amount:</strong> Rs. ${parsed.amount.toLocaleString()}
         </div>
         <div class="parsed-item">
             <strong>Type:</strong> <span style="color: ${typeColor};">${typeIcon} ${typeText}</span>
@@ -7171,22 +6942,12 @@ function displaySMSPreview(parsed) {
             <strong>Description:</strong> ${parsed.remarks || 'Bank Transaction'}
         </div>
         <div class="parsed-item">
-            <strong>Confidence:</strong> <span style="color: ${parsed.confidence >= 70 ? '#10b981' : parsed.confidence >= 50 ? '#FFD93D' : '#ef4444'}">${parsed.confidence}%</span>
-        </div>
-        <div class="parsed-item">
-            <strong>Source:</strong> ${parsed.source}
+            <strong>Confidence:</strong> ${parsed.confidence}%
         </div>
     `;
     
     previewDiv.style.display = 'block';
     addBtn.style.display = 'inline-flex';
-    
-    // Utility functions
-    function escapeHtml(text) {
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
-    }
 }
 
 function addParsedTransaction() {
@@ -7288,258 +7049,12 @@ async function readClipboardSMS() {
     }
 }
 
-// SMS Parser Training Functions
-function selectTrainingField(field, btn) {
-    smsParserState.training.active = true;
-    smsParserState.training.field = field;
-    smsParserState.training.tokens = [];
-
-    document.querySelectorAll('.training-field-btn').forEach(b => b.classList.remove('active'));
-    if (btn && btn.classList) btn.classList.add('active');
-
-    const smsText = (document.getElementById('trainSmsInput')?.value || '').trim();
-    if (!smsText) {
-        showNotification('Please paste an SMS message to train', 'warning');
-        return;
-    }
-
-    smsParserState.training.tokens = smsText.split(/\s+/).filter(Boolean);
-
-    const preview = document.getElementById('trainingPreview');
-    const wordsContainer = document.getElementById('trainingWords');
-    if (!preview || !wordsContainer) return;
-
-    wordsContainer.innerHTML = smsParserState.training.tokens
-        .map((w, i) => `<span class="training-word" data-index="${i}" onclick="markTrainingWord(${i})">${w}</span>`)
-        .join(' ');
-    preview.style.display = 'block';
-}
-
-function markTrainingWord(index) {
-    const field = smsParserState.training.field;
-    const tokens = smsParserState.training.tokens || [];
-    if (!field || !tokens[index]) return;
-
-    const word = String(tokens[index]).trim();
-    const arr = smsParserState.training.marks[field] || (smsParserState.training.marks[field] = []);
-    if (!arr.includes(word)) arr.push(word);
-
-    const el = document.querySelector(`#trainingWords .training-word[data-index="${index}"]`);
-    if (el) el.classList.add('marked');
-}
-
-async function saveTrainingPattern() {
-    const name = (document.getElementById('patternName')?.value || '').trim() || 'Custom Pattern';
-    const marks = smsParserState.training.marks;
-
-    const pattern = {
-        name,
-        bank: (marks.bank && marks.bank[0]) ? marks.bank[0] : null,
-        credit: marks.credit || [],
-        debit: marks.debit || [],
-        date: marks.date || [],
-        remarks: marks.remarks || [],
-        account: marks.account || []
-    };
-
-    if (!pattern.credit.length && !pattern.debit.length && !pattern.date.length && !pattern.remarks.length && !pattern.account.length && !pattern.bank) {
-        showNotification('Please mark at least one word to save a pattern', 'warning');
-        return;
-    }
-
-    if (!window.smsParserDB || typeof window.smsParserDB.add !== 'function') {
-        showNotification('SMS Parser database not available', 'error');
-        return;
-    }
-
-    await window.smsParserDB.add({
-        type: 'pattern',
-        createdAt: new Date().toISOString(),
-        pattern
-    });
-
-    smsParserState.patterns.push(pattern);
-    showNotification('Pattern saved successfully', 'success');
-    clearTraining();
-    updateSMSStats();
-}
-
-function clearTraining() {
-    smsParserState.training.active = false;
-    smsParserState.training.field = null;
-    smsParserState.training.tokens = [];
-    smsParserState.training.marks = { amount: [], credit: [], debit: [], bank: [], date: [], remarks: [], account: [] };
-
-    document.querySelectorAll('.training-field-btn').forEach(b => b.classList.remove('active'));
-
-    const preview = document.getElementById('trainingPreview');
-    const wordsContainer = document.getElementById('trainingWords');
-    const nameInput = document.getElementById('patternName');
-    if (preview) preview.style.display = 'none';
-    if (wordsContainer) wordsContainer.innerHTML = '';
-    if (nameInput) nameInput.value = '';
-}
-
-function clearBulkSMS() {
-    const input = document.getElementById('bulkSmsInput');
-    const progress = document.getElementById('bulkProgress');
-    if (input) input.value = '';
-    if (progress) progress.style.display = 'none';
-}
-
-async function processBulkSMS() {
-    const textarea = document.getElementById('bulkSmsInput');
-    const lines = (textarea?.value || '').split(/\r?\n/).map(l => l.trim()).filter(Boolean);
-    if (lines.length === 0) {
-        showNotification('Please paste SMS messages (one per line)', 'warning');
-        return;
-    }
-
-    const progress = document.getElementById('bulkProgress');
-    const info = document.getElementById('bulkProgressInfo');
-    const fill = document.getElementById('bulkProgressFill');
-    if (progress) progress.style.display = 'block';
-
-    let ok = 0;
-    let failed = 0;
-
-    for (let i = 0; i < lines.length; i++) {
-        const parsed = parseSMS(lines[i]);
-        if (parsed && parsed.amount && parsed.type) {
-            ok++;
-
-            if (window.smsParserDB && typeof window.smsParserDB.add === 'function') {
-                await window.smsParserDB.add({
-                    type: 'transaction',
-                    createdAt: new Date().toISOString(),
-                    transaction: {
-                        amount: parsed.amount,
-                        type: parsed.type,
-                        bank: parsed.bank,
-                        date: parsed.date?.toISOString ? parsed.date.toISOString() : String(parsed.date),
-                        remarks: parsed.remarks,
-                        account: parsed.account,
-                        rawSMS: parsed.rawSMS,
-                        confidence: parsed.confidence
-                    }
-                });
-            }
-        } else {
-            failed++;
-        }
-
-        const pct = Math.round(((i + 1) / lines.length) * 100);
-        if (info) info.textContent = `Processed ${i + 1} / ${lines.length} (Success: ${ok}, Failed: ${failed})`;
-        if (fill) fill.style.width = `${pct}%`;
-    }
-
-    showNotification(`Bulk processing complete. Success: ${ok}, Failed: ${failed}`, failed ? 'warning' : 'success');
-    updateSMSStats();
-}
-
-async function exportSMSData() {
-    if (!window.smsParserDB || typeof window.smsParserDB.getAll !== 'function') {
-        showNotification('SMS Parser database not available', 'error');
-        return;
-    }
-
-    const data = await window.smsParserDB.getAll();
-    downloadFile(JSON.stringify({ version: '1.0', exportDate: new Date().toISOString(), records: data || [] }, null, 2), 'sms-parser-data.json', 'application/json');
-}
-
-async function importSMSData() {
-    if (!window.smsParserDB || typeof window.smsParserDB.clear !== 'function') {
-        showNotification('SMS Parser database not available', 'error');
-        return;
-    }
-
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = '.json,application/json';
-    input.onchange = async () => {
-        const file = input.files && input.files[0];
-        if (!file) return;
-        const text = await file.text();
-        const parsed = JSON.parse(text);
-        const records = Array.isArray(parsed?.records) ? parsed.records : [];
-
-        await window.smsParserDB.clear();
-
-        for (const r of records) {
-            if (!r) continue;
-            const { id, ...rest } = r;
-            await window.smsParserDB.add(rest);
-        }
-
-        await loadSMSParserPersistedData();
-        showNotification('SMS Parser data imported successfully', 'success');
-    };
-    input.click();
-}
-
-async function clearAllSMSData() {
-    if (!confirm('Are you sure you want to clear all SMS Parser data?')) return;
-
-    if (window.smsParserDB && typeof window.smsParserDB.clear === 'function') {
-        await window.smsParserDB.clear();
-    }
-
-    smsParserState.patterns = [];
-    smsParserState.corrections = [];
-    clearTraining();
-    updateSMSStats();
-    showNotification('SMS Parser data cleared', 'success');
-}
-
-async function updateSMSStats() {
-    const txEl = document.getElementById('totalSmsTransactions');
-    const patEl = document.getElementById('totalPatterns');
-    const accEl = document.getElementById('parseAccuracy');
-
-    let totalTx = 0;
-    let totalPat = smsParserState.patterns.length;
-    let avgConfidence = 0;
-
-    if (window.smsParserDB && typeof window.smsParserDB.getAll === 'function') {
-        const records = await window.smsParserDB.getAll();
-        const tx = (records || []).filter(r => r && r.type === 'transaction' && r.transaction);
-        totalTx = tx.length;
-        if (tx.length) {
-            avgConfidence = Math.round(tx.reduce((s, r) => s + (Number(r.transaction.confidence) || 0), 0) / tx.length);
-        }
-        totalPat = (records || []).filter(r => r && r.type === 'pattern' && r.pattern).length;
-    }
-
-    if (txEl) txEl.textContent = String(totalTx);
-    if (patEl) patEl.textContent = String(totalPat);
-    if (accEl) accEl.textContent = `${avgConfidence}%`;
-}
-
-async function loadSMSParserPersistedData() {
-    if (!window.smsParserDB || typeof window.smsParserDB.getAll !== 'function') return;
-
-    const records = await window.smsParserDB.getAll();
-    const patterns = [];
-    const corrections = [];
-
-    for (const r of (records || [])) {
-        if (!r || !r.type) continue;
-        if (r.type === 'pattern' && r.pattern) patterns.push(r.pattern);
-        if (r.type === 'correction' && r.correction) corrections.push(r.correction);
-    }
-
-    smsParserState.patterns = patterns;
-    smsParserState.corrections = corrections;
-
-    updateSMSStats();
-}
-
 function updateRecentSMSTransactions() {
     const recentSmsList = document.getElementById('recentSmsList');
     if (!recentSmsList) return;
     
     // Get recent transactions from SMS parser
-    // This would ideally query database for recent SMS-sourced transactions
+    // This would ideally query the database for recent SMS-sourced transactions
     // For now, show a placeholder
     recentSmsList.innerHTML = `
         <div class="empty-state">
@@ -7549,8 +7064,40 @@ function updateRecentSMSTransactions() {
 }
 
 // Module tab switching for tracker
+document.addEventListener('click', function(e) {
+    if (e.target.classList.contains('module-tab')) {
+        const module = e.target.dataset.module;
+        
+        // Update active tab
+        document.querySelectorAll('.module-tab').forEach(tab => tab.classList.remove('active'));
+        e.target.classList.add('active');
+        
+        // Show corresponding module
+        document.querySelectorAll('.finance-module').forEach(mod => mod.classList.remove('active'));
+        document.getElementById(module + 'Module').classList.add('active');
+        
+        // Initialize SMS parser module if selected
+        if (module === 'smsParser') {
+            // Initialize SMS parser module
+            console.log('SMS parser module initialized');
+        }
+    }
+});
 
-// Remove duplicate DOMContentLoaded listener for medicine tracker (moved to main listener)
+// Initialize medicine tracker when view is shown
+document.addEventListener('click', function(e) {
+    if (e.target.classList.contains('nav-tab') && e.target.dataset.view === 'medicine') {
+        setTimeout(() => {
+            if (typeof renderMedicineList === 'function') renderMedicineList();
+            if (typeof updateMedicineStats === 'function') updateMedicineStats();
+            if (typeof updateMemberFilter === 'function') updateMemberFilter();
+            if (typeof renderFamilyMembersList === 'function') renderFamilyMembersList();
+            if (typeof renderScheduleList === 'function') renderScheduleList();
+        }, 100);
+    }
+});
+
+// Additional event listener setup for medicine tracker buttons
 document.addEventListener('DOMContentLoaded', function() {
     // Add event listeners for medicine tracker buttons
     setTimeout(() => {
@@ -7577,8 +7124,10 @@ document.addEventListener('DOMContentLoaded', function() {
         if (medicineExportBtn) {
             medicineExportBtn.addEventListener('click', function(e) {
                 e.preventDefault();
-                e.stopPropagation();
-                toggleDropdown('medicineExportMenu');
+                const menu = document.getElementById('medicineExportMenu');
+                if (menu) {
+                    menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+                }
             });
         }
         
@@ -7586,452 +7135,35 @@ document.addEventListener('DOMContentLoaded', function() {
         if (medicineImportBtn) {
             medicineImportBtn.addEventListener('click', function(e) {
                 e.preventDefault();
-                toggleDropdown('medicineImportMenu');
+                const menu = document.getElementById('medicineImportMenu');
+                if (menu) {
+                    menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+                }
             });
         }
+        
+        // Close dropdowns when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.dropdown-container')) {
+                document.querySelectorAll('.dropdown-menu').forEach(menu => {
+                    menu.style.display = 'none';
+                });
+            }
+        });
         
         console.log('🔧 Medicine tracker buttons initialized');
     }, 500);
 });
 
 // Make functions globally accessible
-if (typeof parseAndPreviewSMS === 'function') window.parseAndPreviewSMS = parseAndPreviewSMS;
-if (typeof addParsedTransaction === 'function') window.addParsedTransaction = addParsedTransaction;
-if (typeof clearSMSInput === 'function') window.clearSMSInput = clearSMSInput;
-if (typeof readClipboardSMS === 'function') window.readClipboardSMS = readClipboardSMS;
-
-// Enhanced SMS Parser functions
-if (typeof switchSMSTab === 'function') window.switchSMSTab = switchSMSTab;
-if (typeof previewSMS === 'function') window.previewSMS = previewSMS;
-if (typeof loadTestExample === 'function') window.loadTestExample = loadTestExample;
-if (typeof testParseSMS === 'function') window.testParseSMS = testParseSMS;
-if (typeof addTestTransaction === 'function') window.addTestTransaction = addTestTransaction;
-if (typeof clearTestSMS === 'function') window.clearTestSMS = clearTestSMS;
-if (typeof selectTrainingField === 'function') window.selectTrainingField = selectTrainingField;
-if (typeof markTrainingWord === 'function') window.markTrainingWord = markTrainingWord;
-if (typeof saveTrainingPattern === 'function') window.saveTrainingPattern = saveTrainingPattern;
-if (typeof clearTraining === 'function') window.clearTraining = clearTraining;
-if (typeof processBulkSMS === 'function') window.processBulkSMS = processBulkSMS;
-if (typeof clearBulkSMS === 'function') window.clearBulkSMS = clearBulkSMS;
-if (typeof exportSMSData === 'function') window.exportSMSData = exportSMSData;
-if (typeof importSMSData === 'function') window.importSMSData = importSMSData;
-if (typeof clearAllSMSData === 'function') window.clearAllSMSData = clearAllSMSData;
-if (typeof updateSMSStats === 'function') window.updateSMSStats = updateSMSStats;
+window.parseAndPreviewSMS = parseAndPreviewSMS;
+window.addParsedTransaction = addParsedTransaction;
+window.clearSMSInput = clearSMSInput;
+window.readClipboardSMS = readClipboardSMS;
 
 // ============================================
-// ADVANCED SMS PARSER FUNCTIONALITY
+// MEDICINE TRACKER MODULE
 // ============================================
-
-// Test examples
-const TEST_EXAMPLES = {
-    'nabil-credit': 'Dear Customer, NPR 5,000.00 has been credited to your A/C No. XXXX1234 on 15/01/2024. Available Balance: NPR 25,000.00. Nabil Bank',
-    'nic-debit': 'Rs.1,200.00 debited from your NIC Asia Bank A/C XX7890 at Bhatbhateni Supermarket on 16-01-2024. Current Balance: Rs.15,750.00',
-    'esewa-payment': 'You have successfully paid Rs.500.00 to Merchant: Daraz Nepal via eSewa on 17/01/2024. Transaction ID: ES123456789',
-    'khalti-transfer': 'NPR 2,500.00 transferred from Khalti to 9841234567 on 18/01/2024. Remaining balance: NPR 8,500.00',
-    'global-deposit': 'Global IME Bank: NPR 10,000.00 deposited to your account XXXX4567 on 19/01/2024 via Mobile Banking. Balance: NPR 45,000.00',
-    'sanima-withdraw': 'Sanima Bank: Rs.3,000.00 withdrawn from ATM XYZ123 on 20/01/2024. Account Balance: Rs.22,000.00',
-    'himalayan-transfer': 'NPR 7,500.00 has been transferred from your Himalayan Bank A/C XX3456 to A/C XX7890 on 21/01/2024. Balance: NPR 18,500.00',
-    'nmb-purchase': 'NMB Bank: Rs.850.00 debited from your account XX5678 for online purchase at Mero Pasal on 22/01/2024. Available Balance: Rs.12,150.00'
-};
-
-// Main SMS parsing function
-function parseSMS(text) {
-    if (!text?.trim()) return null;
-    text = text.trim();
-    
-    let result = {
-        amount: null,
-        type: null,
-        bank: 'Unknown',
-        date: new Date(),
-        remarks: null,
-        account: null,
-        rawSMS: text,
-        confidence: 0,
-        source: 'default'
-    };
-    
-    // Normalize text for better parsing
-    const normalizedText = text.replace(/\s+/g, ' ').trim();
-    const lower = normalizedText.toLowerCase();
-    
-    // Apply learned corrections first (highest priority)
-    for (const corr of smsParserState.corrections) {
-        if (corr.keywords?.some(k => lower.includes(k))) {
-            result.source = 'learned';
-            result.confidence += 25;
-            
-            // Apply learned type keywords
-            for (const kw of (corr.typeKeywords?.credit || [])) {
-                if (lower.includes(kw)) { 
-                    result.type = 'credit'; 
-                    result.confidence += 20; 
-                    break; 
-                }
-            }
-            for (const kw of (corr.typeKeywords?.debit || [])) {
-                if (lower.includes(kw)) { 
-                    result.type = 'debit'; 
-                    result.confidence += 20; 
-                    break; 
-                }
-            }
-            
-            // Apply learned bank
-            if (corr.bank) {
-                result.bank = corr.bank;
-                result.confidence += 15;
-            }
-            break;
-        }
-    }
-    
-    // Apply custom patterns (medium priority)
-    for (const pat of smsParserState.patterns) {
-        let patternMatched = false;
-        
-        // Check credit patterns
-        for (const kw of (pat.credit || [])) {
-            if (lower.includes(kw) && !result.type) { 
-                result.type = 'credit'; 
-                result.confidence += 15;
-                result.source = 'pattern';
-                patternMatched = true;
-            }
-        }
-        
-        // Check debit patterns
-        for (const kw of (pat.debit || [])) {
-            if (lower.includes(kw) && !result.type) { 
-                result.type = 'debit'; 
-                result.confidence += 15;
-                result.source = 'pattern';
-                patternMatched = true;
-            }
-        }
-        
-        // Check date patterns
-        if (pat.date && pat.date.length > 0) {
-            const dateWords = pat.date.join('|');
-            const dateMatch = normalizedText.match(new RegExp(`\\b(${dateWords})\\b[^\\s]*\\s*(\\d{1,4})[\\/\\-\\.]\\s*(\\d{1,2})[\\/\\-\\.]\\s*(\\d{2,4})\\b`, 'i'));
-            if (dateMatch) {
-                const dateStr = dateMatch[0];
-                const extractedDate = extractDate(dateStr);
-                if (extractedDate && extractedDate.getFullYear() > 2000) {
-                    result.date = extractedDate;
-                    result.confidence += 10;
-                    patternMatched = true;
-                }
-            }
-        }
-        
-        // Check remarks patterns
-        if (pat.remarks && pat.remarks.length > 0) {
-            const remarksWords = pat.remarks.join('|');
-            const remarksMatch = normalizedText.match(new RegExp(`\\b(${remarksWords})\\b[^\\s]*\\s*([A-Za-z0-9\\s&\\-\\.\\,]{3,40})`, 'i'));
-            if (remarksMatch && !result.remarks) {
-                const remark = remarksMatch[0].trim().substring(0, 50);
-                if (remark.length > 3) {
-                    result.remarks = remark;
-                    result.confidence += 8;
-                    patternMatched = true;
-                }
-            }
-        }
-        
-        // Check account patterns
-        if (pat.account && pat.account.length > 0) {
-            const accountWords = pat.account.join('|');
-            const accountMatch = normalizedText.match(new RegExp(`\\b(${accountWords})\\b[^\\s]*\\s*([A-Za-z0-9]{6,20})`, 'i'));
-            if (accountMatch && !result.account) {
-                const account = accountMatch[0].trim().substring(0, 20);
-                if (account.length >= 6 && /\d/.test(account)) {
-                    result.account = account;
-                    result.confidence += 8;
-                    patternMatched = true;
-                }
-            }
-        }
-        
-        // Apply pattern-specific bank if available
-        if (patternMatched && pat.bank) {
-            result.bank = pat.bank;
-            result.confidence += 10;
-        }
-    }
-    
-    // Default parsing with enhanced patterns
-    if (!result.amount) {
-        result.amount = extractAmount(normalizedText);
-    }
-    if (!result.type) {
-        result.type = extractType(normalizedText);
-    }
-    if (result.bank === 'Unknown') {
-        result.bank = extractBank(normalizedText);
-    }
-    result.date = extractDate(normalizedText);
-    result.remarks = extractRemarks(normalizedText);
-    result.account = extractAccount(normalizedText);
-    
-    // Enhanced confidence scoring
-    if (result.amount && result.amount > 0) {
-        result.confidence += 35;
-        
-        // Bonus for realistic amounts
-        if (result.amount >= 10 && result.amount <= 1000000) {
-            result.confidence += 5;
-        }
-    }
-    
-    if (result.type) {
-        result.confidence += 25;
-        
-        // Bonus for clear type indicators
-        const clearIndicators = ['credited', 'debited', 'deposited', 'withdrawn'];
-        if (clearIndicators.some(ind => lower.includes(ind))) {
-            result.confidence += 10;
-        }
-    }
-    
-    if (result.bank !== 'Unknown') {
-        result.confidence += 15;
-        
-        // Bonus for well-known banks
-        const majorBanks = ['nabil', 'global', 'nic', 'sanima', 'himalayan', 'esewa', 'khalti'];
-        if (majorBanks.some(bank => lower.includes(bank))) {
-            result.confidence += 5;
-        }
-    }
-    
-    if (result.remarks && result.remarks.length > 5) {
-        result.confidence += 10;
-    }
-    
-    if (result.account && result.account.length > 5) {
-        result.confidence += 8;
-    }
-    
-    // Cap confidence at 100
-    result.confidence = Math.min(result.confidence, 100);
-    
-    // Ensure minimum confidence for valid transactions
-    if (result.amount && result.type && result.confidence < 30) {
-        result.confidence = 30;
-    }
-    
-    return result;
-}
-
-// Helper functions for extraction
-function extractAmount(text) {
-    const patterns = [
-        // Standard NPR patterns
-        /(?:NPR|Rs\.?|NRs\.?)\s*([\d,]+(?:\.\d{1,2})?)/i,
-        // Amount before transaction type
-        /([\d,]+(?:\.\d{1,2})?)\s*(?:deposited|credited|debited|withdrawn|transferred|sent|received)/i,
-        // Amount with "by" or "of"
-        /(?:by|of|for)\s*(?:NPR|Rs\.?|NRs\.?)?\s*([\d,]+(?:\.\d{1,2})?)/i,
-        // Amount in brackets
-        /\[?\(?\s*(?:NPR|Rs\.?|NRs\.?)?\s*([\d,]+(?:\.\d{1,2})?)\s*\]?\)?/i,
-        // Amount after transaction details
-        /(?:amount|balance|available)\s*(?:is)?\s*(?:NPR|Rs\.?|NRs\.?)?\s*([\d,]+(?:\.\d{1,2})?)/i,
-        // Simple number patterns (fallback)
-        /(?:^|\s)([\d,]{1,8}(?:\.\d{1,2})?)(?:\s|$)/,
-        // Amount with currency code at end
-        /([\d,]+(?:\.\d{1,2})?)\s*(?:NPR|Rs|NRs)/i
-    ];
-    
-    for (const p of patterns) {
-        const m = text.match(p);
-        if (m) {
-            const amt = parseFloat(m[1].replace(/,/g, ''));
-            if (amt > 0 && amt < 1e8) return amt;
-        }
-    }
-    return null;
-}
-
-function extractType(text) {
-    const lower = text.toLowerCase();
-    for (const kw of CREDIT_KW) if (lower.includes(kw)) return 'credit';
-    for (const kw of DEBIT_KW) if (lower.includes(kw)) return 'debit';
-    return null;
-}
-
-function extractBank(text) {
-    const lower = text.toLowerCase();
-    for (const bank of BANKS) {
-        for (const kw of bank.keywords) {
-            if (lower.includes(kw)) return bank.name;
-        }
-    }
-    return 'Unknown';
-}
-
-function extractDate(text) {
-    const patterns = [
-        // ISO date format YYYY-MM-DD (most specific first)
-        /(\d{4})-(\d{2})-(\d{2})/,
-        // YYYY/MM/DD, YYYY-MM-DD (with time)
-        /(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})/,
-        // DD/MM/YYYY, DD-MM-YYYY, DD.MM.YYYY  
-        /(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{2,4})/,
-        // Month name patterns
-        /(\d{1,2})\s+(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+(\d{2,4})/i,
-        // Day Month Year
-        /(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+(\d{1,2})[,\s]+\s*(\d{2,4})/i,
-        // Date with "on" preposition - common in bank SMS
-        /(?:on|dated)\s+(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{2,4})/i,
-        // Date after transaction type
-        /(?:credited|debited|deposited|withdrawn|transferred|sent|received)\s+(?:on|dated)?\s+(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{2,4})/i,
-        // Date in brackets
-        /\[?\(?(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{2,4})\]?\)?/i
-    ];
-    
-    for (const p of patterns) {
-        const m = text.match(p);
-        if (m) {
-            let d, mo, y;
-            
-            if (p === patterns[0]) {
-                // ISO format YYYY-MM-DD
-                y = +m[1]; mo = +m[2]; d = +m[3];
-            } else if (p === patterns[1]) {
-                // YYYY/MM/DD or YYYY-MM-DD (non-ISO)
-                y = +m[1]; mo = +m[2]; d = +m[3];
-            } else if (p === patterns[2]) {
-                // DD/MM/YYYY format
-                d = +m[1]; mo = +m[2]; y = +m[3];
-            } else if (p === patterns[3]) {
-                // Day Month Year
-                d = +m[1]; mo = new Date(Date.parse(m[2] + " 1, 2000")).getMonth() + 1; y = +m[3];
-            } else if (p === patterns[4]) {
-                // Month Day Year
-                mo = new Date(Date.parse(m[1] + " 1, 2000")).getMonth() + 1; d = +m[2]; y = +m[3];
-            } else if (p === patterns[5] || p === patterns[6] || p === patterns[7]) {
-                // Other numeric formats
-                d = +m[1]; mo = +m[2]; y = +m[3];
-            }
-            
-            if (y < 100) y += 2000;
-            if (y < 1900) y += 100;
-            
-            const date = new Date(y, mo - 1, d);
-            if (!isNaN(date.getTime()) && date.getFullYear() === y) {
-                return date;
-            }
-        }
-    }
-    
-    // Default to current date
-    return new Date();
-}
-
-function extractRemarks(text) {
-    const patterns = [
-        // Standard reference patterns
-        /(?:Re:|Ref:|by:|for:|to:|from:|at:)\s*(.+?)(?:\.|$)/i,
-        // Transaction details patterns
-        /(?:transaction|payment|transfer|deposit|withdrawal)\s*(?:details?|info)?\s*(?:is|:)?\s*(.+?)(?:\.|$)/i,
-        // Merchant/store patterns
-        /(?:at|from|to|in)\s*([A-Z][a-zA-Z0-9\s&\-]+?)(?:\s+(?:on|via|using)|\.|$)/i,
-        // Description patterns
-        /(?:description|remark|note|details?)\s*(?:is|:)?\s*(.+?)(?:\.|$)/i,
-        // Between names pattern
-        /(?:between|from)\s*([A-Za-z\s]+)\s*(?:and|to)\s*([A-Za-z\s]+)/i,
-        // Account patterns
-        /(?:account|a\/c)\s*(?:no\.?|number|#)?\s*(?:XXXX)?\d*\s*(?:to|from)?\s*(.+?)(?:\.|$)/i,
-        // Mobile wallet patterns
-        /(?:from|to)\s*(\d{10})\s*(?:on|via|using)?\s*(.+?)(?:\.|$)/i,
-        // Generic description after amount
-        /(?:Rs\.?|NPR)\s*[\d,]+\s*(?:has been)?\s*(?:credited|debited|transferred)\s*(?:to|from)?\s*(.+?)(?:\.|$)/i,
-        // Nepali bank specific patterns
-        /(?:at|from)\s*([A-Z][a-zA-Z0-9\s&\-\.\,]+?)(?:\s+(?:on|via|using)|\.|$)/i,
-        /(?:merchant|store|shop|retail|outlet|supermarket|mall)\s*[:\-]?\s*([A-Za-z0-9\s&\-\.\,]{3,40})/i,
-        // Payment to patterns
-        /(?:payment|paid|bill|invoice)\s*(?:to|for|at)?\s*([A-Za-z0-9\s&\-\.\,]{3,40})/i,
-        // Location patterns
-        /(?:location|loc|place)\s*[:\-]?\s*([A-Za-z0-9\s&\-\.\,]{3,30})/i
-    ];
-    
-    for (const p of patterns) {
-        const m = text.match(p);
-        if (m) {
-            let remark = m[1] || m[0];
-            remark = remark.trim()
-                .replace(/\s+/g, ' ')
-                .replace(/[^\w\s\-\.\/@&\,\.\']/g, '')
-                .substring(0, 100);
-            
-            // Filter out common non-useful phrases
-            const excludePhrases = [
-                'your account', 'the account', 'has been', 'successfully', 
-                'transaction', 'payment', 'thank you', 'dear customer', 'bank',
-                'limited', 'ltd', 'pvt', 'private', 'company', 'corporation',
-                'nepal', 'kathmandu', 'lalitpur', 'bhaktapur', 'available balance',
-                'current balance', 'account balance', 'your a/c', 'a/c no'
-            ];
-            
-            const lowerRemark = remark.toLowerCase();
-            if (!excludePhrases.some(phrase => lowerRemark.includes(phrase)) && 
-                remark.length > 3 && 
-                !/^\d+$/.test(remark) &&
-                !/^(a\/c|account|balance|transaction|payment|bank|npr|rs\.?)/.test(lowerRemark)) {
-                return remark;
-            }
-        }
-    }
-    
-    return null;
-}
-
-function extractAccount(text) {
-    const patterns = [
-        // Account number patterns
-        /(?:A\/C|Account|a\/c)\s*(?:no\.?|number|#)?\s*([A-Za-z0-9]{6,20})/i,
-        // Account with XXXX masking
-        /(?:A\/C|Account|a\/c)\s*(?:no\.?|number|#)?\s*(?:XXXX)?\d{4,8}\s*\*?\s*(\d{4,8})/i,
-        // Simple account patterns
-        /(?:A\/C|Account|a\/c)\s*[:\-]?\s*([A-Za-z0-9]{6,20})/i,
-        // Account in brackets
-        /\[?\(?([A-Za-z0-9]{6,20})\]?\)?\s*(?:A\/C|Account|a\/c)/i,
-        // Common bank account patterns
-        /(?:Account|A\/C|a\/c)\s*(?:no\.?|number|#)?\s*([0-9]{10,16})/,
-        // Mobile wallet account patterns
-        /(?:wallet|account|a\/c)\s*(?:no\.?|number|#)?\s*([0-9]{8,12})/,
-        // Card number patterns (16 digits)
-        /\b(?:\d{4}[\s\-]?\d{4}[\s\-]?\d{4}[\s\-]?\d{4})\b/
-    ];
-    
-    for (const p of patterns) {
-        const m = text.match(p);
-        if (m) {
-            let account = m[1] || m[0];
-            
-            // Clean up the account number
-            account = account.replace(/[^\w\d]/g, '').trim();
-            
-            // Remove common prefixes/suffixes
-            account = account.replace(/^(A\/C|Account|a\/c|no|number|#)/i, '').trim();
-            account = account.replace(/(A\/C|Account|a\/c)$/i, '').trim();
-            
-            // Validate account number length
-            if (account.length >= 6 && account.length <= 20 && /\d/.test(account)) {
-                return account;
-            }
-        }
-    }
-    
-    return null;
-}
-
-// Utility functions
-function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-}
 
 // Implemented in medicine-tracker.js
 

@@ -410,219 +410,39 @@
                     <h3>Budget vs Actual</h3>
                     <canvas id="budgetChart"></canvas>
                 </div>
+            </div>
 
             <!-- SMS Parser Module -->
             <div id="smsParserModule" class="finance-module">
                 <div class="sms-parser-header">
-                    <h3>📱 Advanced SMS Transaction Parser</h3>
-                    <p>Parse bank SMS messages with AI-powered learning and automatically add them as income/expense transactions</p>
+                    <h3>📱 SMS Transaction Parser</h3>
+                    <p>Parse bank SMS messages and automatically add them as income/expense transactions</p>
                 </div>
 
-                <!-- SMS Parser Tabs -->
-                <div class="sms-tabs-container">
-                    <button class="sms-tab-btn active" onclick="switchSMSTab(this, 'tab-sms-parse')">
-                        <i class="fas fa-paste"></i> Parse SMS
-                    </button>
-                    <button class="sms-tab-btn" onclick="switchSMSTab(this, 'tab-sms-bulk')">
-                        <i class="fas fa-layer-group"></i> Bulk Process
-                    </button>
-                    <button class="sms-tab-btn" onclick="switchSMSTab(this, 'tab-sms-test')">
-                        <i class="fas fa-flask"></i> Test Examples
-                    </button>
-                    <button class="sms-tab-btn" onclick="switchSMSTab(this, 'tab-sms-train')">
-                        <i class="fas fa-brain"></i> Train Parser
-                    </button>
-                    <button class="sms-tab-btn" onclick="switchSMSTab(this, 'tab-sms-manage')">
-                        <i class="fas fa-cog"></i> Manage
-                    </button>
-                </div>
-
-                <!-- Parse SMS Tab -->
-                <div id="tab-sms-parse" class="sms-tab-content active">
-                    <div class="sms-input-section">
-                        <div class="form-group">
-                            <label for="smsInput">Paste Bank SMS Message:</label>
-                            <textarea id="smsInput" class="form-control" rows="4" placeholder="Paste your bank SMS message here..." oninput="previewSMS()"></textarea>
-                        </div>
-                        
-                        <div class="sms-parse-preview" id="smsParsePreview" style="display: none;">
-                            <h4>📊 Parsed Transaction Details:</h4>
-                            <div class="parsed-details" id="parsedDetails"></div>
-                        </div>
-
-                        <div class="sms-actions">
-                            <button class="btn btn-primary" onclick="parseAndPreviewSMS()">
-                                <i class="fas fa-search"></i> Parse SMS
-                            </button>
-                            <button class="btn btn-success" id="addParsedTransactionBtn" onclick="addParsedTransaction()" style="display: none;">
-                                <i class="fas fa-plus"></i> Add as Transaction
-                            </button>
-                            <button class="btn btn-secondary" onclick="clearSMSInput()">
-                                <i class="fas fa-eraser"></i> Clear
-                            </button>
-                            <button class="btn btn-info" onclick="readClipboardSMS()">
-                                <i class="fas fa-clipboard"></i> Read from Clipboard
-                            </button>
-                        </div>
+                <div class="sms-input-section">
+                    <div class="form-group">
+                        <label for="smsInput">Paste Bank SMS Message:</label>
+                        <textarea id="smsInput" class="form-control" rows="4" placeholder="Paste your bank SMS message here..."></textarea>
                     </div>
-                </div>
-
-                <!-- Bulk Process Tab -->
-                <div id="tab-sms-bulk" class="sms-tab-content">
-                    <div class="bulk-sms-section">
-                        <div class="form-group">
-                            <label for="bulkSmsInput">Multiple SMS Messages (one per line):</label>
-                            <textarea id="bulkSmsInput" class="form-control" rows="8" placeholder="Paste multiple SMS messages, each on a new line..."></textarea>
-                        </div>
-                        
-                        <div class="bulk-sms-actions">
-                            <button class="btn btn-warning" onclick="processBulkSMS()">
-                                <i class="fas fa-bolt"></i> Process All SMS
-                            </button>
-                            <button class="btn btn-secondary" onclick="clearBulkSMS()">
-                                <i class="fas fa-eraser"></i> Clear
-                            </button>
-                        </div>
-                        
-                        <div class="bulk-progress" id="bulkProgress" style="display: none;">
-                            <h4>📊 Processing Progress:</h4>
-                            <div class="progress-info" id="bulkProgressInfo"></div>
-                            <div class="progress-bar">
-                                <div class="progress-fill" id="bulkProgressFill"></div>
-                            </div>
-                        </div>
+                    
+                    <div class="sms-parse-preview" id="smsParsePreview" style="display: none;">
+                        <h4>📊 Parsed Transaction Details:</h4>
+                        <div class="parsed-details" id="parsedDetails"></div>
                     </div>
-                </div>
 
-                <!-- Test Examples Tab -->
-                <div id="tab-sms-test" class="sms-tab-content">
-                    <div class="sms-test-section">
-                        <div class="form-group">
-                            <label for="testExample">Select Test Example:</label>
-                            <select id="testExample" class="form-control" onchange="loadTestExample()">
-                                <option value="">Select an example...</option>
-                                <option value="nabil-credit">Nabil Bank - Credit</option>
-                                <option value="nic-debit">NIC Asia - Debit</option>
-                                <option value="esewa-payment">eSewa - Payment</option>
-                                <option value="khalti-transfer">Khalti - Transfer</option>
-                                <option value="global-deposit">Global IME - Deposit</option>
-                                <option value="sanima-withdraw">Sanima - Withdrawal</option>
-                                <option value="himalayan-transfer">Himalayan - Transfer</option>
-                                <option value="nmb-purchase">NMB - Purchase</option>
-                            </select>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="testSmsInput">Test SMS Message:</label>
-                            <textarea id="testSmsInput" class="form-control" rows="4" placeholder="Or paste your own SMS to test..." oninput="testParseSMS()"></textarea>
-                        </div>
-                        
-                        <div class="sms-test-preview" id="smsTestPreview" style="display: none;">
-                            <h4>🧪 Test Result:</h4>
-                            <div class="test-details" id="testDetails"></div>
-                        </div>
-
-                        <div class="sms-test-actions">
-                            <button class="btn btn-primary" onclick="testParseSMS()">
-                                <i class="fas fa-search"></i> Test Parse
-                            </button>
-                            <button class="btn btn-success" id="addTestTransactionBtn" onclick="addTestTransaction()" style="display: none;">
-                                <i class="fas fa-plus"></i> Add Test Transaction
-                            </button>
-                            <button class="btn btn-secondary" onclick="clearTestSMS()">
-                                <i class="fas fa-eraser"></i> Clear
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Train Parser Tab -->
-                <div id="tab-sms-train" class="sms-tab-content">
-                    <div class="sms-train-section">
-                        <div class="form-group">
-                            <label for="trainSmsInput">SMS Message for Training:</label>
-                            <textarea id="trainSmsInput" class="form-control" rows="4" placeholder="Paste SMS message to train the parser..."></textarea>
-                        </div>
-                        
-                        <div class="training-controls">
-                            <h4>🧠 Select what to train:</h4>
-                            <div class="training-fields">
-                                <button class="training-field-btn" onclick="selectTrainingField('amount', this)" data-field="amount">
-                                    💰 Amount
-                                </button>
-                                <button class="training-field-btn" onclick="selectTrainingField('credit', this)" data-field="credit">
-                                    ⬇️ Credit
-                                </button>
-                                <button class="training-field-btn" onclick="selectTrainingField('debit', this)" data-field="debit">
-                                    ⬆️ Debit
-                                </button>
-                                <button class="training-field-btn" onclick="selectTrainingField('bank', this)" data-field="bank">
-                                    🏦 Bank
-                                </button>
-                                <button class="training-field-btn" onclick="selectTrainingField('date', this)" data-field="date">
-                                    📅 Date
-                                </button>
-                                <button class="training-field-btn" onclick="selectTrainingField('remarks', this)" data-field="remarks">
-                                    📝 Remarks
-                                </button>
-                                <button class="training-field-btn" onclick="selectTrainingField('account', this)" data-field="account">
-                                    🏦 Account
-                                </button>
-                            </div>
-                        </div>
-                        
-                        <div class="training-preview" id="trainingPreview" style="display: none;">
-                            <h4>📝 Training Preview:</h4>
-                            <div class="training-words" id="trainingWords"></div>
-                        </div>
-                        
-                        <div class="training-actions">
-                            <div class="form-group">
-                                <label for="patternName">Pattern Name:</label>
-                                <input type="text" id="patternName" class="form-control" placeholder="e.g., Nabil Credit Pattern">
-                            </div>
-                            <button class="btn btn-success" onclick="saveTrainingPattern()">
-                                <i class="fas fa-save"></i> Save Pattern
-                            </button>
-                            <button class="btn btn-secondary" onclick="clearTraining()">
-                                <i class="fas fa-eraser"></i> Clear
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Manage Tab -->
-                <div id="tab-sms-manage" class="sms-tab-content">
-                    <div class="sms-manage-section">
-                        <div class="manage-stats">
-                            <h4>📊 SMS Parser Statistics</h4>
-                            <div class="stats-grid">
-                                <div class="stat-item">
-                                    <span class="stat-label">Total Transactions</span>
-                                    <span class="stat-value" id="totalSmsTransactions">0</span>
-                                </div>
-                                <div class="stat-item">
-                                    <span class="stat-label">Saved Patterns</span>
-                                    <span class="stat-value" id="totalPatterns">0</span>
-                                </div>
-                                <div class="stat-item">
-                                    <span class="stat-label">Parse Accuracy</span>
-                                    <span class="stat-value" id="parseAccuracy">0%</span>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="manage-actions">
-                            <button class="btn btn-warning" onclick="exportSMSData()">
-                                <i class="fas fa-download"></i> Export SMS Data
-                            </button>
-                            <button class="btn btn-info" onclick="importSMSData()">
-                                <i class="fas fa-upload"></i> Import SMS Data
-                            </button>
-                            <button class="btn btn-danger" onclick="clearAllSMSData()">
-                                <i class="fas fa-trash"></i> Clear All Data
-                            </button>
-                        </div>
+                    <div class="sms-actions">
+                        <button class="btn btn-primary" onclick="parseAndPreviewSMS()">
+                            <i class="fas fa-search"></i> Parse SMS
+                        </button>
+                        <button class="btn btn-success" id="addParsedTransactionBtn" onclick="addParsedTransaction()" style="display: none;">
+                            <i class="fas fa-plus"></i> Add as Transaction
+                        </button>
+                        <button class="btn btn-secondary" onclick="clearSMSInput()">
+                            <i class="fas fa-eraser"></i> Clear
+                        </button>
+                        <button class="btn btn-info" onclick="readClipboardSMS()">
+                            <i class="fas fa-clipboard"></i> Read from Clipboard
+                        </button>
                     </div>
                 </div>
 
@@ -631,8 +451,7 @@
                     <ul>
                         <li>Paste any bank SMS message containing transaction details</li>
                         <li>The parser will automatically extract amount, type, bank, date, and description</li>
-                        <li>Review parsed details and click "Add as Transaction" to save</li>
-                        <li>Use the Train tab to improve parsing accuracy for your bank's SMS format</li>
+                        <li>Review the parsed details and click "Add as Transaction" to save</li>
                         <li>Supported banks: Nabil, Global IME, Sanima, NIC Asia, Himalayan, eSewa, Khalti, and more</li>
                     </ul>
                 </div>
@@ -1406,7 +1225,7 @@
     <!-- Modal Container -->
     <div class="modal" id="modal">
         <div class="modal-content">
-            <span class="modal-close" onclick="closeModal()">&times;</span>
+            <span class="modal-close">&times;</span>
             <h3 id="modalTitle"></h3>
             <div id="modalBody"></div>
         </div>

@@ -20,7 +20,7 @@ console.log('✅ db.js loading...');
 
 const DB_NAME = 'NepaliCalendarDB';
 
-const DB_VERSION = 5; // ⚠️ INCREASED VERSION TO FORCE UPGRADE
+const DB_VERSION = 4; // ⚠️ INCREASED VERSION TO FORCE UPGRADE
 
 let db;
 
@@ -390,19 +390,11 @@ function initDB() {
 
 
 
-            createStore('smsParser', 'id', [
-
-                { name: 'type' },
-
-                { name: 'createdAt' }
-
-            ]);
-
-
-
             console.log('✅ Database upgrade completed successfully');
 
         };
+
+
 
         request.onblocked = () => {
 
@@ -417,9 +409,13 @@ function initDB() {
 }
 
 
+
 /**
+
  * Wait for database to be ready
+
  */
+
 function waitForDB() {
 
     return new Promise((resolve, reject) => {
@@ -432,9 +428,13 @@ function waitForDB() {
 
         }
 
+        
+
         const maxWait = 50; // 5 seconds
 
         let count = 0;
+
+        
 
         const interval = setInterval(() => {
 
@@ -459,9 +459,13 @@ function waitForDB() {
 }
 
 
+
 /**
+
  * Generic CRUD operations with error handling
+
  */
+
 class DBManager {
 
     constructor(storeName) {
@@ -469,6 +473,8 @@ class DBManager {
         this.storeName = storeName;
 
     }
+
+
 
     async ensureDB() {
 
@@ -479,6 +485,8 @@ class DBManager {
         }
 
     }
+
+
 
     async add(data) {
 
@@ -510,6 +518,8 @@ class DBManager {
 
     }
 
+
+
     async get(id) {
 
         try {
@@ -539,6 +549,8 @@ class DBManager {
         }
 
     }
+
+
 
     async getAll() {
 
@@ -570,6 +582,8 @@ class DBManager {
 
     }
 
+
+
     async update(data) {
 
         try {
@@ -599,6 +613,8 @@ class DBManager {
         }
 
     }
+
+
 
     async delete(id) {
 
@@ -630,6 +646,8 @@ class DBManager {
 
     }
 
+
+
     async getByIndex(indexName, value) {
 
         try {
@@ -642,9 +660,15 @@ class DBManager {
 
                 const store = transaction.objectStore(this.storeName);
 
+                
+
+                // Check if index exists
+
                 if (!store.indexNames.contains(indexName)) {
 
                     console.warn(`Index '${indexName}' not found in ${this.storeName}. Using fallback.`);
+
+                    // Fallback: get all and filter manually
 
                     store.getAll().onsuccess = (event) => {
 
@@ -659,6 +683,8 @@ class DBManager {
                     return;
 
                 }
+
+                
 
                 const index = store.index(indexName);
 
@@ -685,6 +711,8 @@ class DBManager {
         }
 
     }
+
+
 
     async clear() {
 
@@ -719,6 +747,7 @@ class DBManager {
 }
 
 
+
 // Initialize store managers
 
 const holidayDB = new DBManager('holidays');
@@ -751,8 +780,6 @@ const customTypeDB = new DBManager('customTypes');
 
 const customItemDB = new DBManager('customItems');
 
-const smsParserDB = new DBManager('smsParser');
-
 
 
 // Medicine Tracker Databases
@@ -768,7 +795,9 @@ const dosageScheduleDB = new DBManager('dosageSchedule');
 
 
 /**
+
  * Exchange rates
+
  */
 
 let exchangeRates = {
@@ -828,7 +857,9 @@ function convertCurrency(amount, from, to) {
 
 
 /**
+
  * Get transactions for month - FIXED WITH SAFETY CHECKS
+
  */
 
 async function getMonthlyTransactions(bsYear, bsMonth) {
@@ -839,19 +870,41 @@ async function getMonthlyTransactions(bsYear, bsMonth) {
 
         const allExpenses = await expenseDB.getAll();
 
+
+
         const monthStr = `${bsYear}/${String(bsMonth).padStart(2, '0')}`;
+
+
+
+        // CRITICAL FIX: Filter with null/undefined safety checks
 
         const income = allIncome.filter(item => {
 
-            return item && item.date_bs && typeof item.date_bs === 'string' && item.date_bs.startsWith(monthStr);
+            return item && 
+
+                   item.date_bs && 
+
+                   typeof item.date_bs === 'string' && 
+
+                   item.date_bs.startsWith(monthStr);
 
         });
+
+        
 
         const expenses = allExpenses.filter(item => {
 
-            return item && item.date_bs && typeof item.date_bs === 'string' && item.date_bs.startsWith(monthStr);
+            return item && 
+
+                   item.date_bs && 
+
+                   typeof item.date_bs === 'string' && 
+
+                   item.date_bs.startsWith(monthStr);
 
         });
+
+
 
         return { income, expenses };
 
@@ -868,7 +921,9 @@ async function getMonthlyTransactions(bsYear, bsMonth) {
 
 
 /**
+
  * Get monthly income with currency conversion
+
  */
 
 async function getMonthlyIncome(bsYear, bsMonth, targetCurrency = 'NPR') {
@@ -898,7 +953,9 @@ async function getMonthlyIncome(bsYear, bsMonth, targetCurrency = 'NPR') {
 
 
 /**
+
  * Get monthly expense with currency conversion
+
  */
 
 async function getMonthlyExpense(bsYear, bsMonth, targetCurrency = 'NPR') {
@@ -928,7 +985,9 @@ async function getMonthlyExpense(bsYear, bsMonth, targetCurrency = 'NPR') {
 
 
 /**
+
  * Get date data - WITH ERROR HANDLING
+
  */
 
 async function getDateData(dateBs) {
@@ -947,7 +1006,21 @@ async function getDateData(dateBs) {
 
         const dueBills = bills.filter(bill => bill && bill.dueDate === dateBs && bill.status !== 'paid');
 
-        return { holidays: holidays || [], income: income || [], expenses: expenses || [], notes: notes || [], bills: dueBills || [] };
+
+
+        return { 
+
+            holidays: holidays || [], 
+
+            income: income || [], 
+
+            expenses: expenses || [], 
+
+            notes: notes || [], 
+
+            bills: dueBills || [] 
+
+        };
 
     } catch (error) {
 
@@ -962,7 +1035,9 @@ async function getDateData(dateBs) {
 
 
 /**
+
  * Get upcoming reminders
+
  */
 
 async function getUpcomingReminders() {
@@ -974,6 +1049,8 @@ async function getUpcomingReminders() {
         const today = getCurrentNepaliDate();
 
         const todayStr = formatBsDate(today.year, today.month, today.day);
+
+
 
         return allNotes.filter(note => {
 
@@ -994,7 +1071,9 @@ async function getUpcomingReminders() {
 
 
 /**
+
  * Get upcoming bills
+
  */
 
 async function getUpcomingBills(days = 7) {
@@ -1006,6 +1085,8 @@ async function getUpcomingBills(days = 7) {
         const today = getCurrentNepaliDate();
 
         const todayStr = formatBsDate(today.year, today.month, today.day);
+
+
 
         return allBills.filter(bill => {
 
@@ -1028,7 +1109,9 @@ async function getUpcomingBills(days = 7) {
 
 
 /**
+
  * Get budget for month
+
  */
 
 async function getMonthBudget(bsYear, bsMonth) {
@@ -1054,7 +1137,9 @@ async function getMonthBudget(bsYear, bsMonth) {
 
 
 /**
+
  * Reset Database - COMPLETE RESET
+
  */
 
 async function resetDatabase() {
@@ -1062,6 +1147,8 @@ async function resetDatabase() {
     return new Promise((resolve, reject) => {
 
         console.log('🗑️ Resetting database...');
+
+        
 
         if (db) {
 
@@ -1073,7 +1160,11 @@ async function resetDatabase() {
 
         }
 
+
+
         const deleteRequest = indexedDB.deleteDatabase(DB_NAME);
+
+        
 
         deleteRequest.onsuccess = () => {
 
@@ -1089,6 +1180,8 @@ async function resetDatabase() {
 
         };
 
+        
+
         deleteRequest.onerror = () => {
 
             console.error('❌ Failed to delete database');
@@ -1096,6 +1189,8 @@ async function resetDatabase() {
             reject(deleteRequest.error);
 
         };
+
+        
 
         deleteRequest.onblocked = () => {
 
@@ -1112,7 +1207,9 @@ async function resetDatabase() {
 }
 
 
+
 /**
+
  * Export all data
 
  */
@@ -1454,8 +1551,6 @@ window.subscriptionDB = subscriptionDB;
 window.customTypeDB = customTypeDB;
 
 window.customItemDB = customItemDB;
-
-window.smsParserDB = smsParserDB;
 
 
 

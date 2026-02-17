@@ -166,40 +166,12 @@ Access these tools via browser console: `debugHealthCheck()`
 - **Calendar**: Custom Nepali calendar implementation
 - **Charts**: Chart.js for financial visualizations
 
-### Main Application Files
-- `index.html` - Main application HTML
-- `app.js` - Core application logic  
-- `db.js` - IndexedDB database management
-- `style.css` - Application styles
-- `conversion.js` - BS/AD date conversion
-
-### Module Files
-- `budget.js` - Budget management
-- `charts.js` - Data visualization
-- `custom.js` - Custom items/types
-- `import-export.js` - Data import/export
-- `insurance.js` - Insurance tracking
-- `medicine-tracker.js` - Medicine management
-- `subscription.js` - Subscription tracking
-- `vehicle.js` - Vehicle management
-
-### Test/Debug Files
-All test and debug files are located in the `test-debug/` folder to keep the main directory clean.
-
+### File Structure
+```
 nepali-calendar-pwa/
 ├── index.html          # Main HTML file
 ├── style.css           # Complete styling
 ├── app.js              # Main JavaScript application
-├── db.js               # IndexedDB database management
-├── conversion.js       # BS/AD date conversion
-├── budget.js           # Budget management
-├── charts.js           # Data visualization
-├── custom.js           # Custom items/types
-├── import-export.js    # Data import/export
-├── insurance.js        # Insurance tracking
-├── medicine-tracker.js # Medicine management
-├── subscription.js     # Subscription tracking
-├── vehicle.js          # Vehicle management
 ├── manifest.json       # PWA manifest
 ├── sw.js              # Service worker
 ├── README.md          # Documentation
