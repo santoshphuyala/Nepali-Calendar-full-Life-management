@@ -717,10 +717,10 @@ function showNoteForm(note = null) {
         try {
             if (note?.id) {
                 noteData.id = note.id;
-                await noteDB.update(noteData);
+                await enhancedNoteDB.update(noteData);
                 showNotification('✅ Note updated successfully!', 'success');
             } else {
-                await noteDB.add(noteData);
+                await enhancedNoteDB.add(noteData);
                 showNotification('✅ Note added successfully!', 'success');
             }
             
@@ -840,7 +840,7 @@ async function displayMonthlyNotes() {
         if (!notesContent) return;
 
         // Get all notes
-        const allNotes = await noteDB.getAll();
+        const allNotes = await enhancedNoteDB.getAll();
         
         // Filter notes for current month
         const currentMonthNotes = allNotes.filter(note => {
@@ -915,7 +915,7 @@ async function displayMonthlyNotes() {
  */
 async function editNote(id) {
     try {
-        const note = await noteDB.get(id);
+        const note = await enhancedNoteDB.get(id);
         if (note) {
             showNoteForm(note);
         }
@@ -929,7 +929,7 @@ async function deleteNote(id) {
     if (!confirm('Are you sure you want to delete this note?')) return;
     
     try {
-        await noteDB.delete(id);
+        await enhancedNoteDB.delete(id);
         showNotification('✅ Note deleted successfully!', 'success');
         closeModal();
         renderNotes();
@@ -1016,10 +1016,10 @@ function showHolidayForm(holiday = null) {
         try {
             if (holiday?.id) {
                 holidayData.id = holiday.id;
-                await holidayDB.update(holidayData);
+                await enhancedHolidayDB.update(holidayData);
                 showNotification('✅ Holiday updated successfully!', 'success');
             } else {
-                await holidayDB.add(holidayData);
+                await enhancedHolidayDB.add(holidayData);
                 showNotification('✅ Holiday added successfully!', 'success');
             }
             
@@ -1161,10 +1161,10 @@ function showRecurringForm(recurring = null) {
         try {
             if (recurring?.id) {
                 recurringData.id = recurring.id;
-                await recurringDB.update(recurringData);
+                await enhancedRecurringDB.update(recurringData);
                 showNotification('✅ Recurring transaction updated!', 'success');
             } else {
-                await recurringDB.add(recurringData);
+                await enhancedRecurringDB.add(recurringData);
                 showNotification('✅ Recurring transaction added!', 'success');
             }
             
@@ -1184,7 +1184,7 @@ async function renderNotes() {
     const notesList = document.getElementById('notesList');
     if (!notesList) return;
     
-    const notes = await noteDB.getAll();
+    const notes = await enhancedNoteDB.getAll();
     
     if (notes.length === 0) {
         notesList.innerHTML = '<div class="empty-state">📝 No notes yet. Add your first note!</div>';
@@ -1245,7 +1245,7 @@ async function renderHolidayList() {
     const holidayList = document.getElementById('holidayList');
     if (!holidayList) return;
     
-    const holidays = await holidayDB.getAll();
+    const holidays = await enhancedHolidayDB.getAll();
     
     if (holidays.length === 0) {
         holidayList.innerHTML = '<div class="empty-state">🎉 No holidays added yet.</div>';
@@ -1277,7 +1277,7 @@ async function renderRecurringList() {
     const recurringList = document.getElementById('recurringList');
     if (!recurringList) return;
     
-    const recurring = await recurringDB.getAll();
+    const recurring = await enhancedRecurringDB.getAll();
     const active = recurring.filter(r => r.isActive);
     
     if (active.length === 0) {
@@ -1308,7 +1308,7 @@ async function renderRecurringList() {
  */
 async function editNote(id) {
     try {
-        const note = await noteDB.get(id);
+        const note = await enhancedNoteDB.get(id);
         if (note) {
             showNoteForm(note);
         }
@@ -1323,7 +1323,7 @@ async function editNote(id) {
  */
 async function deleteNote(id) {
     if (!confirm('Delete this note?')) return;
-    await noteDB.delete(id);
+    await enhancedNoteDB.delete(id);
     showNotification('✅ Note deleted', 'success');
     renderNotes();
     renderCalendar(currentYear, currentMonth);
@@ -1331,7 +1331,7 @@ async function deleteNote(id) {
 
 async function deleteHoliday(id) {
     if (!confirm('Delete this holiday?')) return;
-    await holidayDB.delete(id);
+    await enhancedHolidayDB.delete(id);
     showNotification('✅ Holiday deleted', 'success');
     renderHolidayList();
     renderCalendar(currentYear, currentMonth);
@@ -1339,7 +1339,7 @@ async function deleteHoliday(id) {
 
 async function deleteRecurring(id) {
     if (!confirm('Delete this recurring transaction?')) return;
-    await recurringDB.delete(id);
+    await enhancedRecurringDB.delete(id);
     showNotification('✅ Recurring transaction deleted', 'success');
     renderRecurringList();
 }
@@ -1612,7 +1612,7 @@ async function renderUpcomingReminders() {
 
 async function removeDuplicateHolidays() {
     try {
-        const holidays = await holidayDB.getAll();
+        const holidays = await enhancedHolidayDB.getAll();
         if (!Array.isArray(holidays) || holidays.length === 0) {
             showNotification('No holidays found', 'info');
             return;
@@ -1641,7 +1641,7 @@ async function removeDuplicateHolidays() {
         if (!confirmed) return;
 
         for (const id of duplicateIds) {
-            await holidayDB.delete(id);
+            await enhancedHolidayDB.delete(id);
         }
 
         showNotification(`✅ Removed ${duplicateIds.length} duplicates`, 'success');
@@ -1657,8 +1657,8 @@ async function removeDuplicateHolidays() {
 async function exportCalendarData(scope) {
     try {
         const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
-        const allHolidays = await holidayDB.getAll();
-        const allNotes = await noteDB.getAll();
+        const allHolidays = await enhancedHolidayDB.getAll();
+        const allNotes = await enhancedNoteDB.getAll();
 
         const filterByYear = (arr) => arr.filter(item => {
             const [y] = (item?.date_bs || '').split('/').map(Number);
@@ -1734,8 +1734,8 @@ async function importCalendarData(scope, fileInput) {
         const confirmed = confirm('This will import items and skip duplicates. Continue?');
         if (!confirmed) return;
 
-        const existingHolidays = await holidayDB.getAll();
-        const existingNotes = await noteDB.getAll();
+        const existingHolidays = await enhancedHolidayDB.getAll();
+        const existingNotes = await enhancedNoteDB.getAll();
         const holidayKeys = new Set(existingHolidays.map(h => `${h?.date_bs || ''}|${(h?.name || '').toLowerCase().trim()}|${(h?.type || '').toLowerCase().trim()}`));
         const noteKeys = new Set(existingNotes.map(n => `${n?.date_bs || ''}|${(n?.title || '').toLowerCase().trim()}|${(n?.content || '').toLowerCase().trim()}`));
 
@@ -1745,7 +1745,7 @@ async function importCalendarData(scope, fileInput) {
                 const key = `${h?.date_bs || ''}|${(h?.name || '').toLowerCase().trim()}|${(h?.type || '').toLowerCase().trim()}`;
                 if (holidayKeys.has(key)) continue;
                 const { id, ...rest } = h || {};
-                await holidayDB.add(rest);
+                await enhancedHolidayDB.add(rest);
                 holidayKeys.add(key);
                 added++;
             }
@@ -1756,7 +1756,7 @@ async function importCalendarData(scope, fileInput) {
                 const key = `${n?.date_bs || ''}|${(n?.title || '').toLowerCase().trim()}|${(n?.content || '').toLowerCase().trim()}`;
                 if (noteKeys.has(key)) continue;
                 const { id, ...rest } = n || {};
-                await noteDB.add(rest);
+                await enhancedNoteDB.add(rest);
                 noteKeys.add(key);
                 added++;
             }
@@ -1780,9 +1780,9 @@ async function exportTrackerData(scope) {
     try {
         const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
 
-        const income = await incomeDB.getAll();
-        const expenses = await expenseDB.getAll();
-        const recurring = await recurringDB.getAll();
+        const income = await enhancedIncomeDB.getAll();
+        const expenses = await enhancedExpenseDB.getAll();
+        const recurring = await enhancedRecurringDB.getAll();
 
         let data = {};
         switch (scope) {
@@ -1851,9 +1851,9 @@ async function importTrackerData(scope, fileInput) {
         const confirmed = confirm('This will import items and skip duplicates. Continue?');
         if (!confirmed) return;
 
-        const existingIncome = await incomeDB.getAll();
-        const existingExpenses = await expenseDB.getAll();
-        const existingRecurring = await recurringDB.getAll();
+        const existingIncome = await enhancedIncomeDB.getAll();
+        const existingExpenses = await enhancedExpenseDB.getAll();
+        const existingRecurring = await enhancedRecurringDB.getAll();
 
         const incomeKeys = new Set(existingIncome.map(t => `${t?.date_bs || ''}|${(t?.category || '').toLowerCase().trim()}|${t?.amount ?? ''}|${(t?.currency || '').toLowerCase().trim()}|${(t?.description || '').toLowerCase().trim()}`));
         const expenseKeys = new Set(existingExpenses.map(t => `${t?.date_bs || ''}|${(t?.category || '').toLowerCase().trim()}|${t?.amount ?? ''}|${(t?.currency || '').toLowerCase().trim()}|${(t?.description || '').toLowerCase().trim()}`));
@@ -1866,7 +1866,7 @@ async function importTrackerData(scope, fileInput) {
                 const key = `${t?.date_bs || ''}|${(t?.category || '').toLowerCase().trim()}|${t?.amount ?? ''}|${(t?.currency || '').toLowerCase().trim()}|${(t?.description || '').toLowerCase().trim()}`;
                 if (incomeKeys.has(key)) continue;
                 const { id, ...rest } = t || {};
-                await incomeDB.add(rest);
+                await enhancedIncomeDB.add(rest);
                 incomeKeys.add(key);
                 added++;
             }
@@ -1877,7 +1877,7 @@ async function importTrackerData(scope, fileInput) {
                 const key = `${t?.date_bs || ''}|${(t?.category || '').toLowerCase().trim()}|${t?.amount ?? ''}|${(t?.currency || '').toLowerCase().trim()}|${(t?.description || '').toLowerCase().trim()}`;
                 if (expenseKeys.has(key)) continue;
                 const { id, ...rest } = t || {};
-                await expenseDB.add(rest);
+                await enhancedExpenseDB.add(rest);
                 expenseKeys.add(key);
                 added++;
             }
@@ -1888,7 +1888,7 @@ async function importTrackerData(scope, fileInput) {
                 const key = `${t?.type || ''}|${(t?.description || '').toLowerCase().trim()}|${t?.amount ?? ''}|${(t?.currency || '').toLowerCase().trim()}|${(t?.frequency || '').toLowerCase().trim()}`;
                 if (recurringKeys.has(key)) continue;
                 const { id, ...rest } = t || {};
-                await recurringDB.add(rest);
+                await enhancedRecurringDB.add(rest);
                 recurringKeys.add(key);
                 added++;
             }
@@ -2587,7 +2587,7 @@ async function displayMonthlyHolidays() {
         if (!holidayContent) return;
 
         // Get all holidays
-        const allHolidays = await holidayDB.getAll();
+        const allHolidays = await enhancedHolidayDB.getAll();
         
         // Filter holidays for current month
         const currentMonthHolidays = allHolidays.filter(holiday => {
@@ -2770,7 +2770,7 @@ function createYearMonthCard(month, year, today) {
 
 async function checkHolidayForYearView(bsDateStr, dayElement) {
     try {
-        const holidays = await holidayDB.getByIndex('date_bs', bsDateStr);
+        const holidays = await enhancedHolidayDB.getByIndex('date_bs', bsDateStr);
         if (holidays && holidays.length > 0) {
             dayElement.classList.add('holiday');
         }
@@ -2791,7 +2791,7 @@ async function loadYearMonthData(card, year, monthNumber) {
         // Count holidays
         for (let day = 1; day <= getDaysInBSMonth(year, monthNumber); day++) {
             const bsDateStr = formatBsDate(year, monthNumber, day);
-            const holidays = await holidayDB.getByIndex('date_bs', bsDateStr);
+            const holidays = await enhancedHolidayDB.getByIndex('date_bs', bsDateStr);
             if (holidays && holidays.length > 0) {
                 holidayCount++;
             }
@@ -2846,7 +2846,7 @@ async function displayYearlyHolidays() {
         if (!holidayContent) return;
 
         // Get all holidays for current year
-        const allHolidays = await holidayDB.getAll();
+        const allHolidays = await enhancedHolidayDB.getAll();
         
         // Filter holidays for current year
         const currentYearHolidays = allHolidays.filter(holiday => {
@@ -2909,7 +2909,7 @@ async function displayYearlySummary() {
                 const bsDateStr = formatBsDate(currentBsYear, month, day);
                 
                 // Count holidays
-                const holidays = await holidayDB.getByIndex('date_bs', bsDateStr);
+                const holidays = await enhancedHolidayDB.getByIndex('date_bs', bsDateStr);
                 if (holidays && holidays.length > 0) {
                     totalHolidays += holidays.length;
                 }
@@ -3014,7 +3014,7 @@ async function displayWeeklyHolidays() {
         const weeklyHolidays = [];
         for (const bsDateStr of weekDates) {
             console.log(`🔍 Checking holidays for: ${bsDateStr}`);
-            const holidays = await holidayDB.getByIndex('date_bs', bsDateStr);
+            const holidays = await enhancedHolidayDB.getByIndex('date_bs', bsDateStr);
             console.log(`🎉 Holidays found for ${bsDateStr}:`, holidays);
             if (holidays && holidays.length > 0) {
                 holidays.forEach(holiday => {
@@ -3107,7 +3107,7 @@ async function displayWeeklySummary() {
             console.log(`🔍 Processing data for: ${bsDateStr}`);
             
             // Count holidays
-            const holidays = await holidayDB.getByIndex('date_bs', bsDateStr);
+            const holidays = await enhancedHolidayDB.getByIndex('date_bs', bsDateStr);
             if (holidays && holidays.length > 0) {
                 totalHolidays += holidays.length;
                 console.log(`🎉 Found ${holidays.length} holidays for ${bsDateStr}`);
@@ -3199,7 +3199,7 @@ async function displayDailySummary() {
         
         // Get data for the day
         const dateData = await getDateData(bsDateStr);
-        const holidays = await holidayDB.getByIndex('date_bs', bsDateStr);
+        const holidays = await enhancedHolidayDB.getByIndex('date_bs', bsDateStr);
 
         // Calculate daily totals
         const totalIncome = dateData.income.reduce((sum, item) => sum + parseFloat(item.amount || 0), 0);
@@ -3518,7 +3518,7 @@ async function getMonthData(year, month) {
         for (let day = 1; day <= daysInMonth; day++) {
             const dateStr = formatBsDate(year, month, day);
             const dateData = await getDateData(dateStr);
-            const holidays = await holidayDB.getByIndex('date_bs', dateStr);
+            const holidays = await enhancedHolidayDB.getByIndex('date_bs', dateStr);
             
             // Add data to month arrays
             monthData.income.push(...dateData.income);
@@ -3788,7 +3788,7 @@ function createCalendarCell(day, isEmpty) {
  */
 async function loadCellData(cell, bsDateStr) {
     try {
-        const holidays = await holidayDB.getByIndex('date_bs', bsDateStr);
+        const holidays = await enhancedHolidayDB.getByIndex('date_bs', bsDateStr);
         if (holidays && holidays.length > 0) {
             // Add holiday class to the cell
             cell.classList.add('holiday');
@@ -3848,14 +3848,132 @@ async function loadCellData(cell, bsDateStr) {
 }
 
 /**
+ * Get data for a specific date
+ */
+async function getDateData(bsDateStr) {
+    try {
+        const [year, month, day] = bsDateStr.split('/').map(Number);
+        
+        // Get all data for the date
+        const allIncome = await enhancedIncomeDB.getAll();
+        const allExpenses = await enhancedExpenseDB.getAll();
+        const allNotes = await enhancedNoteDB.getAll();
+        const allBills = await enhancedBillDB.getAll();
+        
+        // Filter by date
+        const income = allIncome.filter(item => item.date_bs === bsDateStr);
+        const expenses = allExpenses.filter(item => item.date_bs === bsDateStr);
+        const notes = allNotes.filter(item => item.date_bs === bsDateStr);
+        const bills = allBills.filter(item => item.dueDate === bsDateStr);
+        
+        return {
+            income,
+            expenses,
+            notes,
+            bills
+        };
+    } catch (error) {
+        console.error('Error getting date data:', error);
+        return {
+            income: [],
+            expenses: [],
+            notes: [],
+            bills: []
+        };
+    }
+}
+
+/**
+ * Get data for a specific month
+ */
+async function getMonthData(year, month) {
+    try {
+        // Get all data
+        const allIncome = await enhancedIncomeDB.getAll();
+        const allExpenses = await enhancedExpenseDB.getAll();
+        const allNotes = await enhancedNoteDB.getAll();
+        const allBills = await enhancedBillDB.getAll();
+        
+        // Filter by month
+        const income = allIncome.filter(item => {
+            const [itemYear, itemMonth] = item.date_bs.split('/').map(Number);
+            return itemYear === year && itemMonth === month;
+        });
+        const expenses = allExpenses.filter(item => {
+            const [itemYear, itemMonth] = item.date_bs.split('/').map(Number);
+            return itemYear === year && itemMonth === month;
+        });
+        const notes = allNotes.filter(item => {
+            const [itemYear, itemMonth] = item.date_bs.split('/').map(Number);
+            return itemYear === year && itemMonth === month;
+        });
+        const bills = allBills.filter(item => {
+            const [itemYear, itemMonth] = item.dueDate.split('/').map(Number);
+            return itemYear === year && itemMonth === month;
+        });
+        
+        return {
+            income,
+            expenses,
+            notes,
+            bills
+        };
+    } catch (error) {
+        console.error('Error getting month data:', error);
+        return {
+            income: [],
+            expenses: [],
+            notes: [],
+            bills: []
+        };
+    }
+}
+
+/**
+ * Get budget for a specific month
+ */
+async function getMonthBudget(year, month) {
+    try {
+        const allBudgets = await enhancedBudgetDB.getAll();
+        return allBudgets.filter(budget => {
+            const [budgetYear, budgetMonth] = budget.month.split('/').map(Number);
+            return budgetYear === year && budgetMonth === month;
+        });
+    } catch (error) {
+        console.error('Error getting month budget:', error);
+        return [];
+    }
+}
+
+/**
+ * Get monthly transactions for charts
+ */
+async function getMonthlyTransactions(year, month) {
+    try {
+        const monthData = await getMonthData(year, month);
+        return {
+            income: monthData.income,
+            expenses: monthData.expenses
+        };
+    } catch (error) {
+        console.error('Error getting monthly transactions:', error);
+        return {
+            income: [],
+            expenses: []
+        };
+    }
+}
+
+/**
  * ========================================
  * MONTHLY SUMMARY
  * ========================================
  */
 async function updateMonthlySummary() {
     try {
-        const income = await getMonthlyIncome(currentBsYear, currentBsMonth);
-        const expense = await getMonthlyExpense(currentBsYear, currentBsMonth);
+        const monthData = await getMonthData(currentBsYear, currentBsMonth);
+        const income = monthData.income.reduce((sum, item) => sum + parseFloat(item.amount || 0), 0);
+        const expense = monthData.expenses.reduce((sum, item) => sum + parseFloat(item.amount || 0), 0);
         const savings = income - expense;
 
         const budgets = await getMonthBudget(currentBsYear, currentBsMonth);
@@ -3887,13 +4005,13 @@ async function openDateDrawer(bsDate, adDate) {
 
         const data = await getDateData(bsDate);
 
-        const insurances = await insuranceDB.getAll();
+        const insurances = await enhancedInsuranceDB.getAll();
         const insuranceRenewals = insurances.filter(ins => ins.expiryDate === bsDate);
 
-        const services = await vehicleServiceDB.getAll();
+        const services = await enhancedVehicleServiceDB.getAll();
         const vehicleServices = services.filter(svc => svc.date === bsDate || svc.nextDue === bsDate);
 
-        const subscriptions = await subscriptionDB.getAll();
+        const subscriptions = await enhancedSubscriptionDB.getAll();
         const subRenewals = subscriptions.filter(sub => sub.renewalDate === bsDate);
 
         let html = `
@@ -4127,17 +4245,17 @@ function showIncomeExpenseForm(type, date = null, existingTransaction = null) {
                 // Update existing transaction
                 data.id = existingTransaction.id;
                 if (type === 'income') {
-                    await incomeDB.update(data);
+                    await enhancedIncomeDB.update(data);
                 } else {
-                    await expenseDB.update(data);
+                    await enhancedExpenseDB.update(data);
                 }
                 showNotification(`✅ ${type === 'income' ? 'Income' : 'Expense'} updated successfully!`, 'success');
             } else {
                 // Add new transaction
                 if (type === 'income') {
-                    await incomeDB.add(data);
+                    await enhancedIncomeDB.add(data);
                 } else {
-                    await expenseDB.add(data);
+                    await enhancedExpenseDB.add(data);
                 }
                 showNotification(`✅ ${type === 'income' ? 'Income' : 'Expense'} added successfully!`, 'success');
             }
@@ -4264,9 +4382,9 @@ function showRecurringForm(recurring = null) {
         try {
             if (recurring) {
                 data.id = recurring.id;
-                await recurringDB.update(data);
+                await enhancedRecurringDB.update(data);
             } else {
-                await recurringDB.add(data);
+                await enhancedRecurringDB.add(data);
             }
 
             closeModal();
@@ -4281,7 +4399,7 @@ function showRecurringForm(recurring = null) {
 
 async function renderRecurringList() {
     const container = document.getElementById('recurringList');
-    const recurring = await recurringDB.getAll();
+    const recurring = await enhancedRecurringDB.getAll();
 
     if (recurring.length === 0) {
         container.innerHTML = '<p style="color: var(--text-secondary);">No recurring transactions</p>';
@@ -4307,7 +4425,7 @@ async function renderRecurringList() {
 async function deleteRecurring(id) {
     if (!confirm('Delete this recurring transaction?')) return;
     try {
-        await recurringDB.delete(id);
+        await enhancedRecurringDB.delete(id);
         renderRecurringList();
     } catch (error) {
         console.error('Error deleting recurring:', error);
@@ -4315,7 +4433,7 @@ async function deleteRecurring(id) {
 }
 
 async function processRecurringTransactions() {
-    const recurring = await recurringDB.getAll();
+    const recurring = await enhancedRecurringDB.getAll();
     const today = getCurrentNepaliDate();
     const todayStr = formatBsDate(today.year, today.month, today.day);
 
@@ -4337,17 +4455,20 @@ async function processRecurringTransactions() {
             };
 
             if (item.type === 'income') {
-                await incomeDB.add(transData);
+                await enhancedIncomeDB.add(transData);
             } else {
-                await expenseDB.add(transData);
+                await enhancedExpenseDB.add(transData);
             }
 
             item.lastProcessed = todayStr;
-            await recurringDB.update(item);
+            await enhancedRecurringDB.update(item);
         }
     }
 }
 
+/**
+ * Helper function to determine if recurring transaction should be processed
+ */
 function shouldProcessRecurring(lastDate, frequency, currentDate) {
     const [lastY, lastM, lastD] = lastDate.split('/').map(Number);
     const [currY, currM, currD] = currentDate.split('/').map(Number);
@@ -5120,7 +5241,7 @@ function showHolidayForm(holiday = null) {
 
 async function renderHolidayList() {
     const list = document.getElementById('holidayList');
-    const holidays = await holidayDB.getAll();
+    const holidays = await enhancedHolidayDB.getAll();
 
     if (holidays.length === 0) {
         list.innerHTML = '<p style="color: var(--text-secondary);">No holidays</p>';
@@ -5145,7 +5266,7 @@ async function deleteHoliday(id) {
     if (!confirm('Delete this holiday?')) return;
 
     try {
-        await holidayDB.delete(id);
+        await enhancedHolidayDB.delete(id);
         renderHolidayList();
         renderCalendar();
     } catch (error) {
@@ -5669,110 +5790,110 @@ async function importAllData(format, fileInputOrFile) {
                     showNotification('🔄 Importing data...', 'info');
 
                     // Clear all databases first
-                    await holidayDB.clear();
-                    await incomeDB.clear();
-                    await expenseDB.clear();
-                    await noteDB.clear();
-                    await shoppingDB.clear();
-                    await budgetDB.clear();
-                    await billDB.clear();
-                    await goalDB.clear();
-                    await recurringDB.clear();
-                    await insuranceDB.clear();
-                    await vehicleDB.clear();
-                    await vehicleServiceDB.clear();
-                    await subscriptionDB.clear();
-                    await customTypeDB.clear();
-                    await customItemDB.clear();
+                    await enhancedHolidayDB.clear();
+                    await enhancedIncomeDB.clear();
+                    await enhancedExpenseDB.clear();
+                    await enhancedNoteDB.clear();
+                    await enhancedShoppingDB.clear();
+                    await enhancedBudgetDB.clear();
+                    await enhancedBillDB.clear();
+                    await enhancedGoalDB.clear();
+                    await enhancedRecurringDB.clear();
+                    await enhancedInsuranceDB.clear();
+                    await enhancedVehicleDB.clear();
+                    await enhancedVehicleServiceDB.clear();
+                    await enhancedSubscriptionDB.clear();
+                    await enhancedCustomTypeDB.clear();
+                    await enhancedCustomItemDB.clear();
 
                     // Restore data by store
                     if (importData.data.holidays) {
                         for (const holiday of importData.data.holidays) {
-                            await holidayDB.add(holiday);
+                            await enhancedHolidayDB.add(holiday);
                         }
                     }
 
                     if (importData.data.income) {
                         for (const income of importData.data.income) {
-                            await incomeDB.add(income);
+                            await enhancedIncomeDB.add(income);
                         }
                     }
 
                     if (importData.data.expenses) {
                         for (const expense of importData.data.expenses) {
-                            await expenseDB.add(expense);
+                            await enhancedExpenseDB.add(expense);
                         }
                     }
 
                     if (importData.data.notes) {
                         for (const note of importData.data.notes) {
-                            await noteDB.add(note);
+                            await enhancedNoteDB.add(note);
                         }
                     }
 
                     if (importData.data.shopping) {
                         for (const item of importData.data.shopping) {
-                            await shoppingDB.add(item);
+                            await enhancedShoppingDB.add(item);
                         }
                     }
 
                     if (importData.data.budgets) {
                         for (const budget of importData.data.budgets) {
-                            await budgetDB.add(budget);
+                            await enhancedBudgetDB.add(budget);
                         }
                     }
 
                     if (importData.data.bills) {
                         for (const bill of importData.data.bills) {
-                            await billDB.add(bill);
+                            await enhancedBillDB.add(bill);
                         }
                     }
 
                     if (importData.data.goals) {
                         for (const goal of importData.data.goals) {
-                            await goalDB.add(goal);
+                            await enhancedGoalDB.add(goal);
                         }
                     }
 
                     if (importData.data.recurring) {
                         for (const recurring of importData.data.recurring) {
-                            await recurringDB.add(recurring);
+                            await enhancedRecurringDB.add(recurring);
                         }
                     }
 
                     if (importData.data.insurance) {
                         for (const insurance of importData.data.insurance) {
-                            await insuranceDB.add(insurance);
+                            await enhancedInsuranceDB.add(insurance);
                         }
                     }
 
                     if (importData.data.vehicles) {
                         for (const vehicle of importData.data.vehicles) {
-                            await vehicleDB.add(vehicle);
+                            await enhancedVehicleDB.add(vehicle);
                         }
                     }
 
                     if (importData.data.vehicleServices) {
                         for (const service of importData.data.vehicleServices) {
-                            await vehicleServiceDB.add(service);
+                            await enhancedVehicleServiceDB.add(service);
                         }
                     }
 
                     if (importData.data.subscriptions) {
                         for (const subscription of importData.data.subscriptions) {
-                            await subscriptionDB.add(subscription);
+                            await enhancedSubscriptionDB.add(subscription);
                         }
                     }
 
                     if (importData.data.customTypes) {
                         for (const customType of importData.data.customTypes) {
-                            await customTypeDB.add(customType);
+                            await enhancedCustomTypeDB.add(customType);
                         }
                     }
 
                     if (importData.data.customItems) {
                         for (const customItem of importData.data.customItems) {
-                            await customItemDB.add(customItem);
+                            await enhancedCustomItemDB.add(customItem);
                         }
                     }
 
@@ -5880,21 +6001,21 @@ async function clearAllData() {
         showNotification('🗑️ Clearing all data...', 'info');
         
         // Clear all databases
-        await holidayDB.clear();
-        await incomeDB.clear();
-        await expenseDB.clear();
-        await noteDB.clear();
-        await shoppingDB.clear();
-        await budgetDB.clear();
-        await billDB.clear();
-        await goalDB.clear();
-        await recurringDB.clear();
-        await insuranceDB.clear();
-        await vehicleDB.clear();
-        await vehicleServiceDB.clear();
-        await subscriptionDB.clear();
-        await customTypeDB.clear();
-        await customItemDB.clear();
+        await enhancedHolidayDB.clear();
+        await enhancedIncomeDB.clear();
+        await enhancedExpenseDB.clear();
+        await enhancedNoteDB.clear();
+        await enhancedShoppingDB.clear();
+        await enhancedBudgetDB.clear();
+        await enhancedBillDB.clear();
+        await enhancedGoalDB.clear();
+        await enhancedRecurringDB.clear();
+        await enhancedInsuranceDB.clear();
+        await enhancedVehicleDB.clear();
+        await enhancedVehicleServiceDB.clear();
+        await enhancedSubscriptionDB.clear();
+        await enhancedCustomTypeDB.clear();
+        await enhancedCustomItemDB.clear();
         
         // Clear local storage
         localStorage.removeItem('defaultCurrency');
@@ -5957,7 +6078,7 @@ async function checkUpcomingAlerts() {
     let alerts = [];
 
     // Check insurance expiring soon
-    const insurances = await insuranceDB.getAll();
+    const insurances = await enhancedInsuranceDB.getAll();
     const expiringInsurance = insurances.filter(ins => 
         ins.status === 'active' && 
         ins.expiryDate >= todayStr && 
@@ -5969,7 +6090,7 @@ async function checkUpcomingAlerts() {
     });
 
     // Check bills due soon
-    const bills = await billDB.getAll();
+    const bills = await enhancedBillDB.getAll();
     const dueBills = bills.filter(bill =>
         bill.status !== 'paid' &&
         bill.dueDate >= todayStr &&
@@ -5981,7 +6102,7 @@ async function checkUpcomingAlerts() {
     });
 
     // Check subscriptions renewing soon
-    const subscriptions = await subscriptionDB.getAll();
+    const subscriptions = await enhancedSubscriptionDB.getAll();
     const renewingSubs = subscriptions.filter(sub =>
         sub.status === 'active' &&
         sub.renewalDate >= todayStr &&
@@ -6070,7 +6191,7 @@ function downloadFile(content, filename, type) {
 // Process Goals Import
 async function processGoalsImport(data) {
     if (data.goals && Array.isArray(data.goals)) {
-        const existingGoals = await goalDB.getAll();
+        const existingGoals = await enhancedGoalDB.getAll();
         const existingKeys = new Set();
         existingGoals.forEach(goal => {
             const key = `${goal.name.toLowerCase().trim()}-${goal.targetAmount}`;
@@ -6082,7 +6203,7 @@ async function processGoalsImport(data) {
             const { id, ...goalData } = goal;
             const key = `${goalData.name.toLowerCase().trim()}-${goalData.targetAmount}`;
             if (!existingKeys.has(key)) {
-                await goalDB.add(goalData);
+                await enhancedGoalDB.add(goalData);
                 existingKeys.add(key);
                 addedCount++;
             } else {
@@ -6130,12 +6251,15 @@ async function processInsuranceImport(data) {
         console.log('🐛 DEBUG: Found insurance array', { length: insuranceData.length });
         
         console.log('🐛 DEBUG: Getting existing insurance from DB');
-        const existingInsurance = await insuranceDB.getAll();
+        const existingInsurance = await enhancedInsuranceDB.getAll();
         console.log('🐛 DEBUG: Existing insurance retrieved', { count: existingInsurance.length });
         
         const existingKeys = new Set();
         existingInsurance.forEach(insurance => {
-            const key = `${insurance.company.toLowerCase().trim()}-${insurance.policyNumber.toLowerCase().trim()}`;
+            // Handle both provider and company fields, with fallback to empty string
+            const company = insurance.provider || insurance.company || '';
+            const policyNumber = insurance.policyNumber || '';
+            const key = `${company.toString().toLowerCase().trim()}-${policyNumber.toString().toLowerCase().trim()}`;
             existingKeys.add(key);
         });
         console.log('🐛 DEBUG: Existing keys created', { count: existingKeys.size });
@@ -6145,13 +6269,17 @@ async function processInsuranceImport(data) {
         for (const [index, insurance] of insuranceData.entries()) {
             console.log(`🐛 DEBUG: Processing insurance item ${index + 1}/${insuranceData.length}`, {
                 name: insurance.name,
+                provider: insurance.provider,
                 company: insurance.company,
                 policyNumber: insurance.policyNumber
             });
             
             try {
                 const { id, ...insuranceItemData } = insurance;
-                const key = `${insuranceItemData.company?.toLowerCase().trim() || ''}-${insuranceItemData.policyNumber?.toLowerCase().trim() || ''}`;
+                // Use provider field first, fallback to company
+                const company = insuranceItemData.provider || insuranceItemData.company || '';
+                const policyNumber = insuranceItemData.policyNumber || '';
+                const key = `${company.toString().toLowerCase().trim()}-${policyNumber.toString().toLowerCase().trim()}`;
                 
                 console.log(`🐛 DEBUG: Checking duplicate key`, { key });
                 
@@ -6177,7 +6305,7 @@ async function processInsuranceImport(data) {
                     
                     console.log(`🐛 DEBUG: Processed insurance data`, processedData);
                     
-                    await insuranceDB.add(processedData);
+                    await enhancedInsuranceDB.add(processedData);
                     existingKeys.add(key);
                     addedCount++;
                     
@@ -6237,7 +6365,7 @@ async function processVehicleImport(data) {
         if (data.vehicles && Array.isArray(data.vehicles)) {
             console.log('🐛 DEBUG: Found vehicles array', { length: data.vehicles.length });
             
-            const existingVehicles = await vehicleDB.getAll();
+            const existingVehicles = await enhancedVehicleDB.getAll();
             console.log('🐛 DEBUG: Existing vehicles retrieved', { count: existingVehicles.length });
             
             const existingKeys = new Set();
@@ -6276,7 +6404,7 @@ async function processVehicleImport(data) {
                             createdAt: vehicleData.createdAt || new Date().toISOString()
                         };
                         
-                        await vehicleDB.add(processedData);
+                        await enhancedVehicleDB.add(processedData);
                         existingKeys.add(key);
                         addedCount++;
                         
@@ -6324,7 +6452,7 @@ async function processVehicleImport(data) {
 // Process Subscription Import
 async function processSubscriptionImport(data) {
     if (data.subscriptions && Array.isArray(data.subscriptions)) {
-        const existingSubscriptions = await subscriptionDB.getAll();
+        const existingSubscriptions = await enhancedSubscriptionDB.getAll();
         const existingKeys = new Set();
         existingSubscriptions.forEach(subscription => {
             const key = `${subscription.name.toLowerCase().trim()}-${subscription.category.toLowerCase().trim()}`;
@@ -6336,7 +6464,7 @@ async function processSubscriptionImport(data) {
             const { id, ...subscriptionData } = subscription;
             const key = `${subscriptionData.name.toLowerCase().trim()}-${subscriptionData.category.toLowerCase().trim()}`;
             if (!existingKeys.has(key)) {
-                await subscriptionDB.add(subscriptionData);
+                await enhancedSubscriptionDB.add(subscriptionData);
                 existingKeys.add(key);
                 addedCount++;
             } else {
@@ -6354,7 +6482,7 @@ async function processSubscriptionImport(data) {
 // Process Custom Import
 async function processCustomImport(data) {
     if (data.customTypes && Array.isArray(data.customTypes)) {
-        const existingTypes = await customTypeDB.getAll();
+        const existingTypes = await enhancedCustomTypeDB.getAll();
         const existingKeys = new Set();
         existingTypes.forEach(type => {
             const key = type.name.toLowerCase().trim();
@@ -6366,7 +6494,7 @@ async function processCustomImport(data) {
             const { id, ...typeData } = type;
             const key = typeData.name.toLowerCase().trim();
             if (!existingKeys.has(key)) {
-                await customTypeDB.add(typeData);
+                await enhancedCustomTypeDB.add(typeData);
                 existingKeys.add(key);
                 addedCount++;
             } else {
@@ -6377,7 +6505,7 @@ async function processCustomImport(data) {
     }
     
     if (data.customItems && Array.isArray(data.customItems)) {
-        const existingItems = await customItemDB.getAll();
+        const existingItems = await enhancedCustomItemDB.getAll();
         const existingKeys = new Set();
         existingItems.forEach(item => {
             const key = `${item.typeId}-${item.name.toLowerCase().trim()}`;
@@ -6389,7 +6517,7 @@ async function processCustomImport(data) {
             const { id, ...itemData } = item;
             const key = `${itemData.typeId}-${itemData.name.toLowerCase().trim()}`;
             if (!existingKeys.has(key)) {
-                await customItemDB.add(itemData);
+                await enhancedCustomItemDB.add(itemData);
                 existingKeys.add(key);
                 addedCount++;
             } else {
@@ -6406,7 +6534,7 @@ async function processCustomImport(data) {
 // Process Shopping Import
 async function processShoppingImport(data) {
     if (data.shopping && Array.isArray(data.shopping)) {
-        const existingShopping = await shoppingDB.getAll();
+        const existingShopping = await enhancedShoppingDB.getAll();
         const existingKeys = new Set();
         existingShopping.forEach(item => {
             const key = item.name.toLowerCase().trim();
@@ -6418,7 +6546,7 @@ async function processShoppingImport(data) {
             const { id, ...itemData } = item;
             const key = itemData.name.toLowerCase().trim();
             if (!existingKeys.has(key)) {
-                await shoppingDB.add(itemData);
+                await enhancedShoppingDB.add(itemData);
                 existingKeys.add(key);
                 addedCount++;
             } else {

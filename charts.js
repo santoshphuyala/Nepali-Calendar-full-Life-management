@@ -31,8 +31,9 @@ async function renderTrendChart(bsYear, bsMonth) {
         if (year < 2082) continue;
 
         months.push(`${getNepaliMonthName(month).substring(0, 3)} ${year}`);
-        const income = await getMonthlyIncome(year, month);
-        const expense = await getMonthlyExpense(year, month);
+        const monthData = await getMonthData(year, month);
+        const income = monthData.income.reduce((sum, item) => sum + parseFloat(item.amount || 0), 0);
+        const expense = monthData.expenses.reduce((sum, item) => sum + parseFloat(item.amount || 0), 0);
         incomeData.push(income);
         expenseData.push(expense);
     }

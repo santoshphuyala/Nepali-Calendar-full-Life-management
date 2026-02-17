@@ -12,7 +12,7 @@ let selectedCustomTypeId = null;
  */
 async function renderCustomTypes() {
     const container = document.getElementById('customTypes');
-    const types = await customTypeDB.getAll();
+    const types = await enhancedCustomTypeDB.getAll();
 
     if (types.length === 0) {
         container.innerHTML = `
@@ -104,9 +104,9 @@ function showCustomTypeForm(type = null) {
         try {
             if (type) {
                 data.id = type.id;
-                await customTypeDB.update(data);
+                await enhancedCustomTypeDB.update(data);
             } else {
-                const id = await customTypeDB.add(data);
+                const id = await enhancedCustomTypeDB.add(data);
                 selectedCustomTypeId = id;
             }
 
@@ -128,12 +128,12 @@ async function deleteCustomType(id) {
 
     try {
         // Delete all items of this type
-        const items = await customItemDB.getByIndex('typeId', id);
+        const items = await enhancedCustomItemDB.getByIndex('typeId', id);
         for (const item of items) {
-            await customItemDB.delete(item.id);
+            await enhancedCustomItemDB.delete(item.id);
         }
 
-        await customTypeDB.delete(id);
+        await enhancedCustomTypeDB.delete(id);
         
         if (selectedCustomTypeId === id) {
             selectedCustomTypeId = null;
@@ -152,8 +152,8 @@ async function deleteCustomType(id) {
  */
 async function renderCustomItems(typeId) {
     const container = document.getElementById('customItems');
-    const type = await customTypeDB.get(typeId);
-    const items = await customItemDB.getByIndex('typeId', typeId);
+    const type = await enhancedCustomTypeDB.get(typeId);
+    const items = await enhancedCustomItemDB.getByIndex('typeId', typeId);
 
     let html = `
         <div class="custom-items-header">
@@ -199,7 +199,7 @@ async function renderCustomItems(typeId) {
  * Show custom item form
  */
 async function showCustomItemForm(typeId, item = null) {
-    const type = await customTypeDB.get(typeId);
+    const type = await enhancedCustomTypeDB.get(typeId);
 
     let html = `
         <h2>${item ? 'Edit' : 'Add'} ${type.name}</h2>
@@ -243,9 +243,9 @@ async function showCustomItemForm(typeId, item = null) {
         try {
             if (item) {
                 data.id = item.id;
-                await customItemDB.update(data);
+                await enhancedCustomItemDB.update(data);
             } else {
-                await customItemDB.add(data);
+                await enhancedCustomItemDB.add(data);
             }
 
             closeModal();
@@ -265,7 +265,7 @@ async function deleteCustomItem(id) {
     if (!confirm('Delete this item?')) return;
 
     try {
-        await customItemDB.delete(id);
+        await enhancedCustomItemDB.delete(id);
         await renderCustomItems(selectedCustomTypeId);
         alert('Item deleted!');
     } catch (error) {

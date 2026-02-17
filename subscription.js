@@ -9,7 +9,7 @@
  * Render subscription summary
  */
 async function renderSubscriptionSummary() {
-    const allSubs = await subscriptionDB.getAll();
+    const allSubs = await enhancedSubscriptionDB.getAll();
     const activeSubs = allSubs.filter(s => s.status === 'active');
 
     const monthlyTotal = activeSubs.reduce((sum, sub) => {
@@ -138,9 +138,9 @@ function showSubscriptionForm(subscription = null) {
         try {
             if (subscription) {
                 data.id = subscription.id;
-                await subscriptionDB.update(data);
+                await enhancedSubscriptionDB.update(data);
             } else {
-                await subscriptionDB.add(data);
+                await enhancedSubscriptionDB.add(data);
             }
 
             closeModal();
@@ -164,7 +164,7 @@ async function renderSubscriptionList() {
     const activeFilter = document.querySelector('#subscriptionView .filter-btn.active');
     const filter = activeFilter ? activeFilter.dataset.filter : 'all';
 
-    let subscriptions = await subscriptionDB.getAll();
+    let subscriptions = await enhancedSubscriptionDB.getAll();
 
     if (filter !== 'all') {
         subscriptions = subscriptions.filter(s => s.status === filter);
@@ -245,11 +245,11 @@ async function renderSubscriptionList() {
  * Renew subscription
  */
 async function renewSubscription(id) {
-    const sub = await subscriptionDB.get(id);
+    const sub = await enhancedSubscriptionDB.get(id);
     
     // Add expense
     const today = getCurrentNepaliDate();
-    await expenseDB.add({
+    await enhancedExpenseDB.add({
         date_bs: formatBsDate(today.year, today.month, today.day),
         category: 'Subscription',
         amount: sub.cost,
@@ -281,7 +281,7 @@ async function renewSubscription(id) {
     }
 
     sub.renewalDate = formatBsDate(newYear, newMonth, day);
-    await subscriptionDB.update(sub);
+    await enhancedSubscriptionDB.update(sub);
 
     await renderSubscriptionList();
     await renderSubscriptionSummary();
@@ -295,7 +295,7 @@ async function deleteSubscription(id) {
     if (!confirm('Delete this subscription?')) return;
 
     try {
-        await subscriptionDB.delete(id);
+        await enhancedSubscriptionDB.delete(id);
         await renderSubscriptionList();
         await renderSubscriptionSummary();
         alert('Subscription deleted!');

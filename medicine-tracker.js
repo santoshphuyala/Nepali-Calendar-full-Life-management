@@ -13,7 +13,7 @@ async function showMedicineForm(existingMedicine = null) {
         return;
     }
     
-    const familyMembers = await familyMembersDB.getAll();
+    const familyMembers = await enhancedFamilyMembersDB.getAll();
     const familyMemberOptions = familyMembers.map(member => 
         `<option value="${member.id}">${member.name}</option>` 
     ).join('');
@@ -166,10 +166,10 @@ async function saveMedicine(medicineId = null) {
         }
         
         if (medicineId) {
-            await medicineDB.update({ ...medicineData, id: medicineId });
+            await enhancedMedicineDB.update({ ...medicineData, id: medicineId });
             showNotification('Medicine updated successfully', 'success');
         } else {
-            await medicineDB.add(medicineData);
+            await enhancedMedicineDB.add(medicineData);
             showNotification('Medicine added successfully', 'success');
         }
         
@@ -188,7 +188,7 @@ async function deleteMedicine(medicineId) {
     }
     
     try {
-        await medicineDB.delete(medicineId);
+        await enhancedMedicineDB.delete(medicineId);
         showNotification('Medicine deleted successfully', 'success');
         closeModal();
         await renderMedicineList();
@@ -204,8 +204,8 @@ async function renderMedicineList() {
     if (!medicineList) return;
     
     try {
-        const medicines = await medicineDB.getAll();
-        const familyMembers = await familyMembersDB.getAll();
+        const medicines = await enhancedMedicineDB.getAll();
+        const familyMembers = await enhancedFamilyMembersDB.getAll();
         
         const memberMap = {};
         familyMembers.forEach(member => {
@@ -304,7 +304,7 @@ async function checkLowStockMedicines(medicines) {
 
 async function updateMedicineStats() {
     try {
-        const medicines = await medicineDB.getAll();
+        const medicines = await enhancedMedicineDB.getAll();
         const today = new Date().toISOString().split('T')[0];
         
         const activeMedicines = medicines.filter(m => m.status === 'active' && 
@@ -324,7 +324,7 @@ async function updateMedicineStats() {
         if (expiringCount) expiringCount.textContent = expiringSoon.length;
         
         if (todayCount) {
-            const todayDoses = await dosageScheduleDB.getByIndex('date', today);
+            const todayDoses = await enhancedDosageScheduleDB.getByIndex('date', today);
             todayCount.textContent = todayDoses.length;
         }
         
@@ -442,10 +442,10 @@ async function saveFamilyMember(memberId = null) {
         }
         
         if (memberId) {
-            await familyMembersDB.update({ ...memberData, id: memberId });
+            await enhancedFamilyMembersDB.update({ ...memberData, id: memberId });
             showNotification('Family member updated successfully', 'success');
         } else {
-            await familyMembersDB.add(memberData);
+            await enhancedFamilyMembersDB.add(memberData);
             showNotification('Family member added successfully', 'success');
         }
         
@@ -464,7 +464,7 @@ async function deleteFamilyMember(memberId) {
     }
     
     try {
-        await familyMembersDB.delete(memberId);
+        await enhancedFamilyMembersDB.delete(memberId);
         showNotification('Family member deleted successfully', 'success');
         closeModal();
         await renderFamilyMembersList();
@@ -480,7 +480,7 @@ async function renderFamilyMembersList() {
     if (!familyMembersList) return;
     
     try {
-        const familyMembers = await familyMembersDB.getAll();
+        const familyMembers = await enhancedFamilyMembersDB.getAll();
         
         if (familyMembers.length === 0) {
             familyMembersList.innerHTML = `
@@ -541,7 +541,7 @@ async function renderFamilyMembersList() {
 
 async function getMemberMedicineCount(memberId) {
     try {
-        const medicines = await medicineDB.getByIndex('familyMemberId', memberId);
+        const medicines = await enhancedMedicineDB.getByIndex('familyMemberId', memberId);
         const today = new Date().toISOString().split('T')[0];
         return medicines.filter(m => m.status === 'active' && 
             (!m.endDate || m.endDate >= today)).length;
@@ -554,7 +554,7 @@ async function updateMemberFilter() {
     const memberFilter = document.getElementById('memberFilter');
     if (!memberFilter) return;
     
-    const familyMembers = await familyMembersDB.getAll();
+    const familyMembers = await enhancedFamilyMembersDB.getAll();
     
     memberFilter.innerHTML = '<option value="all">All Family Members</option>' +
         familyMembers.map(member => 
@@ -578,12 +578,12 @@ async function markDoseTaken(medicineId) {
             createdAt: now.toISOString()
         };
         
-        await dosageScheduleDB.add(doseData);
+        await enhancedDosageScheduleDB.add(doseData);
         
         // Decrement stock quantity
-        const medicine = await medicineDB.get(medicineId);
+        const medicine = await enhancedMedicineDB.get(medicineId);
         if (medicine && medicine.stockQuantity > 0) {
-            await medicineDB.update({ ...medicine, stockQuantity: medicine.stockQuantity - 1, updatedAt: new Date().toISOString() });
+            await enhancedMedicineDB.update({ ...medicine, stockQuantity: medicine.stockQuantity - 1, updatedAt: new Date().toISOString() });
         }
         
         showNotification('Dose marked as taken', 'success');
@@ -606,7 +606,7 @@ async function renderScheduleList() {
         const dateStr = today.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
         
         const todayStr = today.toISOString().split('T')[0];
-        const schedules = await dosageScheduleDB.getByIndex('date', todayStr);
+        const schedules = await enhancedDosageScheduleDB.getByIndex('date', todayStr);
         
         if (schedules.length === 0) {
             scheduleList.innerHTML = `
@@ -620,7 +620,7 @@ async function renderScheduleList() {
         }
         
         const scheduleHtml = await Promise.all(schedules.map(async schedule => {
-            const medicine = await medicineDB.get(schedule.medicineId);
+            const medicine = await enhancedMedicineDB.get(schedule.medicineId);
             const medicineName = medicine ? medicine.name : 'Unknown Medicine';
             
             return `
@@ -650,7 +650,7 @@ async function renderPrescriptionsList() {
     if (!prescriptionsList) return;
     
     try {
-        const prescriptions = await prescriptionsDB.getAll();
+        const prescriptions = await enhancedPrescriptionsDB.getAll();
         
         if (prescriptions.length === 0) {
             prescriptionsList.innerHTML = `
@@ -663,12 +663,12 @@ async function renderPrescriptionsList() {
             return;
         }
         
-        const allFamilyMembers = await familyMembersDB.getAll();
+        const allFamilyMembers = await enhancedFamilyMembersDB.getAll();
         const memberMap = {};
         allFamilyMembers.forEach(m => { memberMap[m.id] = m.name; });
 
         const prescriptionHtml = await Promise.all(prescriptions.map(async prescription => {
-            const medicine = await medicineDB.get(prescription.medicineId);
+            const medicine = await enhancedMedicineDB.get(prescription.medicineId);
             const medicineName = medicine ? medicine.name : 'Unknown Medicine';
             const memberName = prescription.familyMemberId ? (memberMap[prescription.familyMemberId] || 'Unknown') : 'General';
             
@@ -707,8 +707,8 @@ async function showPrescriptionForm(existingPrescription = null) {
         return;
     }
     
-    const medicines = await medicineDB.getAll();
-    const familyMembers = await familyMembersDB.getAll();
+    const medicines = await enhancedMedicineDB.getAll();
+    const familyMembers = await enhancedFamilyMembersDB.getAll();
     
     const medicineOptions = medicines.map(medicine => 
         `<option value="${medicine.id}">${medicine.name}</option>`
@@ -807,10 +807,10 @@ async function savePrescription(prescriptionId = null) {
         }
         
         if (prescriptionId) {
-            await prescriptionsDB.update({ ...prescriptionData, id: prescriptionId });
+            await enhancedPrescriptionsDB.update({ ...prescriptionData, id: prescriptionId });
             showNotification('Prescription updated successfully', 'success');
         } else {
-            await prescriptionsDB.add(prescriptionData);
+            await enhancedPrescriptionsDB.add(prescriptionData);
             showNotification('Prescription added successfully', 'success');
         }
         
@@ -828,7 +828,7 @@ async function deletePrescription(prescriptionId) {
     }
     
     try {
-        await prescriptionsDB.delete(prescriptionId);
+        await enhancedPrescriptionsDB.delete(prescriptionId);
         showNotification('Prescription deleted successfully', 'success');
         closeModal();
         await renderPrescriptionsList();
@@ -845,16 +845,16 @@ async function exportMedicineData(type, format = 'json') {
         
         switch(type) {
             case 'medicines':
-                data.medicines = await medicineDB.getAll();
+                data.medicines = await enhancedMedicineDB.getAll();
                 break;
             case 'family':
-                data.familyMembers = await familyMembersDB.getAll();
+                data.familyMembers = await enhancedFamilyMembersDB.getAll();
                 break;
             case 'complete':
-                data.medicines = await medicineDB.getAll();
-                data.familyMembers = await familyMembersDB.getAll();
-                data.prescriptions = await prescriptionsDB.getAll();
-                data.dosageSchedule = await dosageScheduleDB.getAll();
+                data.medicines = await enhancedMedicineDB.getAll();
+                data.familyMembers = await enhancedFamilyMembersDB.getAll();
+                data.prescriptions = await enhancedPrescriptionsDB.getAll();
+                data.dosageSchedule = await enhancedDosageScheduleDB.getAll();
                 break;
         }
         
@@ -919,28 +919,28 @@ async function importMedicineData(format, fileInput) {
                     if (importData.medicines) {
                         for (const item of importData.medicines) {
                             delete item.id;
-                            await medicineDB.add(item);
+                            await enhancedMedicineDB.add(item);
                         }
                     }
                     
                     if (importData.familyMembers) {
                         for (const item of importData.familyMembers) {
                             delete item.id;
-                            await familyMembersDB.add(item);
+                            await enhancedFamilyMembersDB.add(item);
                         }
                     }
                     
                     if (importData.prescriptions) {
                         for (const item of importData.prescriptions) {
                             delete item.id;
-                            await prescriptionsDB.add(item);
+                            await enhancedPrescriptionsDB.add(item);
                         }
                     }
                     
                     if (importData.dosageSchedule) {
                         for (const item of importData.dosageSchedule) {
                             delete item.id;
-                            await dosageScheduleDB.add(item);
+                            await enhancedDosageScheduleDB.add(item);
                         }
                     }
                     
@@ -977,7 +977,7 @@ async function importMedicineData(format, fileInput) {
 // Buy medicine function - adds to shopping list and creates expense
 async function buyMedicine(medicineId, medicineName, currentStock) {
     try {
-        const familyMembers = await familyMembersDB.getAll();
+        const familyMembers = await enhancedFamilyMembersDB.getAll();
         const familyMemberOptions = familyMembers.map(member => 
             `<option value="${member.id}">${member.name}</option>`
         ).join('');
@@ -1072,7 +1072,7 @@ async function buyMedicine(medicineId, medicineName, currentStock) {
                 updatedAt: new Date().toISOString()
             };
             
-            await shoppingDB.add(shoppingItem);
+            await enhancedShoppingDB.add(shoppingItem);
             
             const today = getCurrentNepaliDate();
             const bsDate = formatBsDate(today.year, today.month, today.day);
@@ -1088,12 +1088,12 @@ async function buyMedicine(medicineId, medicineName, currentStock) {
                 notes: `Purchased ${quantity} units of ${medicineName} from ${store}. ${notes || ''}`
             };
             
-            await expenseDB.add(expenseData);
+            await enhancedExpenseDB.add(expenseData);
             
-            const medicine = await medicineDB.get(medicineId);
+            const medicine = await enhancedMedicineDB.get(medicineId);
             if (medicine) {
                 const newStock = (medicine.stockQuantity || 0) + quantity;
-                await medicineDB.update({ ...medicine, stockQuantity: newStock, updatedAt: new Date().toISOString() });
+                await enhancedMedicineDB.update({ ...medicine, stockQuantity: newStock, updatedAt: new Date().toISOString() });
             }
             
             closeModal();

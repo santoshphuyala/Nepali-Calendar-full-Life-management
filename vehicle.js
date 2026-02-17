@@ -109,9 +109,9 @@ function showVehicleForm(vehicle = null) {
         try {
             if (vehicle) {
                 data.id = vehicle.id;
-                await vehicleDB.update(data);
+                await enhancedVehicleDB.update(data);
             } else {
-                await vehicleDB.add(data);
+                await enhancedVehicleDB.add(data);
             }
 
             closeModal();
@@ -129,7 +129,7 @@ function showVehicleForm(vehicle = null) {
  */
 async function renderVehicleGrid() {
     const container = document.getElementById('vehicleGrid');
-    const vehicles = await vehicleDB.getAll();
+    const vehicles = await enhancedVehicleDB.getAll();
 
     if (vehicles.length === 0) {
         container.innerHTML = '<div class="loading">No vehicles added. Click "Add Vehicle" to get started.</div>';
@@ -198,8 +198,8 @@ async function renderVehicleGrid() {
  * Show service history
  */
 async function showServiceHistory(vehicleId) {
-    const vehicle = await vehicleDB.get(vehicleId);
-    const services = await vehicleServiceDB.getByIndex('vehicleId', vehicleId);
+    const vehicle = await enhancedVehicleDB.get(vehicleId);
+    const services = await enhancedVehicleServiceDB.getByIndex('vehicleId', vehicleId);
 
     const html = `
         <h2>🔧 Service History - ${vehicle.name}</h2>
@@ -315,10 +315,10 @@ function addServiceRecord(vehicleId) {
         };
 
         try {
-            await vehicleServiceDB.add(data);
+            await enhancedVehicleServiceDB.add(data);
             
             // Add to expenses
-            await expenseDB.add({
+            await enhancedExpenseDB.add({
                 date_bs: data.date,
                 category: 'Vehicle',
                 amount: data.cost,
@@ -344,7 +344,7 @@ function addServiceRecord(vehicleId) {
 async function deleteService(id) {
     if (!confirm('Delete this service record?')) return;
     try {
-        await vehicleServiceDB.delete(id);
+        await enhancedVehicleServiceDB.delete(id);
         alert('Service deleted!');
         closeModal();
     } catch (error) {
@@ -356,7 +356,7 @@ async function deleteService(id) {
  * Add fuel expense
  */
 async function addFuelExpense(vehicleId) {
-    const vehicle = await vehicleDB.get(vehicleId);
+    const vehicle = await enhancedVehicleDB.get(vehicleId);
     const today = getCurrentNepaliDate();
 
     const html = `
@@ -420,7 +420,7 @@ async function addFuelExpense(vehicleId) {
         const mileage = document.getElementById('fuelMileage').value;
 
         try {
-            await expenseDB.add({
+            await enhancedExpenseDB.add({
                 date_bs: document.getElementById('fuelDate').value,
                 category: 'Fuel',
                 amount: totalCost,
@@ -433,7 +433,7 @@ async function addFuelExpense(vehicleId) {
             // Update mileage if provided
             if (mileage) {
                 vehicle.mileage = parseFloat(mileage);
-                await vehicleDB.update(vehicle);
+                await enhancedVehicleDB.update(vehicle);
             }
 
             closeModal();
@@ -450,13 +450,13 @@ async function addFuelExpense(vehicleId) {
  * Update mileage
  */
 async function updateMileage(vehicleId) {
-    const vehicle = await vehicleDB.get(vehicleId);
+    const vehicle = await enhancedVehicleDB.get(vehicleId);
 
     const newMileage = prompt(`Enter current mileage for ${vehicle.name} (KM):`, vehicle.mileage);
     if (!newMileage || isNaN(newMileage)) return;
 
     vehicle.mileage = parseFloat(newMileage);
-    await vehicleDB.update(vehicle);
+    await enhancedVehicleDB.update(vehicle);
     renderVehicleGrid();
     alert('Mileage updated!');
 }
@@ -468,12 +468,12 @@ async function deleteVehicle(id) {
     if (!confirm('Delete this vehicle? This will also delete all service records.')) return;
 
     try {
-        const services = await vehicleServiceDB.getByIndex('vehicleId', id);
+        const services = await enhancedVehicleServiceDB.getByIndex('vehicleId', id);
         for (const service of services) {
-            await vehicleServiceDB.delete(service.id);
+            await enhancedVehicleServiceDB.delete(service.id);
         }
 
-        await vehicleDB.delete(id);
+        await enhancedVehicleDB.delete(id);
         renderVehicleGrid();
         alert('Vehicle deleted!');
     } catch (error) {

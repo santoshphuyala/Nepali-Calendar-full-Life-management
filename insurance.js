@@ -12,7 +12,7 @@ async function renderInsuranceStats() {
     console.log('🐛 DEBUG: renderInsuranceStats called');
     
     try {
-        const allPolicies = await insuranceDB.getAll();
+        const allPolicies = await enhancedInsuranceDB.getAll();
         console.log('🐛 DEBUG: Retrieved all policies from DB', { count: allPolicies.length });
         
         const activePolicies = allPolicies.filter(p => p.status === 'active');
@@ -172,9 +172,9 @@ function showInsuranceForm(policy = null) {
         try {
             if (policy) {
                 data.id = policy.id;
-                await insuranceDB.update(data);
+                await enhancedInsuranceDB.update(data);
             } else {
-                await insuranceDB.add(data);
+                await enhancedInsuranceDB.add(data);
             }
 
             closeModal();
@@ -209,7 +209,7 @@ async function renderInsuranceList() {
         const filter = activeFilter ? activeFilter.dataset.filter : 'all';
         console.log('🐛 DEBUG: Current filter', { filter });
 
-        let policies = await insuranceDB.getAll();
+        let policies = await enhancedInsuranceDB.getAll();
         console.log('🐛 DEBUG: Retrieved policies from DB', { count: policies.length });
 
         // Apply filter
@@ -339,7 +339,7 @@ async function renderInsuranceList() {
  * View insurance details
  */
 async function viewInsuranceDetails(id) {
-    const policy = await insuranceDB.get(id);
+    const policy = await enhancedInsuranceDB.get(id);
     
     const typeIcons = {
         life: '👤',
@@ -409,7 +409,7 @@ async function deleteInsurance(id) {
     if (!confirm('Are you sure you want to delete this insurance policy?')) return;
 
     try {
-        await insuranceDB.delete(id);
+        await enhancedInsuranceDB.delete(id);
         await renderInsuranceList();
         await renderInsuranceStats();
         alert('Insurance policy deleted successfully!');

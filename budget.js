@@ -155,9 +155,9 @@ function showBudgetForm(budget = null) {
         try {
             if (budget) {
                 data.id = budget.id;
-                await budgetDB.update(data);
+                await enhancedBudgetDB.update(data);
             } else {
-                await budgetDB.add(data);
+                await enhancedBudgetDB.add(data);
             }
 
             closeModal();
@@ -261,9 +261,9 @@ function showBillForm(bill = null) {
             if (bill) {
                 data.id = bill.id;
                 data.status = bill.status; // Preserve status
-                await billDB.update(data);
+                await enhancedBillDB.update(data);
             } else {
-                await billDB.add(data);
+                await enhancedBillDB.add(data);
             }
 
             closeModal();
@@ -286,7 +286,7 @@ async function renderBillsList() {
     const container = document.getElementById('billsList');
     const activeFilter = document.querySelector('#billsView .filter-btn.active').dataset.filter;
     
-    let bills = await billDB.getAll();
+    let bills = await enhancedBillDB.getAll();
     const today = getCurrentNepaliDate();
     const todayStr = formatBsDate(today.year, today.month, today.day);
 
@@ -393,12 +393,12 @@ async function renderUpcomingBillsList() {
  * Mark bill as paid
  */
 async function markBillPaid(id) {
-    const bill = await billDB.get(id);
+    const bill = await enhancedBillDB.get(id);
     bill.status = 'paid';
     bill.paidAt = new Date().toISOString();
 
     // Add to expenses
-    await expenseDB.add({
+    await enhancedExpenseDB.add({
         date_bs: bill.dueDate,
         category: bill.category,
         amount: bill.amount,
@@ -428,7 +428,7 @@ async function markBillPaid(id) {
         const daysInMonth = getDaysInBSMonth(nextYear, nextMonth);
         const nextDay = Math.min(day, daysInMonth);
 
-        await billDB.add({
+        await enhancedBillDB.add({
             ...bill,
             id: undefined,
             dueDate: formatBsDate(nextYear, nextMonth, nextDay),
@@ -437,7 +437,7 @@ async function markBillPaid(id) {
         });
     }
 
-    await billDB.update(bill);
+    await enhancedBillDB.update(bill);
     await renderBillsList();
     await renderUpcomingBillsList();
     updateMonthlySummary();
@@ -449,7 +449,7 @@ async function markBillPaid(id) {
 async function deleteBill(id) {
     if (!confirm('Delete this bill?')) return;
     try {
-        await billDB.delete(id);
+        await enhancedBillDB.delete(id);
         await renderBillsList();
         await renderUpcomingBillsList();
     } catch (error) {
@@ -523,9 +523,9 @@ function showGoalForm(goal = null) {
         try {
             if (goal) {
                 data.id = goal.id;
-                await goalDB.update(data);
+                await enhancedGoalDB.update(data);
             } else {
-                await goalDB.add(data);
+                await enhancedGoalDB.add(data);
             }
 
             closeModal();
@@ -543,7 +543,7 @@ function showGoalForm(goal = null) {
  */
 async function renderGoalsGrid() {
     const container = document.getElementById('goalsGrid');
-    const goals = await goalDB.getAll();
+    const goals = await enhancedGoalDB.getAll();
 
     if (goals.length === 0) {
         container.innerHTML = '<div class="loading">No goals yet. Create your first savings goal!</div>';
@@ -603,14 +603,14 @@ async function addToGoal(id) {
     const amount = prompt('Enter amount to add (NPR):');
     if (!amount || isNaN(amount) || parseFloat(amount) <= 0) return;
 
-    const goal = await goalDB.get(id);
+    const goal = await enhancedGoalDB.get(id);
     goal.current += parseFloat(amount);
     
     if (goal.current >= goal.target) {
         goal.status = 'completed';
     }
 
-    await goalDB.update(goal);
+    await enhancedGoalDB.update(goal);
     await renderGoalsGrid();
 }
 
@@ -620,7 +620,7 @@ async function addToGoal(id) {
 async function deleteGoal(id) {
     if (!confirm('Delete this goal?')) return;
     try {
-        await goalDB.delete(id);
+        await enhancedGoalDB.delete(id);
         await renderGoalsGrid();
     } catch (error) {
         console.error('Error deleting goal:', error);
@@ -712,7 +712,7 @@ async function deleteBudget(id) {
     if (!confirm('Delete this budget? This will remove the budget limit for this category and month.')) return;
     
     try {
-        await budgetDB.delete(id);
+        await enhancedBudgetDB.delete(id);
         
         // Refresh the budget view
         if (currentView === 'budget') {
