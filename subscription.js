@@ -305,6 +305,32 @@ async function deleteSubscription(id) {
     }
 }
 
+// Initialize subscription list when DOM is ready
+document.addEventListener('DOMContentLoaded', async () => {
+    console.log('🐛 DEBUG: DOMContentLoaded, checking if subscription view needs initialization');
+    
+    // Check if we're on the subscription view
+    const subscriptionModule = document.getElementById('subscriptionModule');
+    if (subscriptionModule && subscriptionModule.classList.contains('active')) {
+        console.log('🐛 DEBUG: Subscription module is active, initializing renderSubscriptionList');
+        await renderSubscriptionList();
+        await renderSubscriptionSummary();
+    } else {
+        console.log('🐛 DEBUG: Subscription module is not active, skipping initialization');
+    }
+});
+
+// Also try to initialize after a short delay to ensure everything is loaded
+setTimeout(async () => {
+    console.log('🐛 DEBUG: Delayed initialization check for subscription');
+    const subscriptionModule = document.getElementById('subscriptionModule');
+    if (subscriptionModule && subscriptionModule.classList.contains('active')) {
+        console.log('🐛 DEBUG: Delayed - Subscription module is active, initializing renderSubscriptionList');
+        await renderSubscriptionList();
+        await renderSubscriptionSummary();
+    }
+}, 1000);
+
 /**
  * Get currency symbol helper
  */

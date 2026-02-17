@@ -273,3 +273,27 @@ async function deleteCustomItem(id) {
         alert('Error deleting item.');
     }
 }
+
+// Initialize custom types when DOM is ready
+document.addEventListener('DOMContentLoaded', async () => {
+    console.log('🐛 DEBUG: DOMContentLoaded, checking if custom view needs initialization');
+    
+    // Check if we're on the custom view
+    const customModule = document.getElementById('customView');
+    if (customModule && customModule.classList.contains('active')) {
+        console.log('🐛 DEBUG: Custom module is active, initializing renderCustomTypes');
+        await renderCustomTypes();
+    } else {
+        console.log('🐛 DEBUG: Custom module is not active, skipping initialization');
+    }
+});
+
+// Also try to initialize after a short delay to ensure everything is loaded
+setTimeout(async () => {
+    console.log('🐛 DEBUG: Delayed initialization check for custom');
+    const customModule = document.getElementById('customView');
+    if (customModule && customModule.classList.contains('active')) {
+        console.log('🐛 DEBUG: Delayed - Custom module is active, initializing renderCustomTypes');
+        await renderCustomTypes();
+    }
+}, 1000);

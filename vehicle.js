@@ -481,3 +481,27 @@ async function deleteVehicle(id) {
         alert('Error deleting vehicle.');
     }
 }
+
+// Initialize vehicle grid when DOM is ready
+document.addEventListener('DOMContentLoaded', async () => {
+    console.log('🐛 DEBUG: DOMContentLoaded, checking if vehicle view needs initialization');
+    
+    // Check if we're on the vehicle view
+    const vehicleModule = document.getElementById('vehicleModule');
+    if (vehicleModule && vehicleModule.classList.contains('active')) {
+        console.log('🐛 DEBUG: Vehicle module is active, initializing renderVehicleGrid');
+        await renderVehicleGrid();
+    } else {
+        console.log('🐛 DEBUG: Vehicle module is not active, skipping initialization');
+    }
+});
+
+// Also try to initialize after a short delay to ensure everything is loaded
+setTimeout(async () => {
+    console.log('🐛 DEBUG: Delayed initialization check for vehicle');
+    const vehicleModule = document.getElementById('vehicleModule');
+    if (vehicleModule && vehicleModule.classList.contains('active')) {
+        console.log('🐛 DEBUG: Delayed - Vehicle module is active, initializing renderVehicleGrid');
+        await renderVehicleGrid();
+    }
+}, 1000);

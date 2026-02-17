@@ -627,6 +627,30 @@ async function deleteGoal(id) {
     }
 }
 
+// Initialize goals grid when DOM is ready
+document.addEventListener('DOMContentLoaded', async () => {
+    console.log('🐛 DEBUG: DOMContentLoaded, checking if goals view needs initialization');
+    
+    // Check if we're on the goals view
+    const goalsModule = document.getElementById('goalsView');
+    if (goalsModule && goalsModule.classList.contains('active')) {
+        console.log('🐛 DEBUG: Goals module is active, initializing renderGoalsGrid');
+        await renderGoalsGrid();
+    } else {
+        console.log('🐛 DEBUG: Goals module is not active, skipping initialization');
+    }
+});
+
+// Also try to initialize after a short delay to ensure everything is loaded
+setTimeout(async () => {
+    console.log('🐛 DEBUG: Delayed initialization check for goals');
+    const goalsModule = document.getElementById('goalsView');
+    if (goalsModule && goalsModule.classList.contains('active')) {
+        console.log('🐛 DEBUG: Delayed - Goals module is active, initializing renderGoalsGrid');
+        await renderGoalsGrid();
+    }
+}, 1000);
+
 /**
  * Nepal Tax Calculator (FY 2081/82 rates)
  */

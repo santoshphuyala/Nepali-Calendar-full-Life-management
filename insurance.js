@@ -152,6 +152,8 @@ function showInsuranceForm(policy = null) {
 
     document.getElementById('insuranceForm').addEventListener('submit', async (e) => {
         e.preventDefault();
+        
+        console.log('🐛 DEBUG: Insurance form submitted');
 
         const data = {
             type: document.getElementById('insuranceType').value,
@@ -168,23 +170,46 @@ function showInsuranceForm(policy = null) {
             notes: document.getElementById('insuranceNotes').value,
             createdAt: policy ? policy.createdAt : new Date().toISOString()
         };
+        
+        console.log('🐛 DEBUG: Insurance data to save:', data);
 
         try {
+            console.log('🐛 DEBUG: Starting database save operation');
+            
             if (policy) {
+                console.log('🐛 DEBUG: Updating existing policy:', policy.id);
                 data.id = policy.id;
-                await enhancedInsuranceDB.update(data);
+                const result = await enhancedInsuranceDB.update(data);
+                console.log('🐛 DEBUG: Policy updated successfully:', result);
             } else {
-                await enhancedInsuranceDB.add(data);
+                console.log('🐛 DEBUG: Adding new policy');
+                const result = await enhancedInsuranceDB.add(data);
+                console.log('🐛 DEBUG: Policy added successfully:', result);
             }
+            
+            // Verify the save by immediately retrieving
+            console.log('🐛 DEBUG: Verifying save by retrieving all policies');
+            const allPolicies = await enhancedInsuranceDB.getAll();
+            console.log('🐛 DEBUG: Retrieved policies after save:', { count: allPolicies.length });
+            
+            // Check if our policy is in the list
+            const savedPolicy = allPolicies.find(p => p.policyNumber === data.policyNumber);
+            console.log('🐛 DEBUG: Found saved policy:', !!savedPolicy);
 
             closeModal();
             if (currentView === 'insurance') {
+                console.log('🐛 DEBUG: Refreshing insurance views');
                 await renderInsuranceList();
                 await renderInsuranceStats();
             }
             alert('Insurance policy saved successfully!');
         } catch (error) {
-            console.error('Error saving insurance:', error);
+            console.error('🐛 DEBUG: Error saving insurance:', error);
+            console.error('🐛 DEBUG: Error details:', {
+                message: error.message,
+                stack: error.stack,
+                name: error.name
+            });
             alert('Error saving policy. Please try again.');
         }
     });
@@ -205,12 +230,15 @@ async function renderInsuranceList() {
             return;
         }
         
-        const activeFilter = document.querySelector('#insuranceView .filter-btn.active');
+        console.log('🐛 DEBUG: Container element:', container);
+        console.log('🐛 DEBUG: Container innerHTML before:', container.innerHTML);
+        
+        const activeFilter = document.querySelector('#insuranceModule .filter-btn.active');
         const filter = activeFilter ? activeFilter.dataset.filter : 'all';
-        console.log('🐛 DEBUG: Current filter', { filter });
+        console.log('🐛 DEBUG: Current filter', { filter, activeFilter: !!activeFilter });
 
         let policies = await enhancedInsuranceDB.getAll();
-        console.log('🐛 DEBUG: Retrieved policies from DB', { count: policies.length });
+        console.log('🐛 DEBUG: Retrieved policies from DB', { count: policies.length, policies: policies });
 
         // Apply filter
         if (filter !== 'all') {
@@ -223,13 +251,12 @@ async function renderInsuranceList() {
             });
         }
 
-        // Sort by expiry date
-        policies.sort((a, b) => a.expiryDate.localeCompare(b.expiryDate));
-        console.log('🐛 DEBUG: Sorted policies by expiry date');
+        console.log('🐛 DEBUG: Final policies to display:', { count: policies.length });
 
         if (policies.length === 0) {
             console.log('🐛 DEBUG: No policies to display, showing empty message');
             container.innerHTML = '<div class="loading">No insurance policies found</div>';
+            console.log('🐛 DEBUG: Container innerHTML after empty:', container.innerHTML);
             return;
         }
 
@@ -238,7 +265,8 @@ async function renderInsuranceList() {
         console.log('🐛 DEBUG: Today date for comparison', { todayStr });
 
         console.log('🐛 DEBUG: Generating HTML for policies', { count: policies.length });
-        container.innerHTML = policies.map(policy => {
+        const html = policies.map(policy => {
+            console.log('🐛 DEBUG: Processing policy:', policy);
             const isExpiringSoon = policy.expiryDate >= todayStr && policy.expiryDate <= addDaysToBsDate(todayStr, 30);
             const isExpired = policy.expiryDate < todayStr;
 
@@ -303,7 +331,7 @@ async function renderInsuranceList() {
                     
                     <div class="insurance-actions">
                         <button class="btn-info" onclick='viewInsuranceDetails(${JSON.stringify(policy).replace(/'/g, "&apos;")})'>
-                            �️ View Details
+                            ℹ️ View Details
                         </button>
                         <button class="btn-primary" onclick='closeModal(); showInsuranceForm(${JSON.stringify(policy).replace(/'/g, "&apos;")})'>
                             ✏️ Edit
@@ -316,6 +344,8 @@ async function renderInsuranceList() {
             `;
         }).join('');
         
+        container.innerHTML = html;
+        console.log('🐛 DEBUG: Container innerHTML after render:', container.innerHTML);
         console.log('🐛 DEBUG: Successfully rendered insurance list');
         
     } catch (error) {
@@ -429,3 +459,29 @@ function addDaysToBsDate(bsDateStr, days) {
     const newBs = adToBs(adDate.date.getFullYear(), adDate.date.getMonth() + 1, adDate.date.getDate());
     return formatBsDate(newBs.year, newBs.month, newBs.day);
 }
+
+// Initialize insurance list when DOM is ready
+document.addEventListener('DOMContentLoaded', async () => {
+    console.log('🐛 DEBUG: DOMContentLoaded, checking if insurance view needs initialization');
+    
+    // Check if we're on the insurance view
+    const insuranceModule = document.getElementById('insuranceModule');
+    if (insuranceModule && insuranceModule.classList.contains('active')) {
+        console.log('🐛 DEBUG: Insurance module is active, initializing renderInsuranceList');
+        await renderInsuranceList();
+        await renderInsuranceStats();
+    } else {
+        console.log('🐛 DEBUG: Insurance module is not active, skipping initialization');
+    }
+});
+
+// Also try to initialize after a short delay to ensure everything is loaded
+setTimeout(async () => {
+    console.log('🐛 DEBUG: Delayed initialization check for insurance');
+    const insuranceModule = document.getElementById('insuranceModule');
+    if (insuranceModule && insuranceModule.classList.contains('active')) {
+        console.log('🐛 DEBUG: Delayed - Insurance module is active, initializing renderInsuranceList');
+        await renderInsuranceList();
+        await renderInsuranceStats();
+    }
+}, 1000);
