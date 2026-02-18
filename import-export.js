@@ -3,37 +3,32 @@
  * Handles data import/export with duplicate prevention and smart preview
  */
 
-// Simple notification function (fallback if app.js not loaded)
-function showNotification(message, type = 'info') {
-    // Try to use app.js notification if available
-    if (typeof window.showNotification === 'function') {
-        window.showNotification(message, type);
-        return;
-    }
-    
-    // Fallback notification
-    const notification = document.createElement('div');
-    notification.style.cssText = `
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        padding: 12px 20px;
-        background: ${type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : '#3b82f6'};
-        color: white;
-        border-radius: 8px;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        z-index: 10000;
-        font-size: 14px;
-    `;
-    notification.textContent = message;
-    
-    document.body.appendChild(notification);
-    setTimeout(() => {
-        if (notification.parentNode) {
-            notification.parentNode.removeChild(notification);
-        }
-    }, 3000);
+// Notification helper — use app.js implementation if available, otherwise create a minimal fallback
+// FIX: Guard with typeof so we don't shadow app.js's showNotification on the global scope
+if (typeof window.showNotification !== 'function') {
+    window.showNotification = function(message, type = 'info') {
+        const notification = document.createElement('div');
+        notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 12px 20px;
+            background: ${type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : '#3b82f6'};
+            color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            z-index: 10000;
+            font-size: 14px;
+        `;
+        notification.textContent = message;
+        document.body.appendChild(notification);
+        setTimeout(() => {
+            if (notification.parentNode) notification.parentNode.removeChild(notification);
+        }, 3000);
+    };
 }
+// Local alias so class methods can call showNotification() without window. prefix
+function showNotification(message, type) { window.showNotification(message, type); }
 
 // Import/Export Manager Class
 class ImportExportManager {
@@ -91,9 +86,8 @@ class ImportExportManager {
     // Export Functions
     async exportData(module, format) {
         try {
-            if (typeof window.exportData === 'function' && !this.isFallbackGlobal(window.exportData)) {
-                return await window.exportData(module, format);
-            }
+            // NOTE: No delegation to window.exportData — this class IS the authority.
+            // Delegating to window.exportData risks circular calls if the flag is missing.
             showNotification('📤 Preparing export...', 'info');
             
             const data = await this.collectModuleData(module);
@@ -120,9 +114,7 @@ class ImportExportManager {
 
     async exportAllData(format) {
         try {
-            if (typeof window.exportAllData === 'function' && !this.isFallbackGlobal(window.exportAllData)) {
-                return await window.exportAllData(format);
-            }
+            // NOTE: No delegation to window.exportAllData — circular risk removed.
             showNotification('📤 Preparing complete export...', 'info');
             
             const allData = await this.collectAllData();
@@ -164,8 +156,12 @@ class ImportExportManager {
                 }
                 break;
             case 'tracker':
+            case 'finance': // HTML alias used in settings module export buttons
                 data.income = await window.enhancedIncomeDB.getAll();
                 data.expenses = await window.enhancedExpenseDB.getAll();
+                data.recurring = await window.enhancedRecurringDB.getAll(); // FIX: was missing
+                data.budgets = await window.enhancedBudgetDB.getAll();
+                data.bills = await window.enhancedBillDB.getAll();
                 break;
             case 'budget':
                 data.budgets = await window.enhancedBudgetDB.getAll();
@@ -191,6 +187,12 @@ class ImportExportManager {
                 break;
             case 'shopping':
                 data.shopping = await window.enhancedShoppingDB.getAll();
+                break;
+            case 'assets': // HTML alias — covers insurance, vehicle, subscription
+                data.insurance = await window.enhancedInsuranceDB.getAll();
+                data.vehicles = await window.enhancedVehicleDB.getAll();
+                data.vehicleServices = await window.enhancedVehicleServiceDB.getAll();
+                data.subscriptions = await window.enhancedSubscriptionDB.getAll();
                 break;
             default:
                 throw new Error(`Unknown module: ${module}`);
@@ -349,9 +351,8 @@ class ImportExportManager {
     async importData(module, format, fileInputOrFile) {
         const isFileInput = !!(fileInputOrFile && typeof fileInputOrFile === 'object' && 'files' in fileInputOrFile);
         try {
-            if (typeof window.importData === 'function' && !this.isFallbackGlobal(window.importData)) {
-                return await window.importData(module, format, fileInputOrFile);
-            }
+            // NOTE: Delegation guard removed — app.js importData doesn't handle all modules
+            // and doesn't support the full-backup schema (payload.modules).
             const file = isFileInput ? fileInputOrFile.files[0] : fileInputOrFile;
             if (!file) return;
             
@@ -387,9 +388,9 @@ class ImportExportManager {
     async importAllData(format, fileInputOrFile) {
         const isFileInput = !!(fileInputOrFile && typeof fileInputOrFile === 'object' && 'files' in fileInputOrFile);
         try {
-            if (typeof window.importAllData === 'function' && !this.isFallbackGlobal(window.importAllData)) {
-                return await window.importAllData(format, fileInputOrFile);
-            }
+            // NOTE: Delegation guard removed — app.js importAllData only checks payload.data,
+            // so importing a backup file (which uses payload.modules) always fails with
+            // "Invalid import file format". This class handles both schemas correctly.
             const file = isFileInput ? fileInputOrFile.files[0] : fileInputOrFile;
             if (!file) return;
             
@@ -619,44 +620,55 @@ class ImportExportManager {
         let totalItems = 0;
         let newItems = 0;
         let duplicates = 0;
-        let modules = 0;
-        
-        if (data.modules) {
-            // Complete import
-            for (const [moduleName, moduleData] of Object.entries(data.modules)) {
-                modules++;
-                for (const [dataType, items] of Object.entries(moduleData)) {
-                    if (Array.isArray(items)) {
-                        totalItems += items.length;
-                        // Check for duplicates (simplified)
-                        items.forEach(item => {
-                            if (this.isDuplicate(item, dataType)) {
-                                duplicates++;
-                            } else {
-                                newItems++;
-                            }
-                        });
-                    }
+        let modulesCount = 0;
+
+        // Normalize: support three schemas:
+        //   1. Full backup:      { modules: { calendar: {...}, tracker: {...}, ... } }
+        //   2. Module export:    { module, data: { holidays: [...], notes: [...] }, exportDate }
+        //   3. Legacy flat:      { data: { ... } } or bare { holidays: [...] }
+        const normalizedSources = this._normalizeSources(data);
+
+        for (const [dataType, items] of Object.entries(normalizedSources)) {
+            if (!Array.isArray(items) || items.length === 0) continue;
+            modulesCount++;
+            totalItems += items.length;
+            items.forEach(item => {
+                if (this.isDuplicate(item, dataType)) {
+                    duplicates++;
+                } else {
+                    newItems++;
                 }
-            }
-        } else if (data.data) {
-            // Single module import
-            modules = 1;
-            for (const [dataType, items] of Object.entries(data.data)) {
-                if (Array.isArray(items)) {
-                    totalItems += items.length;
-                    items.forEach(item => {
-                        if (this.isDuplicate(item, dataType)) {
-                            duplicates++;
-                        } else {
-                            newItems++;
-                        }
-                    });
-                }
-            }
+            });
         }
-        
-        return { totalItems, newItems, duplicates, modules };
+
+        return { totalItems, newItems, duplicates, modules: modulesCount };
+    }
+
+    // Normalize any import schema into a flat { dataType: items[] } map
+    _normalizeSources(data) {
+        if (!data || typeof data !== 'object') return {};
+
+        if (data.modules) {
+            // Full backup: { modules: { calendar: { notes, holidays }, tracker: { income, expenses }, ... } }
+            return Object.values(data.modules).reduce((acc, mod) => {
+                if (mod && typeof mod === 'object') Object.assign(acc, mod);
+                return acc;
+            }, {});
+        }
+
+        if (data.data) {
+            // Single-module or grouped export: { data: { income: [], expenses: [] } }
+            return data.data;
+        }
+
+        // Legacy / bare object where top-level keys are arrays directly
+        const bare = {};
+        for (const [k, v] of Object.entries(data)) {
+            if (Array.isArray(v)) bare[k] = v;
+        }
+        if (Object.keys(bare).length > 0) return bare;
+
+        return {};
     }
 
     isDuplicate(item, type) {
@@ -666,41 +678,30 @@ class ImportExportManager {
     }
 
     generatePreviewRows(data) {
+        const sources = this._normalizeSources(data);
         let rows = '';
-        
+
         const processItems = (items, type) => {
             if (!Array.isArray(items)) return '';
-            
             return items.slice(0, 10).map(item => {
-                const title = item.title || item.name || item.description || 'N/A';
+                const title = (item.title || item.name || item.description || 'N/A').toString().substring(0, 40);
                 const date = item.date_bs || item.date || item.dueDate || 'N/A';
                 const status = this.isDuplicate(item, type) ? 'duplicate' : 'new';
                 const statusClass = status === 'duplicate' ? 'duplicate-row' : 'new-row';
-                
-                return `
-                    <tr class="${statusClass}">
-                        <td>${type}</td>
-                        <td>${title}</td>
-                        <td>${date}</td>
-                        <td>${status}</td>
-                    </tr>
-                `;
+                return `<tr class="${statusClass}">
+                    <td>${type}</td>
+                    <td>${title}</td>
+                    <td>${date}</td>
+                    <td><span class="status-badge ${statusClass}">${status}</span></td>
+                </tr>`;
             }).join('');
         };
-        
-        if (data.modules) {
-            for (const [moduleName, moduleData] of Object.entries(data.modules)) {
-                for (const [dataType, items] of Object.entries(moduleData)) {
-                    rows += processItems(items, dataType);
-                }
-            }
-        } else if (data.data) {
-            for (const [dataType, items] of Object.entries(data.data)) {
-                rows += processItems(items, dataType);
-            }
+
+        for (const [dataType, items] of Object.entries(sources)) {
+            rows += processItems(items, dataType);
         }
-        
-        return rows || '<tr><td colspan="4">No data to preview</td></tr>';
+
+        return rows || '<tr><td colspan="4" style="text-align:center;color:#888">No data to preview</td></tr>';
     }
 
     async executeImport(module, button) {
@@ -771,176 +772,111 @@ class ImportExportManager {
     }
 
     async performImport(module, strategy) {
-        if (module === 'notes') {
-            // Handle notes import
-            const previewData = this.importPreview;
-            if (!previewData || !previewData.data || !previewData.data.notes) {
-                throw new Error('No notes data found in import file');
+        // Unified DB map for all stores
+        const dbMap = {
+            notes:           window.enhancedNoteDB,
+            holidays:        window.enhancedHolidayDB,
+            income:          window.enhancedIncomeDB,
+            expenses:        window.enhancedExpenseDB,
+            budgets:         window.enhancedBudgetDB,
+            bills:           window.enhancedBillDB,
+            goals:           window.enhancedGoalDB,
+            recurring:       window.enhancedRecurringDB,
+            insurance:       window.enhancedInsuranceDB,
+            vehicles:        window.enhancedVehicleDB,
+            vehicleServices: window.enhancedVehicleServiceDB,
+            subscriptions:   window.enhancedSubscriptionDB,
+            shopping:        window.enhancedShoppingDB,
+            customTypes:     window.enhancedCustomTypeDB,
+            customItems:     window.enhancedCustomItemDB,
+            medicines:       window.enhancedMedicineDB,
+            familyMembers:   window.enhancedFamilyMembersDB,
+            prescriptions:   window.enhancedPrescriptionsDB,
+            dosageSchedule:  window.enhancedDosageScheduleDB
+        };
+
+        // Normalize all three possible schemas into a flat { dataType: items[] } map
+        const importSources = this._normalizeSources(this.importPreview);
+
+        if (Object.keys(importSources).length === 0) {
+            throw new Error('No importable data found in file. The file may be empty or use an unsupported format.');
+        }
+
+        let totalImported = 0;
+        let totalSkipped = 0;
+        let totalFailed = 0;
+
+        for (const [dataType, items] of Object.entries(importSources)) {
+            if (!Array.isArray(items) || items.length === 0) continue;
+
+            const dbStore = dbMap[dataType];
+            if (!dbStore) {
+                console.warn(`⚠️ No DB store found for dataType: "${dataType}" — skipping`);
+                continue;
             }
-            
-            const notes = previewData.data.notes;
-            
-            for (let i = 0; i < notes.length; i++) {
-                const note = notes[i];
+
+            for (const item of items) {
                 try {
-                    // Check if note already exists
-                    let existingNote = null;
-                    if (window.noteDB) {
-                        existingNote = await window.enhancedNoteDB.get(note.id);
-                    } else {
-                        console.error('❌ Note database not available');
-                        continue;
+                    // Strip old id so the DB auto-assigns a new one on insert
+                    const { id: _oldId, ...itemWithoutId } = item || {};
+
+                    // For skip strategy: try to find by id first, then fall back to content match
+                    let existing = null;
+                    if (strategy !== 'update' && item.id) {
+                        try { existing = await dbStore.get(item.id); } catch (_) {}
                     }
-                    
-                    if (existingNote) {
+
+                    if (existing) {
                         if (strategy === 'skip') {
+                            totalSkipped++;
                             continue;
                         } else if (strategy === 'update') {
-                            if (window.noteDB) {
-                                await window.enhancedNoteDB.update(note);
-                            } else {
-                                console.error('❌ Note database not available');
-                                continue;
-                            }
+                            await dbStore.update({ ...existing, ...itemWithoutId, id: existing.id });
+                            totalImported++;
                         } else if (strategy === 'merge') {
-                            // Merge logic - combine content
-                            if (existingNote.content !== note.content) {
-                                note.content = existingNote.content + '\n\n--- Merged ---\n\n' + note.content;
+                            // Merge text fields
+                            const merged = { ...existing };
+                            for (const [k, v] of Object.entries(itemWithoutId)) {
+                                if (typeof v === 'string' && typeof existing[k] === 'string' && v !== existing[k]) {
+                                    merged[k] = existing[k] + '\n\n--- Merged ---\n\n' + v;
+                                } else if (v !== undefined) {
+                                    merged[k] = v;
+                                }
                             }
-                            if (window.noteDB) {
-                                await window.enhancedNoteDB.update(note);
-                            } else {
-                                console.error('❌ Note database not available');
-                                continue;
-                            }
+                            await dbStore.update({ ...merged, id: existing.id });
+                            totalImported++;
                         }
                     } else {
-                        // Add new note
-                        if (window.noteDB) {
-                            await window.enhancedNoteDB.add(note);
-                        } else {
-                            console.error('❌ Note database not available');
-                            continue;
-                        }
+                        await dbStore.add(itemWithoutId);
+                        totalImported++;
                     }
-                } catch (error) {
-                    console.warn(`Failed to import note ${i + 1}:`, note, error);
+                } catch (err) {
+                    console.warn(`❌ Failed to import item in "${dataType}":`, item, err);
+                    totalFailed++;
                 }
             }
-            
-            // Refresh notes display
-            if (typeof renderNotes === 'function') {
-                renderNotes();
-            } else if (typeof updateUI === 'function') {
-                updateUI();
-            }
-        } else if (module === 'insurance') {
-            // Handle insurance import
-            const previewData = this.importPreview;
-            if (!previewData || !previewData.data || !previewData.data.insurance) {
-                throw new Error('No insurance data found in import file');
-            }
-            
-            const insurances = previewData.data.insurance;
-            
-            for (let i = 0; i < insurances.length; i++) {
-                const insurance = insurances[i];
-                try {
-                    // Check if insurance already exists
-                    let existingInsurance = null;
-                    if (window.insuranceDB) {
-                        existingInsurance = insurance.id ? await window.enhancedInsuranceDB.get(insurance.id) : null;
-                    }
-                    
-                    if (existingInsurance) {
-                        if (strategy === 'skip') {
-                            continue;
-                        } else if (strategy === 'update') {
-                            if (window.insuranceDB) {
-                                await window.enhancedInsuranceDB.update(insurance);
-                            }
-                        } else if (strategy === 'merge') {
-                            // Merge logic - combine notes
-                            if (existingInsurance.notes !== insurance.notes) {
-                                insurance.notes = existingInsurance.notes + '\n\n--- Merged ---\n\n' + insurance.notes;
-                            }
-                            if (window.insuranceDB) {
-                                await window.enhancedInsuranceDB.update(insurance);
-                            }
-                        }
-                    } else {
-                        // Add new insurance
-                        if (window.insuranceDB) {
-                            const newItem = { ...insurance };
-                            delete newItem.id;
-                            await window.enhancedInsuranceDB.add(newItem);
-                        }
-                    }
-                } catch (error) {
-                    console.warn(`Failed to import insurance ${i + 1}:`, insurance, error);
-                }
-            }
-            
-            // Refresh insurance display
-            if (typeof renderInsuranceList === 'function') {
-                await renderInsuranceList();
-            }
-            if (typeof renderInsuranceStats === 'function') {
-                await renderInsuranceStats();
-            } else if (typeof updateUI === 'function') {
-                updateUI();
-            }
-        } else {
-            // General import handler for all non-notes modules
-            const dbMap = {
-                income:          window.incomeDB,
-                expenses:        window.expenseDB,
-                budgets:         window.budgetDB,
-                bills:           window.billDB,
-                goals:           window.goalDB,
-                recurring:       window.recurringDB,
-                insurance:       window.insuranceDB,
-                vehicles:        window.vehicleDB,
-                vehicleServices: window.vehicleServiceDB,
-                subscriptions:   window.subscriptionDB,
-                shopping:        window.shoppingDB,
-                customTypes:     window.customTypeDB,
-                customItems:     window.customItemDB,
-                medicines:       window.medicineDB,
-                familyMembers:   window.familyMembersDB,
-                prescriptions:   window.prescriptionsDB,
-                dosageSchedule:  window.dosageScheduleDB
-            };
+        }
 
-            // Support both single-module (data.data) and complete (data.modules) export shapes
-            const importSources = this.importPreview?.modules
-                ? Object.values(this.importPreview.modules).reduce((acc, mod) => Object.assign(acc, mod), {})
-                : (this.importPreview?.data || {});
+        console.log(`✅ Import complete: ${totalImported} imported, ${totalSkipped} skipped, ${totalFailed} failed`);
 
-            for (const [dataType, items] of Object.entries(importSources)) {
-                if (!Array.isArray(items)) continue;
-                const dbStore = dbMap[dataType];
-                if (!dbStore) {
-                    console.warn(`No DB store found for dataType: ${dataType}`);
-                    continue;
-                }
-
-                for (const item of items) {
-                    try {
-                        const existing = item.id ? await dbStore.get(item.id) : null;
-                        if (existing) {
-                            if (strategy === 'skip') continue;
-                            await dbStore.update({ ...existing, ...item });
-                        } else {
-                            const newItem = { ...item };
-                            delete newItem.id;
-                            await dbStore.add(newItem);
-                        }
-                    } catch (err) {
-                        console.warn(`Failed to import item in ${dataType}:`, item, err);
-                    }
-                }
-            }
+        // Refresh all relevant views
+        const refreshers = [
+            ['renderCalendar',          () => typeof renderCalendar === 'function' && renderCalendar()],
+            ['renderNotes',             () => typeof renderNotes === 'function' && renderNotes()],
+            ['renderHolidayList',       () => typeof renderHolidayList === 'function' && renderHolidayList()],
+            ['renderTrackerList',       () => typeof renderTrackerList === 'function' && renderTrackerList()],
+            ['renderRecurringList',     () => typeof renderRecurringList === 'function' && renderRecurringList()],
+            ['renderInsuranceList',     () => typeof renderInsuranceList === 'function' && renderInsuranceList()],
+            ['renderInsuranceStats',    () => typeof renderInsuranceStats === 'function' && renderInsuranceStats()],
+            ['renderVehicleGrid',       () => typeof renderVehicleGrid === 'function' && renderVehicleGrid()],
+            ['renderSubscriptionList',  () => typeof renderSubscriptionList === 'function' && renderSubscriptionList()],
+            ['renderGoalsGrid',         () => typeof renderGoalsGrid === 'function' && renderGoalsGrid()],
+            ['renderShoppingList',      () => typeof renderShoppingList === 'function' && renderShoppingList()],
+            ['renderBillsList',         () => typeof renderBillsList === 'function' && renderBillsList()],
+            ['renderBudgetOverview',    () => typeof renderBudgetOverview === 'function' && renderBudgetOverview()],
+        ];
+        for (const [name, fn] of refreshers) {
+            try { await fn(); } catch (e) { console.warn(`Refresh failed for ${name}:`, e); }
         }
         
         // Update progress to 100%
@@ -956,40 +892,47 @@ class ImportExportManager {
 // Global instance
 const importExportManager = new ImportExportManager();
 
-// Export functions for global access
-if (typeof window.exportData !== 'function') {
-    const exportDataFn = (module, format) => importExportManager.exportData(module, format);
-    exportDataFn.__ie_fallback = true;
-    window.exportData = exportDataFn;
-}
-if (typeof window.exportAllData !== 'function') {
-    const exportAllDataFn = (format) => importExportManager.exportAllData(format);
-    exportAllDataFn.__ie_fallback = true;
-    window.exportAllData = exportAllDataFn;
-}
-if (typeof window.exportModuleData !== 'function') {
-    const exportModuleDataFn = (module, format) => importExportManager.exportData(module, format);
-    exportModuleDataFn.__ie_fallback = true;
-    window.exportModuleData = exportModuleDataFn;
-}
-if (typeof window.importData !== 'function') {
-    const importDataFn = (module, format, fileInputOrFile) => importExportManager.importData(module, format, fileInputOrFile);
-    importDataFn.__ie_fallback = true;
-    window.importData = importDataFn;
-}
-if (typeof window.importAllData !== 'function') {
-    const importAllDataFn = (format, fileInputOrFile) => importExportManager.importAllData(format, fileInputOrFile);
-    importAllDataFn.__ie_fallback = true;
-    window.importAllData = importAllDataFn;
-}
-if (typeof window.importModuleData !== 'function') {
-    const importModuleDataFn = (module, fileInput) => {
-        const format = fileInput.files[0]?.name.endsWith('.json') ? 'json' : 'excel';
+// ─── Global function registration ─────────────────────────────────────────────
+// LOAD ORDER: import-export.js loads at line 1256, app.js at line 1277 (AFTER).
+// app.js declares: async function importAllData(), importData(), importModuleData(),
+// showImportPreview() — these shadow any window.* we set here at parse time.
+//
+// Solution: set window.* now AND re-apply in the 'load' event which fires after
+// ALL scripts have executed. This reliably overrides app.js's declarations.
+
+function _applyImportExportOverrides() {
+    // Export functions (app.js does not define these — no conflict):
+    if (!window.exportData || window.exportData.__ie_fallback) {
+        window.exportData = (module, format) => importExportManager.exportData(module, format);
+        window.exportData.__ie_fallback = true;
+    }
+    if (!window.exportAllData || window.exportAllData.__ie_fallback) {
+        window.exportAllData = (format) => importExportManager.exportAllData(format);
+        window.exportAllData.__ie_fallback = true;
+    }
+    if (!window.exportModuleData || window.exportModuleData.__ie_fallback) {
+        window.exportModuleData = (module, format) => importExportManager.exportData(module, format);
+        window.exportModuleData.__ie_fallback = true;
+    }
+
+    // CRITICAL overrides — app.js's versions have broken schema handling.
+    // These MUST unconditionally replace the app.js function declarations.
+    window.importData = (module, format, fileInputOrFile) => importExportManager.importData(module, format, fileInputOrFile);
+    window.importAllData = (format, fileInputOrFile) => importExportManager.importAllData(format, fileInputOrFile);
+    window.importModuleData = (module, fileInput) => {
+        const format = fileInput?.files?.[0]?.name?.endsWith('.json') ? 'json' : 'excel';
         importExportManager.importData(module, format, fileInput);
     };
-    importModuleDataFn.__ie_fallback = true;
-    window.importModuleData = importModuleDataFn;
 }
+
+// Apply immediately (in case app.js is not yet loaded or for direct calls)
+_applyImportExportOverrides();
+
+// Re-apply after ALL scripts finish loading — beats app.js's function declarations
+window.addEventListener('load', () => {
+    _applyImportExportOverrides();
+    console.log('✅ import-export.js: import/export overrides confirmed after full page load');
+});
 
 // Make importExportManager globally available for testing
 window.importExportManager = importExportManager;
