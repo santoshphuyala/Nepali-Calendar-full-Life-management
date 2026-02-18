@@ -7,562 +7,6 @@
  * ========================================
  */
 
-// Debug: Comprehensive Error Logging
-window.debugLog = function(message, data = null) {
-    const timestamp = new Date().toISOString();
-    const logEntry = `[${timestamp}] ${message}`;
-    console.log(logEntry, data || '');
-    
-    // Also log to a global debug array for inspection
-    if (!window.debugLogs) window.debugLogs = [];
-    window.debugLogs.push({ timestamp, message, data });
-};
-
-// Debug: Error tracking
-window.debugError = function(error, context = '') {
-    const timestamp = new Date().toISOString();
-    const errorInfo = {
-        timestamp,
-        context,
-        message: error.message,
-        stack: error.stack,
-        name: error.name
-    };
-    console.error(`[ERROR ${timestamp}] ${context}:`, errorInfo);
-    
-    if (!window.debugErrors) window.debugErrors = [];
-    window.debugErrors.push(errorInfo);
-};
-
-// Debug: Function availability checker
-window.debugCheckFunctions = function() {
-    const requiredFunctions = [
-        'showIncomeExpenseForm', 'showRecurringForm', 'showShoppingForm', 'showNoteForm',
-        'showHolidayForm', 'showBudgetForm', 'showBillForm', 'showGoalForm',
-        'showInsuranceForm', 'showVehicleForm', 'showSubscriptionForm', 'showCustomTypeForm',
-        'closeModal', 'closeDrawer', 'deleteTransaction', 'deleteRecurring',
-        'deleteShoppingItem', 'deleteNote', 'deleteHoliday', 'deleteBill',
-        'deleteGoal', 'deleteInsurance', 'deleteVehicle', 'deleteSubscription',
-        'deleteCustomType', 'deleteCustomItem', 'toggleShoppingStatus', 'markBillPaid',
-        'addToGoal', 'viewInsuranceDetails', 'showServiceHistory', 'addServiceRecord',
-        'deleteService', 'addFuelExpense', 'updateMileage', 'renewSubscription',
-        'selectCustomType', 'showCustomItemForm',
-        'backupData', 'restoreData', 'clearAllData', 'exportCalendarData', 'importCalendarData',
-        'exportTrackerData', 'importTrackerData'
-    ];
-    
-    const missingFunctions = [];
-    const availableFunctions = [];
-    
-    requiredFunctions.forEach(funcName => {
-        if (typeof window[funcName] === 'function') {
-            availableFunctions.push(funcName);
-        } else {
-            missingFunctions.push(funcName);
-        }
-    });
-    
-    window.debugLog('Function Availability Check', {
-        total: requiredFunctions.length,
-        available: availableFunctions.length,
-        missing: missingFunctions.length,
-        missingFunctions
-    });
-    
-    return { availableFunctions, missingFunctions };
-};
-
-// Debug: Database connection checker
-window.debugCheckDatabase = async function() {
-    try {
-        const databases = {
-            holidayDB: window.holidayDB,
-            incomeDB: window.incomeDB,
-            expenseDB: window.expenseDB,
-            noteDB: window.noteDB,
-            shoppingDB: window.shoppingDB,
-            budgetDB: window.budgetDB,
-            billDB: window.billDB,
-            goalDB: window.goalDB,
-            recurringDB: window.recurringDB,
-            insuranceDB: window.insuranceDB,
-            vehicleDB: window.vehicleDB,
-            vehicleServiceDB: window.vehicleServiceDB,
-            subscriptionDB: window.subscriptionDB,
-            customTypeDB: window.customTypeDB,
-            customItemDB: window.customItemDB
-        };
-        
-        const dbStatus = {};
-        for (const [name, db] of Object.entries(databases)) {
-            try {
-                if (db && typeof db.getAll === 'function') {
-                    const count = await db.count();
-                    dbStatus[name] = { status: 'connected', count };
-                } else {
-                    dbStatus[name] = { status: 'not initialized' };
-                }
-            } catch (error) {
-                dbStatus[name] = { status: 'error', error: error.message };
-            }
-        }
-        
-        window.debugLog('Database Status Check', dbStatus);
-        return dbStatus;
-    } catch (error) {
-        window.debugError(error, 'Database Check');
-        return null;
-    }
-};
-
-// Debug: DOM element checker
-window.debugCheckDOM = function() {
-    const criticalElements = {
-        'modal': document.getElementById('modal'),
-        'modalBody': document.getElementById('modalBody'),
-        'calendarView': document.getElementById('calendarView'),
-        'trackerView': document.getElementById('trackerView'),
-        'budgetView': document.getElementById('budgetView'),
-        'billsView': document.getElementById('billsView'),
-        'goalsView': document.getElementById('goalsView'),
-        'insuranceView': document.getElementById('insuranceView'),
-        'vehicleView': document.getElementById('vehicleView'),
-        'subscriptionView': document.getElementById('subscriptionView'),
-        'customView': document.getElementById('customView'),
-        'shoppingView': document.getElementById('shoppingView'),
-        'notesView': document.getElementById('notesView'),
-        'settingsView': document.getElementById('settingsView'),
-        'calendarGrid': document.getElementById('calendarGrid'),
-        'trackerList': document.getElementById('trackerList'),
-        'notesList': document.getElementById('notesList')
-    };
-    
-    const elementStatus = {};
-    for (const [name, element] of Object.entries(criticalElements)) {
-        elementStatus[name] = {
-            exists: !!element,
-            tagName: element?.tagName || 'null',
-            id: element?.id || 'null'
-        };
-    }
-    
-    window.debugLog('DOM Elements Check', elementStatus);
-    return elementStatus;
-};
-
-// Debug: Comprehensive Feature Verification
-window.debugCheckAllFeatures = async function() {
-    console.log('🔍 === COMPREHENSIVE FEATURE VERIFICATION ===');
-    
-    const results = {
-        timestamp: new Date().toISOString(),
-        checks: {}
-    };
-    
-    // Check 1: Core Functions
-    results.checks.coreFunctions = {
-        'bsToAd': typeof bsToAd === 'function',
-        'adToBs': typeof adToBs === 'function',
-        'getCurrentNepaliDate': typeof getCurrentNepaliDate === 'function',
-        'formatBsDate': typeof formatBsDate === 'function',
-        'getNepaliMonthName': typeof getNepaliMonthName === 'function',
-        'getDayOfWeek': typeof getDayOfWeek === 'function'
-    };
-    
-    // Check 2: Database Connections
-    try {
-        const dbStatus = await window.debugCheckDatabase();
-        results.checks.database = dbStatus;
-    } catch (error) {
-        results.checks.database = { error: error.message };
-    }
-    
-    // Check 3: DOM Elements
-    try {
-        const domStatus = window.debugCheckDOM();
-        results.checks.dom = domStatus;
-    } catch (error) {
-        results.checks.dom = { error: error.message };
-    }
-    
-    // Check 4: Required Functions
-    try {
-        const functionStatus = window.debugCheckFunctions();
-        results.checks.functions = functionStatus;
-    } catch (error) {
-        results.checks.functions = { error: error.message };
-    }
-    
-    // Check 5: Import/Export Functions
-    const importExportFunctions = [
-        'exportCalendarData', 'importCalendarData', 'exportTrackerData', 'importTrackerData',
-        'backupData', 'restoreData', 'clearAllData'
-    ];
-    results.checks.importExport = {};
-    importExportFunctions.forEach(funcName => {
-        results.checks.importExport[funcName] = typeof window[funcName] === 'function';
-    });
-    
-    // Check 6: Calendar Rendering
-    try {
-        const calendarGrid = document.getElementById('calendarGrid');
-        const calendarView = document.getElementById('calendarView');
-        results.checks.calendarRendering = {
-            calendarGrid: !!calendarGrid,
-            calendarView: !!calendarView,
-            calendarGridChildren: calendarGrid ? calendarGrid.children.length : 0,
-            calendarViewActive: calendarView ? calendarView.classList.contains('active') : false
-        };
-    } catch (error) {
-        results.checks.calendarRendering = { error: error.message };
-    }
-    
-    // Check 7: Event Listeners
-    const criticalElements = ['yearSelect', 'monthSelect', 'prevMonth', 'nextMonth', 'todayBtn'];
-    results.checks.eventListeners = {};
-    criticalElements.forEach(elementId => {
-        const element = document.getElementById(elementId);
-        results.checks.eventListeners[elementId] = {
-            exists: !!element,
-            hasListeners: element && element.onclick !== null
-        };
-    });
-    
-    // Check 8: Local Storage
-    results.checks.localStorage = {
-        theme: !!localStorage.getItem('theme'),
-        defaultCurrency: !!localStorage.getItem('defaultCurrency')
-    };
-    
-    // Check 9: Service Worker
-    results.checks.serviceWorker = {
-        'serviceWorker' : 'serviceWorker' in navigator,
-        'serviceWorkerReady' : navigator.serviceWorker && navigator.serviceWorker.state === 'activated'
-    };
-    
-    // Check 10: Chart Library
-    results.checks.charts = {
-        'Chart': typeof Chart !== 'undefined'
-    };
-    
-    // Summary
-    const totalChecks = Object.keys(results.checks).length;
-    const passedChecks = Object.values(results.checks).reduce((count, check) => {
-        if (typeof check === 'object') {
-            if (check.error) return count;
-            if (Array.isArray(check)) {
-                return count + check.filter(c => c).length;
-            }
-            return count + (Object.values(check).filter(c => c).length);
-        }
-        return count + (check ? 1 : 0);
-    }, 0);
-    
-    results.summary = {
-        total: totalChecks,
-        passed: passedChecks,
-        failed: totalChecks - passedChecks,
-        successRate: totalChecks > 0 ? (passedChecks / totalChecks * 100).toFixed(1) + '%' : '0%',
-        status: passedChecks === totalChecks ? '✅ ALL CHECKS PASSED' : '⚠️ SOME CHECKS FAILED'
-    };
-    
-    console.log('📊 Feature Verification Results:', results);
-    console.log('📊 Summary:', results.summary);
-    
-    // Store results for inspection
-    window.lastDebugCheck = results;
-    
-    return results;
-};
-
-// Debug: Quick Health Check
-window.debugHealthCheck = function() {
-    console.log('🏥 === QUICK HEALTH CHECK ===');
-    
-    const health = {
-        timestamp: new Date().toISOString(),
-        app: {
-            initialized: !!window.currentBsYear,
-            currentView: window.currentView,
-            calendarView: window.currentCalendarView
-        },
-        database: {
-            connected: !!window.holidayDB,
-            databases: ['holidayDB', 'incomeDB', 'expenseDB', 'noteDB', 'shoppingDB', 'budgetDB', 'billDB', 'goalDB', 'recurringDB', 'insuranceDB', 'vehicleDB', 'vehicleServiceDB', 'subscriptionDB', 'customTypeDB', 'customItemDB']
-        },
-        ui: {
-            modal: !!document.getElementById('modal'),
-            calendarGrid: !!document.getElementById('calendarGrid'),
-            trackerList: !!document.getElementById('trackerList'),
-            notesList: !!document.getElementById('notesList')
-        },
-        features: {
-            calendar: !!window.renderCalendar,
-            tracker: !!window.renderTrackerList,
-            notes: !!window.renderNotes,
-            importExport: !!window.exportCalendarData && !!window.importCalendarData
-        }
-    };
-    
-    console.log('🏥 Health Status:', health);
-    
-    const issues = [];
-    
-    if (!health.app.initialized) issues.push('App not initialized');
-    if (!health.database.connected) issues.push('Database not connected');
-    if (!health.ui.modal) issues.push('Modal not found');
-    if (!health.features.calendar) issues.push('Calendar functions missing');
-    if (!health.features.importExport) issues.push('Import/Export functions missing');
-    
-    if (issues.length === 0) {
-        console.log('✅ All core systems operational');
-    } else {
-        console.warn('⚠️ Issues found:', issues);
-    }
-    
-    return health;
-};
-
-// Debug: Test Import/Export Functions
-window.debugTestImportExport = async function() {
-    console.log('🔄 === TESTING IMPORT/EXPORT FUNCTIONS ===');
-    
-    const testResults = {
-        timestamp: new Date().toISOString(),
-        tests: {}
-    };
-    
-    // Test Calendar Export
-    try {
-        console.log('📅 Testing calendar export...');
-        await window.exportCalendarData('monthly');
-        testResults.tests.calendarExportMonthly = '✅ Success';
-    } catch (error) {
-        testResults.tests.calendarExportMonthly = `❌ Error: ${error.message}`;
-    }
-    
-    // Test Tracker Export
-    try {
-        console.log('💰 Testing tracker export...');
-        await window.exportTrackerData('income');
-        testResults.tests.trackerExportIncome = '✅ Success';
-    } catch (error) {
-        testResults.tests.trackerExportIncome = `❌ Error: ${error.message}`;
-    }
-    
-    // Test Backup
-    try {
-        console.log('💾 Testing backup...');
-        await window.backupData();
-        testResults.tests.backup = '✅ Success';
-    } catch (error) {
-        testResults.tests.backup = `❌ Error: ${error.message}`;
-    }
-    
-    console.log('📊 Import/Export Test Results:', testResults);
-    return testResults;
-};
-
-// Debug: Test Core Functions
-window.debugTestCoreFunctions = function() {
-    console.log('🔧 === TESTING CORE FUNCTIONS ===');
-    
-    const coreTests = {
-        timestamp: new Date().toISOString(),
-        tests: {}
-    };
-    
-    // Test Date Conversion
-    try {
-        const bsDate = bsToAd(2082, 10, 14);
-        const adDate = adToBs(2025, 4, 14);
-        coreTests.tests.dateConversion = '✅ Success';
-        console.log('📅 Date Conversion Test:', bsDate, adDate);
-    } catch (error) {
-        coreTests.tests.dateConversion = `❌ Error: ${error.message}`;
-    }
-    
-    // Test Date Formatting
-    try {
-        const formatted = formatBsDate(2082, 10, 14);
-        coreTests.tests.dateFormatting = '✅ Success';
-        console.log('📅 Date Formatting Test:', formatted);
-    } catch (error) {
-        coreTests.tests.dateFormatting = `❌ Error: ${error.message}`;
-    }
-    
-    // Test Current Date
-    try {
-        const current = getCurrentNepaliDate();
-        coreTests.tests.currentDate = '✅ Success';
-        console.log('📅 Current Date Test:', current);
-    } catch (error) {
-        coreTests.tests.currentDate = `❌ Error: ${error.message}`;
-    }
-    
-    console.log('📊 Core Function Test Results:', coreTests);
-    return coreTests;
-};
-
-// Debug: Test Database Operations
-window.debugTestDatabase = async function() {
-    console.log('💾 === TESTING DATABASE OPERATIONS ===');
-    
-    const dbTests = {
-        timestamp: new Date().toISOString(),
-        tests: {}
-    };
-    
-    const databases = ['holidayDB', 'incomeDB', 'expenseDB', 'noteDB', 'shoppingDB', 'budgetDB', 'billDB', 'goalDB', 'recurringDB', 'insuranceDB', 'vehicleDB', 'vehicleServiceDB', 'subscriptionDB', 'customTypeDB', 'customItemDB'];
-    
-    for (const dbName of databases) {
-        try {
-            const db = window[dbName];
-            if (db && typeof db.count === 'function') {
-                const count = await db.count();
-                dbTests.tests[dbName] = `✅ Success (${count} records)`;
-            } else {
-                dbTests.tests[dbName] = `❌ Not available`;
-            }
-        } catch (error) {
-            dbTests.tests[dbName] = `❌ Error: ${error.message}`;
-        }
-    }
-    
-    console.log('📊 Database Test Results:', dbTests);
-    return dbTests;
-};
-
-// Debug: Test UI Rendering
-window.debugTestUI = async function() {
-    console.log('🎨 === TESTING UI RENDERING ===');
-    
-    const uiTests = {
-        timestamp: new Date().toISOString(),
-        tests: {}
-    };
-    
-    // Test Calendar Rendering
-    try {
-        await renderCalendar();
-        uiTests.tests.calendar = '✅ Success';
-        console.log('📅 Calendar rendering test passed');
-    } catch (error) {
-        uiTests.tests.calendar = `❌ Error: ${error.message}`;
-    }
-    
-    // Test Notes Rendering
-    try {
-        await renderNotes();
-        uiTests.tests.notes = '✅ Success';
-        console.log('📝 Notes rendering test passed');
-    } catch (error) {
-        uiTests.tests.notes = `❌ Error: ${error.message}`;
-    }
-    
-    // Test Tracker Rendering
-    try {
-        await renderTrackerList();
-        uiTests.tests.tracker = '✅ Success';
-        console.log('💰 Tracker rendering test passed');
-    } catch (error) {
-        uiTests.tests.tracker = `❌ Error: ${error.message}`;
-    }
-    
-    console.log('📊 UI Test Results:', uiTests);
-    return uiTests;
-};
-
-// Debug: Test Event Listeners
-window.debugTestEventListeners = function() {
-    console.log('🎯 === TESTING EVENT LISTENERS ===');
-    
-    const eventTests = {
-        timestamp: new Date().toISOString(),
-        tests: {}
-    };
-    
-    const criticalEvents = [
-        'yearSelect', 'monthSelect', 'prevMonth', 'nextMonth', 'todayBtn',
-        'addIncomeBtn', 'addExpenseBtn', 'addRecurringBtn', 'addBudgetBtn',
-        'addBillBtn', 'addGoalBtn', 'addInsuranceBtn', 'addVehicleBtn', 'addSubscriptionBtn',
-        'addShoppingBtn', 'addNoteBtn', 'darkModeToggle', 'addHolidayBtn', 'importHolidayBtn',
-        'clearDataBtn', 'backupDataBtn', 'restoreDataBtn'
-    ];
-    
-    criticalEvents.forEach(eventName => {
-        try {
-            const element = document.getElementById(eventName);
-            eventTests.tests[eventName] = {
-                exists: !!element,
-                hasClick: element && typeof element.onclick === 'function',
-                hasChange: element && typeof element.onchange === 'function',
-                tagName: element?.tagName || 'null'
-            };
-        } catch (error) {
-            eventTests.tests[eventName] = `❌ Error: ${error.message}`;
-        }
-    });
-    
-    console.log('📊 Event Listener Test Results:', eventTests);
-    return eventTests;
-};
-
-// Debug: Run All Tests
-window.debugRunAllTests = async function() {
-    console.log('🚀 === RUNNING ALL DEBUG TESTS ===');
-    
-    const allResults = {
-        timestamp: new Date().toISOString(),
-        coreFunctions: window.debugTestCoreFunctions(),
-        database: await window.debugTestDatabase(),
-        ui: await window.debugTestUI(),
-        eventListeners: window.debugTestEventListeners(),
-        importExport: await window.debugTestImportExport()
-    };
-    
-    const totalTests = Object.keys(allResults).length;
-    const passedTests = Object.values(allResults).reduce((count, result) => {
-        if (typeof result === 'object') {
-            if (result.tests) {
-                return count + Object.values(result.tests).filter(t => t.includes('✅')).length;
-            }
-        }
-        return count + (result.includes('✅') ? 1 : 0);
-    }, 0);
-    
-    const failedTests = totalTests - passedTests;
-    
-    console.log('📊 === ALL TESTS COMPLETE ===');
-    console.log(`📊 Total Tests: ${totalTests}`);
-    console.log(`✅ Passed: ${passedTests}`);
-    console.log(`❌ Failed: ${failedTests}`);
-    console.log(`📊 Success Rate: ${totalTests > 0 ? (passedTests / totalTests * 100).toFixed(1) + '%' : '0%'}`);
-    
-    if (failedTests > 0) {
-        console.log('⚠️ Failed Tests:', Object.entries(allResults).filter(([key, result]) => {
-            if (typeof result === 'object' && result.tests) {
-                return Object.entries(result.tests).filter(([key, test]) => test.includes('❌'));
-            }
-        }));
-    }
-    
-    return allResults;
-};
-
-// Add debug commands to console
-console.log('🔧 Debug Commands Available:');
-console.log('  debugCheckAllFeatures() - Comprehensive feature verification');
-console.log('  debugHealthCheck() - Quick health check');
-console.log('  debugTestImportExport() - Test import/export functions');
-console.log('  debugTestCoreFunctions() - Test core date functions');
-console.log('  debugTestDatabase() - Test database connections');
-console.log('  debugTestUI() - Test UI rendering');
-console.log('  debugTestEventListeners() - Test event listeners');
-console.log('  debugRunAllTests() - Run all tests');
-
-console.log('✅ app.js loading...');
-
 // Global state
 let currentBsYear, currentBsMonth, currentBsDay;
 let currentView = 'calendar';
@@ -1359,7 +803,6 @@ async function deleteRecurring(id) {
     renderRecurringList();
 }
 
-
 /**
  * ========================================
  * NOTIFICATION SYSTEM
@@ -1406,44 +849,33 @@ function showNotification(message, type = 'info') {
  */
 document.addEventListener('DOMContentLoaded', async () => {
     try {
-        window.debugLog('=== APP INITIALIZATION START ===');
         
         // Debug: Check DOM elements first
-        window.debugLog('Checking DOM elements...');
         const domStatus = window.debugCheckDOM();
         
         // Debug: Check script loading
-        window.debugLog('Checking script dependencies...');
         const scripts = {
             'conversion.js': typeof bsToAd !== 'undefined',
             'db.js': typeof initDB !== 'undefined',
             'charts.js': typeof Chart !== 'undefined',
             'import-export.js': typeof ImportExportManager !== 'undefined'
         };
-        window.debugLog('Script Dependencies Check', scripts);
         
         // Debug: Initialize database with error tracking
-        window.debugLog('Initializing database...');
         try {
             await initDB();
-            window.debugLog('Database initialized successfully');
         } catch (dbError) {
-            window.debugError(dbError, 'Database Initialization');
             return;
         }
         
         // Debug: Check database connections
-        window.debugLog('Checking database connections...');
         const dbStatus = await window.debugCheckDatabase();
         
         // Debug: Initialize app variables
-        window.debugLog('Initializing app variables...');
         const today = getCurrentNepaliDate();
         currentBsYear = today.year;
         currentBsMonth = today.month;
         currentBsDay = today.day;
-
-        console.log(`📅 Current BS Date: ${currentBsYear}/${currentBsMonth}/${currentBsDay}`);
 
         initializeHeader();
         initializeYearMonthSelectors();
@@ -1459,22 +891,15 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
         document.getElementById('monthView').classList.add('active');
         
-        window.debugLog('Rendering calendar...');
         renderCalendar();
-        window.debugLog('Calendar rendered successfully');
         
         // Debug: Async operations monitoring
-        window.debugLog('Starting async operations...');
         updateMonthlySummary().then(() => {
-            window.debugLog('Monthly summary updated successfully');
         }).catch(error => {
-            window.debugError(error, 'Monthly Summary Update');
         });
         
         updateAllCharts(currentBsYear, currentBsMonth).then(() => {
-            window.debugLog('Charts updated successfully');
         }).catch(error => {
-            window.debugError(error, 'Charts Update');
         });
 
         // Debug: Theme initialization
@@ -1485,34 +910,24 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (darkModeToggle) {
                 darkModeToggle.checked = true;
             }
-            window.debugLog('Dark theme applied');
         }
 
         // Debug: Recurring transactions
         await processRecurringTransactions();
-        window.debugLog('Recurring transactions processed');
 
         // Debug: Alerts system
         setTimeout(async () => {
             const alerts = await checkUpcomingAlerts();
             if (alerts.length > 0) {
-                window.debugLog('Upcoming alerts found', alerts);
             }
         }, 2000);
 
         // Debug: Final function availability check
-        window.debugLog('Performing final function availability check...');
         const functionStatus = window.debugCheckFunctions();
         
         if (functionStatus.missingFunctions.length > 0) {
-            console.warn('⚠️ Missing functions (non-fatal):', functionStatus.missingFunctions);
-            window.debugLog('Function Check Warning', functionStatus);
         } else {
-            window.debugLog('All required functions are available');
         }
-        
-        window.debugLog('=== APP INITIALIZATION COMPLETE ===');
-        console.log('✅ App initialized successfully!');
         
         // Initialize Nepali date pickers for all date inputs
         initNepaliDatePickers();
@@ -1521,9 +936,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         updateSMSProcessButton();
 
     } catch (error) {
-        window.debugError(error, 'App Initialization');
         console.error('❌ App initialization error:', error);
-        console.error('Error details:', error.stack);
         alert('Error initializing app: ' + error.message + '\n\nPlease make sure you are running this on a local server (http://localhost), not by opening the file directly.');
     }
 });
@@ -1585,22 +998,6 @@ function closeAllDropdowns() {
     });
 }
 
-async function backupData() {
-    if (typeof exportAllData === 'function') {
-        await exportAllData('json');
-    } else {
-        showNotification('❌ Export system not available', 'error');
-    }
-}
-
-async function restoreData() {
-    const input = document.getElementById('overallImportJson');
-    if (input) {
-        input.click();
-        return;
-    }
-    showNotification('❌ Import input not found', 'error');
-}
 
 async function renderUpcomingReminders() {
     const container = document.getElementById('remindersList');
@@ -1669,275 +1066,7 @@ async function removeDuplicateHolidays() {
     }
 }
 
-async function exportCalendarData(scope) {
-    try {
-        const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
-        const allHolidays = await enhancedHolidayDB.getAll();
-        const allNotes = await enhancedNoteDB.getAll();
 
-        const filterByYear = (arr) => arr.filter(item => {
-            const [y] = (item?.date_bs || '').split('/').map(Number);
-            return y === currentBsYear;
-        });
-        const filterByMonth = (arr) => arr.filter(item => {
-            const [y, m] = (item?.date_bs || '').split('/').map(Number);
-            return y === currentBsYear && m === currentBsMonth;
-        });
-
-        let data = { holidays: [], notes: [] };
-
-        switch (scope) {
-            case 'monthly':
-                data.holidays = filterByMonth(allHolidays);
-                data.notes = filterByMonth(allNotes);
-                break;
-            case 'yearly':
-                data.holidays = filterByYear(allHolidays);
-                data.notes = filterByYear(allNotes);
-                break;
-            case 'holidays':
-                data.holidays = filterByYear(allHolidays);
-                data.notes = [];
-                break;
-            case 'events':
-                data.holidays = [];
-                data.notes = filterByYear(allNotes);
-                break;
-            case 'complete':
-            default:
-                data.holidays = allHolidays;
-                data.notes = allNotes;
-                break;
-        }
-
-        const payload = {
-            version: '2.0.0',
-            timestamp: new Date().toISOString(),
-            scope,
-            data
-        };
-
-        downloadFile(JSON.stringify(payload, null, 2), `calendar-${scope || 'export'}-${timestamp}.json`, 'application/json');
-        showNotification('✅ Calendar export created', 'success');
-    } catch (error) {
-        console.error('Calendar export error:', error);
-        showNotification('❌ Calendar export failed: ' + error.message, 'error');
-    }
-}
-
-async function importCalendarData(scope, fileInput) {
-    try {
-        const file = fileInput?.files?.[0];
-        if (!file) {
-            showNotification('❌ No file selected', 'error');
-            return;
-        }
-
-        if (!file.name.toLowerCase().endsWith('.json')) {
-            showNotification('❌ Only JSON import is supported for calendar import', 'error');
-            return;
-        }
-
-        const text = await file.text();
-        const payload = JSON.parse(text);
-        let importData = payload?.data;
-    if (!importData && payload?.modules) {
-        // Full backup file — extract the calendar sub-object
-        const calMod = payload.modules.calendar || {};
-        importData = {
-            holidays: calMod.holidays || [],
-            notes:    calMod.notes    || []
-        };
-    }
-    if (!importData) {
-        showNotification('❌ Invalid calendar import file', 'error');
-        return;
-    }
-
-        const confirmed = confirm('This will import items and skip duplicates. Continue?');
-        if (!confirmed) return;
-
-        const existingHolidays = await enhancedHolidayDB.getAll();
-        const existingNotes = await enhancedNoteDB.getAll();
-        const holidayKeys = new Set(existingHolidays.map(h => `${h?.date_bs || ''}|${(h?.name || '').toLowerCase().trim()}|${(h?.type || '').toLowerCase().trim()}`));
-        const noteKeys = new Set(existingNotes.map(n => `${n?.date_bs || ''}|${(n?.title || '').toLowerCase().trim()}|${(n?.content || '').toLowerCase().trim()}`));
-
-        let added = 0;
-        if (Array.isArray(importData.holidays)) {
-            for (const h of importData.holidays) {
-                const key = `${h?.date_bs || ''}|${(h?.name || '').toLowerCase().trim()}|${(h?.type || '').toLowerCase().trim()}`;
-                if (holidayKeys.has(key)) continue;
-                const { id, ...rest } = h || {};
-                await enhancedHolidayDB.add(rest);
-                holidayKeys.add(key);
-                added++;
-            }
-        }
-
-        if (Array.isArray(importData.notes)) {
-            for (const n of importData.notes) {
-                const key = `${n?.date_bs || ''}|${(n?.title || '').toLowerCase().trim()}|${(n?.content || '').toLowerCase().trim()}`;
-                if (noteKeys.has(key)) continue;
-                const { id, ...rest } = n || {};
-                await enhancedNoteDB.add(rest);
-                noteKeys.add(key);
-                added++;
-            }
-        }
-
-        showNotification(`✅ Imported ${added} item(s)`, 'success');
-        if (typeof renderCalendar === 'function') renderCalendar();
-        if (typeof renderNotes === 'function') renderNotes();
-        if (typeof renderHolidayList === 'function') renderHolidayList();
-    } catch (error) {
-        console.error('Calendar import error:', error);
-        showNotification('❌ Calendar import failed: ' + error.message, 'error');
-    } finally {
-        if (fileInput && typeof fileInput.value === 'string') {
-            fileInput.value = '';
-        }
-    }
-}
-
-async function exportTrackerData(scope) {
-    try {
-        const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
-
-        const income = await enhancedIncomeDB.getAll();
-        const expenses = await enhancedExpenseDB.getAll();
-        const recurring = await enhancedRecurringDB.getAll();
-
-        let data = {};
-        switch (scope) {
-            case 'income':
-                data = { income };
-                break;
-            case 'expenses':
-                data = { expenses };
-                break;
-            case 'recurring':
-                data = { recurring };
-                break;
-            case 'monthly': {
-                const filterByMonth = (arr) => arr.filter(item => {
-                    const [y, m] = (item?.date_bs || '').split('/').map(Number);
-                    return y === currentBsYear && m === currentBsMonth;
-                });
-                data = {
-                    income: filterByMonth(income),
-                    expenses: filterByMonth(expenses)
-                };
-                break;
-            }
-            case 'complete':
-            default:
-                data = { income, expenses, recurring };
-                break;
-        }
-
-        const payload = {
-            version: '2.0.0',
-            timestamp: new Date().toISOString(),
-            scope,
-            data
-        };
-
-        downloadFile(JSON.stringify(payload, null, 2), `tracker-${scope || 'export'}-${timestamp}.json`, 'application/json');
-        showNotification('✅ Tracker export created', 'success');
-    } catch (error) {
-        console.error('Tracker export error:', error);
-        showNotification('❌ Tracker export failed: ' + error.message, 'error');
-    }
-}
-
-async function importTrackerData(scope, fileInput) {
-    try {
-        const file = fileInput?.files?.[0];
-        if (!file) {
-            showNotification('❌ No file selected', 'error');
-            return;
-        }
-
-        if (!file.name.toLowerCase().endsWith('.json')) {
-            showNotification('❌ Only JSON import is supported for tracker import', 'error');
-            return;
-        }
-
-        const text = await file.text();
-        const payload = JSON.parse(text);
-        
-let importData = payload?.data;
-    if (!importData && payload?.modules) {
-        // Full backup file — extract the tracker sub-object
-        const trackerMod = payload.modules.tracker || {};
-        importData = {
-            income:    trackerMod.income    || [],
-            expenses:  trackerMod.expenses  || [],
-            recurring: trackerMod.recurring || []
-        };
-    }
-    if (!importData) {
-        showNotification('❌ Invalid tracker import file', 'error');
-        return;
-    }
-        const confirmed = confirm('This will import items and skip duplicates. Continue?');
-        if (!confirmed) return;
-
-        const existingIncome = await enhancedIncomeDB.getAll();
-        const existingExpenses = await enhancedExpenseDB.getAll();
-        const existingRecurring = await enhancedRecurringDB.getAll();
-
-        const incomeKeys = new Set(existingIncome.map(t => `${t?.date_bs || ''}|${(t?.category || '').toLowerCase().trim()}|${t?.amount ?? ''}|${(t?.currency || '').toLowerCase().trim()}|${(t?.description || '').toLowerCase().trim()}`));
-        const expenseKeys = new Set(existingExpenses.map(t => `${t?.date_bs || ''}|${(t?.category || '').toLowerCase().trim()}|${t?.amount ?? ''}|${(t?.currency || '').toLowerCase().trim()}|${(t?.description || '').toLowerCase().trim()}`));
-        const recurringKeys = new Set(existingRecurring.map(t => `${t?.type || ''}|${(t?.description || '').toLowerCase().trim()}|${t?.amount ?? ''}|${(t?.currency || '').toLowerCase().trim()}|${(t?.frequency || '').toLowerCase().trim()}`));
-
-        let added = 0;
-
-        if (Array.isArray(importData.income)) {
-            for (const t of importData.income) {
-                const key = `${t?.date_bs || ''}|${(t?.category || '').toLowerCase().trim()}|${t?.amount ?? ''}|${(t?.currency || '').toLowerCase().trim()}|${(t?.description || '').toLowerCase().trim()}`;
-                if (incomeKeys.has(key)) continue;
-                const { id, ...rest } = t || {};
-                await enhancedIncomeDB.add(rest);
-                incomeKeys.add(key);
-                added++;
-            }
-        }
-
-        if (Array.isArray(importData.expenses)) {
-            for (const t of importData.expenses) {
-                const key = `${t?.date_bs || ''}|${(t?.category || '').toLowerCase().trim()}|${t?.amount ?? ''}|${(t?.currency || '').toLowerCase().trim()}|${(t?.description || '').toLowerCase().trim()}`;
-                if (expenseKeys.has(key)) continue;
-                const { id, ...rest } = t || {};
-                await enhancedExpenseDB.add(rest);
-                expenseKeys.add(key);
-                added++;
-            }
-        }
-
-        if (Array.isArray(importData.recurring)) {
-            for (const t of importData.recurring) {
-                const key = `${t?.type || ''}|${(t?.description || '').toLowerCase().trim()}|${t?.amount ?? ''}|${(t?.currency || '').toLowerCase().trim()}|${(t?.frequency || '').toLowerCase().trim()}`;
-                if (recurringKeys.has(key)) continue;
-                const { id, ...rest } = t || {};
-                await enhancedRecurringDB.add(rest);
-                recurringKeys.add(key);
-                added++;
-            }
-        }
-
-        showNotification(`✅ Imported ${added} item(s)`, 'success');
-        if (typeof renderTrackerList === 'function') renderTrackerList();
-        if (typeof renderRecurringList === 'function') renderRecurringList();
-    } catch (error) {
-        console.error('Tracker import error:', error);
-        showNotification('❌ Tracker import failed: ' + error.message, 'error');
-    } finally {
-        if (fileInput && typeof fileInput.value === 'string') {
-            fileInput.value = '';
-        }
-    }
-}
 
 function initializeEventListeners() {
     // Import/Export Dropdown Event Listeners
@@ -2326,50 +1455,26 @@ function initializeEventListeners() {
     const overallExportBtn = document.getElementById('overallExportBtn');
     const overallExportMenu = document.getElementById('overallExportMenu');
     
-    console.log(' Export button setup:', {
-        button: !!overallExportBtn,
-        menu: !!overallExportMenu,
-        buttonElement: overallExportBtn,
-        menuElement: overallExportMenu
-    });
-    
     if (overallExportBtn) {
-        console.log(' Adding click listener to export button');
         overallExportBtn.addEventListener('click', (e) => {
-            console.log(' Export button clicked!', e);
             e.preventDefault();
             e.stopPropagation();
-            console.log(' Toggling export menu');
             overallExportMenu.classList.toggle('show');
-            console.log(' Export menu classes:', overallExportMenu.className);
         });
     } else {
-        console.error(' Export button not found!');
     }
     
     // Overall Import button
     const overallImportBtn = document.getElementById('overallImportBtn');
     const overallImportMenu = document.getElementById('overallImportMenu');
     
-    console.log(' Import button setup:', {
-        button: !!overallImportBtn,
-        menu: !!overallImportMenu,
-        buttonElement: overallImportBtn,
-        menuElement: overallImportMenu
-    });
-    
     if (overallImportBtn) {
-        console.log(' Adding click listener to import button');
         overallImportBtn.addEventListener('click', (e) => {
-            console.log(' Import button clicked!', e);
             e.preventDefault();
             e.stopPropagation();
-            console.log(' Toggling import menu');
             overallImportMenu.classList.toggle('show');
-            console.log(' Import menu classes:', overallImportMenu.className);
         });
     } else {
-        console.error(' Import button not found!');
     }
     
     // Remove Duplicate Holidays Button
@@ -2658,7 +1763,6 @@ async function renderYearView() {
     try {
         const grid = document.getElementById('yearGrid');
         if (!grid) {
-            console.error('❌ Year grid not found!');
             return;
         }
 
@@ -2685,8 +1789,6 @@ async function renderYearView() {
             const monthCard = createYearMonthCard(month, currentBsYear, today);
             grid.appendChild(monthCard);
         }
-
-        console.log('✅ Year view rendered successfully');
 
         // Display yearly holidays and summary after rendering year view
         displayYearlyHolidays();
@@ -3012,23 +2114,18 @@ async function displayYearlySummary() {
  */
 async function displayWeeklyHolidays() {
     try {
-        console.log('🔍 displayWeeklyHolidays called');
         const holidayContent = document.getElementById('weeklyHolidayContent');
         if (!holidayContent) {
-            console.error('❌ weeklyHolidayContent element not found');
             return;
         }
 
         // Get current week dates
         const today = getCurrentNepaliDate();
-        console.log('📅 Today:', today);
         const currentDate = bsToAd(currentBsYear, currentBsMonth, currentBsDay || today.day);
         const dayOfWeek = currentDate.date.getDay();
-        console.log('📅 Current AD date:', currentDate, 'Day of week:', dayOfWeek);
         
         const weekStart = new Date(currentDate.date);
         weekStart.setDate(weekStart.getDate() - dayOfWeek);
-        console.log('📅 Week start:', weekStart);
 
         const weekDates = [];
         for (let i = 0; i < 7; i++) {
@@ -3037,17 +2134,12 @@ async function displayWeeklyHolidays() {
             const bs = adToBs(date.getFullYear(), date.getMonth() + 1, date.getDate());
             const bsDateStr = formatBsDate(bs.year, bs.month, bs.day);
             weekDates.push(bsDateStr);
-            console.log(`📅 Day ${i}: ${bsDateStr} (BS: ${bs.year}/${bs.month}/${bs.day})`);
         }
-
-        console.log('📅 Week dates:', weekDates);
 
         // Get holidays for the week
         const weeklyHolidays = [];
         for (const bsDateStr of weekDates) {
-            console.log(`🔍 Checking holidays for: ${bsDateStr}`);
             const holidays = await enhancedHolidayDB.getByIndex('date_bs', bsDateStr);
-            console.log(`🎉 Holidays found for ${bsDateStr}:`, holidays);
             if (holidays && holidays.length > 0) {
                 holidays.forEach(holiday => {
                     weeklyHolidays.push({...holiday, date_bs: bsDateStr});
@@ -3055,11 +2147,8 @@ async function displayWeeklyHolidays() {
             }
         }
 
-        console.log('🎉 Total weekly holidays:', weeklyHolidays);
-
         if (weeklyHolidays.length === 0) {
             holidayContent.innerHTML = '<div class="no-weekly-holidays">No holidays this week</div>';
-            console.log('📝 No holidays message displayed');
             return;
         }
 
@@ -3084,8 +2173,6 @@ async function displayWeeklyHolidays() {
             `;
         }).join('');
 
-        console.log('✅ Weekly holidays displayed successfully');
-
     } catch (error) {
         console.error('❌ Error displaying weekly holidays:', error);
     }
@@ -3096,23 +2183,18 @@ async function displayWeeklyHolidays() {
  */
 async function displayWeeklySummary() {
     try {
-        console.log('🔍 displayWeeklySummary called');
         const summaryContent = document.getElementById('weeklySummaryContent');
         if (!summaryContent) {
-            console.error('❌ weeklySummaryContent element not found');
             return;
         }
 
         // Get current week dates
         const today = getCurrentNepaliDate();
-        console.log('📅 Today:', today);
         const currentDate = bsToAd(currentBsYear, currentBsMonth, currentBsDay || today.day);
         const dayOfWeek = currentDate.date.getDay();
-        console.log('📅 Current AD date:', currentDate, 'Day of week:', dayOfWeek);
         
         const weekStart = new Date(currentDate.date);
         weekStart.setDate(weekStart.getDate() - dayOfWeek);
-        console.log('📅 Week start:', weekStart);
 
         const weekDates = [];
         for (let i = 0; i < 7; i++) {
@@ -3121,10 +2203,7 @@ async function displayWeeklySummary() {
             const bs = adToBs(date.getFullYear(), date.getMonth() + 1, date.getDate());
             const bsDateStr = formatBsDate(bs.year, bs.month, bs.day);
             weekDates.push(bsDateStr);
-            console.log(`📅 Day ${i}: ${bsDateStr} (BS: ${bs.year}/${bs.month}/${bs.day})`);
         }
-
-        console.log('📅 Week dates:', weekDates);
 
         // Initialize weekly totals
         let totalIncome = 0;
@@ -3136,13 +2215,11 @@ async function displayWeeklySummary() {
 
         // Calculate weekly totals
         for (const bsDateStr of weekDates) {
-            console.log(`🔍 Processing data for: ${bsDateStr}`);
             
             // Count holidays
             const holidays = await enhancedHolidayDB.getByIndex('date_bs', bsDateStr);
             if (holidays && holidays.length > 0) {
                 totalHolidays += holidays.length;
-                console.log(`🎉 Found ${holidays.length} holidays for ${bsDateStr}`);
             }
             
             // Count events
@@ -3159,10 +2236,7 @@ async function displayWeeklySummary() {
             totalBills += dayBills;
             totalEvents += dayEvents;
             
-            console.log(`💰 Data for ${bsDateStr}: Income=${dayIncome}, Expense=${dayExpense}, Notes=${dayNotes}, Bills=${dayBills}, Events=${dayEvents}`);
         }
-
-        console.log('📊 Weekly totals:', { totalIncome, totalExpense, totalHolidays, totalEvents, totalNotes, totalBills });
 
         const netAmount = totalIncome - totalExpense;
 
@@ -3209,8 +2283,6 @@ async function displayWeeklySummary() {
                 netCard.style.color = 'var(--danger-color)';
             }
         }
-
-        console.log('✅ Weekly summary displayed successfully');
 
     } catch (error) {
         console.error('❌ Error displaying weekly summary:', error);
@@ -3297,10 +2369,8 @@ async function displayDailySummary() {
  */
 async function renderWeekView() {
     try {
-        console.log('🔍 renderWeekView called');
         const grid = document.getElementById('weekGrid');
         if (!grid) {
-            console.error('❌ Week grid not found!');
             return;
         }
 
@@ -3309,11 +2379,9 @@ async function renderWeekView() {
         const today = getCurrentNepaliDate();
         const currentDate = bsToAd(currentBsYear, currentBsMonth, currentBsDay || today.day);
         const dayOfWeek = currentDate.date.getDay();
-        console.log('📅 Today:', today, 'Day of week:', dayOfWeek);
 
         const weekStart = new Date(currentDate.date);
         weekStart.setDate(weekStart.getDate() - dayOfWeek);
-        console.log('📅 Week start:', weekStart);
 
         // Add time slot header
         grid.appendChild(createWeekTimeSlot(''));
@@ -3385,8 +2453,6 @@ async function renderWeekView() {
             cell.innerHTML = html || '<span style="color: var(--text-secondary); font-size: 0.85rem;">No events</span>';
             grid.appendChild(cell);
         }
-        
-        console.log('✅ Week view rendered successfully');
         
         // Display weekly holidays and summary after rendering week view
         displayWeeklyHolidays();
@@ -3728,7 +2794,6 @@ function renderCalendar() {
 
         const grid = document.getElementById('calendarGrid');
         if (!grid) {
-            console.error('❌ Calendar grid not found!');
             return;
         }
 
@@ -3758,8 +2823,6 @@ function renderCalendar() {
         
         // Display monthly notes after rendering calendar
         displayMonthlyNotes();
-
-        console.log('✅ Calendar rendered successfully');
 
     } catch (error) {
         console.error('❌ Calendar render error:', error);
@@ -4536,7 +3599,6 @@ async function processPendingSMSTransactions() {
         const pendingTransactions = JSON.parse(localStorage.getItem('pendingTrackerTransactions') || '[]');
         
         // Debug: Log what we found
-        console.log('📱 SMS Processing - Pending from localStorage:', pendingTransactions.length);
         showNotification(`📱 Found ${pendingTransactions.length} pending transactions in localStorage`, 'info');
         
         // Then, collect all transactions from SMS parser IndexedDB
@@ -4548,14 +3610,11 @@ async function processPendingSMSTransactions() {
             if (smsParserDB) {
                 const allSmsTransactions = await smsParserDB.getAll('transactions');
                 smsParserTransactions = allSmsTransactions || [];
-                console.log(`📱 Found ${smsParserTransactions.length} transactions in SMS parser IndexedDB`);
                 showNotification(`📱 Found ${smsParserTransactions.length} transactions in SMS parser database`, 'info');
             } else {
-                console.log('📱 SMS parser IndexedDB not accessible');
                 showNotification('📱 SMS parser database not accessible', 'warning');
             }
         } catch (error) {
-            console.warn('Could not access SMS parser IndexedDB:', error);
             showNotification('⚠️ Could not access SMS parser database', 'warning');
         }
         
@@ -4567,7 +3626,6 @@ async function processPendingSMSTransactions() {
             return;
         }
         
-        console.log(`📱 Processing ${allTransactions.length} total SMS transactions (${pendingTransactions.length} from localStorage, ${smsParserTransactions.length} from IndexedDB)`);
         showNotification(`📱 Processing ${allTransactions.length} total SMS transactions...`, 'info');
         
         // Show preview before importing
@@ -4617,10 +3675,8 @@ async function processPendingSMSTransactions() {
                 
                 if (isIncome) {
                     await incomeDB.add(trackerData);
-                    console.log('Added to income DB:', trackerData);
                 } else {
                     await expenseDB.add(trackerData);
-                    console.log('Added to expense DB:', trackerData);
                 }
                 
                 processedCount++;
@@ -4659,7 +3715,6 @@ async function processPendingSMSTransactions() {
         }
         
         if (errorCount > 0) {
-            console.warn(`⚠️ Failed to process ${errorCount} SMS transactions`);
             showNotification(`⚠️ Failed to process ${errorCount} SMS transactions`, 'error');
         }
         
@@ -4958,7 +4013,6 @@ async function renderTrackerList() {
     const currencyElement = document.getElementById('currencyFilter');
     
     if (!list) {
-        console.warn('Tracker list element not found');
         return;
     }
     
@@ -5063,18 +4117,7 @@ async function editTransaction(type, id) {
     }
 }
 
-async function exportTransactions() {
-    const allIncome = await incomeDB.getAll();
-    const allExpenses = await expenseDB.getAll();
 
-    const csv = [
-        ['Type', 'Date (BS)', 'Category', 'Description', 'Amount', 'Currency'],
-        ...allIncome.map(item => ['Income', item.date_bs, item.category, item.description, item.amount, item.currency || 'NPR']),
-        ...allExpenses.map(item => ['Expense', item.date_bs, item.category, item.description, item.amount, item.currency || 'NPR'])
-    ].map(row => row.join(',')).join('\n');
-
-    downloadFile(csv, 'transactions.csv', 'text/csv');
-}
 
 /**
  * ========================================
@@ -5217,7 +4260,6 @@ async function deleteShoppingItem(id) {
     }
 }
 
-
 /**
  * ========================================
  * HOLIDAYS
@@ -5320,44 +4362,7 @@ async function deleteHoliday(id) {
     }
 }
 
-async function importHolidaysCSV(event) {
-    const file = event.target.files[0];
-    if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = async (e) => {
-        try {
-            const text = e.target.result;
-            const lines = text.split('\n').filter(line => line.trim());
-            
-            const dataLines = lines[0].includes('date_bs') ? lines.slice(1) : lines;
-
-            let count = 0;
-            for (const line of dataLines) {
-                const [date_bs, date_ad, name, type] = line.split(',').map(s => s.trim());
-                if (date_bs && date_ad && name) {
-                    await holidayDB.add({
-                        date_bs,
-                        date_ad,
-                        name,
-                        type: type || 'public'
-                    });
-                    count++;
-                }
-            }
-
-            alert(`${count} holidays imported successfully!`);
-            renderHolidayList();
-            renderCalendar();
-        } catch (error) {
-            console.error('CSV import error:', error);
-            alert('Error importing CSV. Please check the format.');
-        }
-    };
-
-    reader.readAsText(file);
-    event.target.value = '';
-}
 
 // Settings
 function toggleDarkMode(e) {
@@ -5389,610 +4394,6 @@ function getFormattedDate() {
     return `${year}-${month}-${day}_${hours}-${minutes}-${seconds}`;
 }
 
-// Excel file reader function
-async function readExcelFile(file) {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            try {
-                const data = new Uint8Array(e.target.result);
-                const workbook = XLSX.read(data, { type: 'array' });
-                
-                // Get the first worksheet
-                const sheetName = workbook.SheetNames[0];
-                const worksheet = workbook.Sheets[sheetName];
-                
-                // Convert to JSON
-                const jsonData = XLSX.utils.sheet_to_json(worksheet);
-                
-                // Determine module type based on file content or name
-                const fileName = file.name.toLowerCase();
-                let moduleType = 'unknown';
-                let processedData = {};
-                
-                if (fileName.includes('insurance') || jsonData.some(row => row.policyNumber || row.company)) {
-                    moduleType = 'insurance';
-                    processedData = {
-                        type: 'insurance',
-                        insurance: jsonData.map(row => ({
-                            name: row.name || row.policyName || '',
-                            policyNumber: row.policyNumber || row.policyNo || '',
-                            company: row.company || row.provider || '',
-                            type: row.type || 'other',
-                            coverage: parseFloat(row.coverage) || 0,
-                            premium: parseFloat(row.premium) || 0,
-                            frequency: row.frequency || 'yearly',
-                            startDate: row.startDate || '',
-                            expiryDate: row.expiryDate || '',
-                            beneficiary: row.beneficiary || '',
-                            status: row.status || 'active',
-                            notes: row.notes || '',
-                            createdAt: new Date().toISOString()
-                        }))
-                    };
-                } else if (fileName.includes('vehicle') || jsonData.some(row => row.make || row.model)) {
-                    moduleType = 'vehicle';
-                    processedData = {
-                        type: 'vehicle',
-                        vehicles: jsonData.map(row => ({
-                            make: row.make || '',
-                            model: row.model || '',
-                            year: parseInt(row.year) || new Date().getFullYear(),
-                            licensePlate: row.licensePlate || row.plate || '',
-                            type: row.type || 'car',
-                            mileage: parseInt(row.mileage) || 0,
-                            fuelType: row.fuelType || 'petrol',
-                            status: row.status || 'active',
-                            notes: row.notes || '',
-                            createdAt: new Date().toISOString()
-                        }))
-                    };
-                } else if (fileName.includes('subscription') || jsonData.some(row => row.renewalDate || row.cost)) {
-                    moduleType = 'subscription';
-                    processedData = {
-                        type: 'subscription',
-                        subscriptions: jsonData.map(row => ({
-                            name: row.name || '',
-                            category: row.category || 'other',
-                            cost: parseFloat(row.cost) || parseFloat(row.amount) || 0,
-                            frequency: row.frequency || 'monthly',
-                            renewalDate: row.renewalDate || row.dueDate || '',
-                            status: row.status || 'active',
-                            notes: row.notes || '',
-                            createdAt: new Date().toISOString()
-                        }))
-                    };
-                } else if (fileName.includes('goal') || jsonData.some(row => row.targetAmount)) {
-                    moduleType = 'goals';
-                    processedData = {
-                        type: 'goals',
-                        goals: jsonData.map(row => ({
-                            name: row.name || '',
-                            targetAmount: parseFloat(row.targetAmount) || 0,
-                            currentAmount: parseFloat(row.currentAmount) || 0,
-                            deadline: row.deadline || '',
-                            category: row.category || 'other',
-                            priority: row.priority || 'medium',
-                            status: row.status || 'active',
-                            notes: row.notes || '',
-                            createdAt: new Date().toISOString()
-                        }))
-                    };
-                } else {
-                    // Default to generic data structure
-                    processedData = {
-                        type: 'generic',
-                        data: jsonData
-                    };
-                }
-                
-                resolve(processedData);
-            } catch (error) {
-                reject(error);
-            }
-        };
-        reader.onerror = () => reject(new Error('Failed to read file'));
-        reader.readAsArrayBuffer(file);
-    });
-}
-
-// Data Management - Replaced by import-export.js system
-// Generic Import Function for Individual Modules
-async function importData(module, format, fileInput) {
-    console.log('🐛 DEBUG: importData called', { module, format, fileInput });
-    
-    try {
-        const file = fileInput.files[0];
-        if (!file) {
-            console.error('🐛 DEBUG: No file selected');
-            return;
-        }
-        
-        console.log('🐛 DEBUG: File selected', { 
-            name: file.name, 
-            size: file.size, 
-            type: file.type,
-            lastModified: file.lastModified 
-        });
-        
-        showNotification(`📥 Reading ${module} data...`, 'info');
-        
-        if (format === 'json') {
-            console.log('🐛 DEBUG: Processing JSON file');
-            const reader = new FileReader();
-            reader.onload = async (e) => {
-                try {
-                    console.log('🐛 DEBUG: FileReader loaded, parsing JSON');
-                    const importData = JSON.parse(e.target.result);
-                    console.log('🐛 DEBUG: JSON parsed successfully', { 
-                        dataType: typeof importData,
-                        keys: Object.keys(importData),
-                        hasInsurance: !!importData.insurance,
-                        insuranceLength: importData.insurance ? importData.insurance.length : 0,
-                        fullData: importData
-                    });
-                    
-                    // Show preview before importing
-                    console.log('🐛 DEBUG: Showing import preview');
-                    const confirmed = await showImportPreview(importData, module);
-                    console.log('🐛 DEBUG: Preview confirmed', confirmed);
-                    if (!confirmed) {
-                        console.log('🐛 DEBUG: Import cancelled by user');
-                        return;
-                    }
-                    
-                    showNotification(`🔄 Importing ${module} data...`, 'info');
-                    
-                    // Process import based on module
-                    console.log('🐛 DEBUG: Processing import for module', module);
-                    switch(module) {
-                        case 'insurance':
-                            console.log('🐛 DEBUG: Calling processInsuranceImport');
-                            await processInsuranceImport(importData);
-                            console.log('🐛 DEBUG: processInsuranceImport completed');
-                            break;
-                        case 'vehicle':
-                            console.log('🐛 DEBUG: Calling processVehicleImport');
-                            await processVehicleImport(importData);
-                            break;
-                        case 'subscription':
-                            console.log('🐛 DEBUG: Calling processSubscriptionImport');
-                            await processSubscriptionImport(importData);
-                            break;
-                        case 'goals':
-                            console.log('🐛 DEBUG: Calling processGoalsImport');
-                            await processGoalsImport(importData);
-                            break;
-                        case 'custom':
-                            console.log('🐛 DEBUG: Calling processCustomImport');
-                            await processCustomImport(importData);
-                            break;
-                        default:
-                            console.error('🐛 DEBUG: Unknown module for import', module);
-                            showNotification('❌ Unknown module for import', 'error');
-                            return;
-                    }
-                    
-                    showNotification(`✅ ${module} imported successfully!`, 'success');
-                    console.log('🐛 DEBUG: Import success notification shown');
-                    
-                    // Refresh relevant views
-                    console.log('🐛 DEBUG: Refreshing views for module', module);
-                    if (module === 'insurance') {
-                        console.log('🐛 DEBUG: Calling renderInsuranceList');
-                        await renderInsuranceList();
-                        console.log('🐛 DEBUG: Calling renderInsuranceStats');
-                        await renderInsuranceStats();
-                    } else if (module === 'vehicle') {
-                        console.log('🐛 DEBUG: Calling renderVehicleGrid');
-                        await renderVehicleGrid();
-                    } else if (module === 'subscription') {
-                        console.log('🐛 DEBUG: Calling renderSubscriptionList');
-                        await renderSubscriptionList();
-                        console.log('🐛 DEBUG: Calling renderSubscriptionSummary');
-                        await renderSubscriptionSummary();
-                    } else if (module === 'goals') {
-                        console.log('🐛 DEBUG: Calling renderGoalsGrid');
-                        await renderGoalsGrid();
-                    }
-                    console.log('🐛 DEBUG: View refresh completed');
-                    
-                } catch (parseError) {
-                    console.error('🐛 DEBUG: Parse error occurred', parseError);
-                    console.error('🐛 DEBUG: Error details', {
-                        message: parseError.message,
-                        stack: parseError.stack,
-                        name: parseError.name
-                    });
-                    showNotification('❌ Failed to parse import file: ' + parseError.message, 'error');
-                }
-            };
-            
-            reader.onerror = (error) => {
-                console.error('🐛 DEBUG: FileReader error', error);
-                showNotification('❌ Failed to read file', 'error');
-            };
-            
-            console.log('🐛 DEBUG: Starting FileReader.readAsText');
-            reader.readAsText(file);
-        } else if (format === 'excel') {
-            // Handle Excel import
-            console.log('🐛 DEBUG: Processing Excel file');
-            showNotification('📊 Processing Excel file...', 'info');
-            
-            try {
-                console.log('🐛 DEBUG: Calling readExcelFile');
-                const data = await readExcelFile(file);
-                console.log('🐛 DEBUG: Excel file read successfully', { 
-                    dataType: typeof data,
-                    keys: Object.keys(data),
-                    hasInsurance: !!data.insurance,
-                    insuranceLength: data.insurance ? data.insurance.length : 0
-                });
-                
-                // Show preview before importing
-                console.log('🐛 DEBUG: Showing Excel import preview');
-                const confirmed = await showImportPreview(data, module);
-                console.log('🐛 DEBUG: Excel preview confirmed', confirmed);
-                if (!confirmed) {
-                    console.log('🐛 DEBUG: Excel import cancelled by user');
-                    return;
-                }
-                
-                showNotification(`🔄 Importing ${module} data...`, 'info');
-                
-                // Process import based on module
-                console.log('🐛 DEBUG: Processing Excel import for module', module);
-                switch(module) {
-                    case 'insurance':
-                        console.log('🐛 DEBUG: Calling processInsuranceImport for Excel');
-                        await processInsuranceImport(data);
-                        break;
-                    case 'vehicle':
-                        console.log('🐛 DEBUG: Calling processVehicleImport for Excel');
-                        await processVehicleImport(data);
-                        break;
-                    case 'subscription':
-                        console.log('🐛 DEBUG: Calling processSubscriptionImport for Excel');
-                        await processSubscriptionImport(data);
-                        break;
-                    case 'goals':
-                        console.log('🐛 DEBUG: Calling processGoalsImport for Excel');
-                        await processGoalsImport(data);
-                        break;
-                    case 'custom':
-                        console.log('🐛 DEBUG: Calling processCustomImport for Excel');
-                        await processCustomImport(data);
-                        break;
-                    default:
-                        console.error('🐛 DEBUG: Unknown module for Excel import', module);
-                        showNotification('❌ Unknown module for import', 'error');
-                        return;
-                }
-                
-                showNotification(`✅ ${module} imported successfully!`, 'success');
-                console.log('🐛 DEBUG: Excel import success notification shown');
-                
-                // Refresh relevant views
-                console.log('🐛 DEBUG: Refreshing views after Excel import for module', module);
-                if (module === 'insurance') {
-                    console.log('🐛 DEBUG: Calling renderInsuranceList after Excel import');
-                    await renderInsuranceList();
-                    console.log('🐛 DEBUG: Calling renderInsuranceStats after Excel import');
-                    await renderInsuranceStats();
-                } else if (module === 'vehicle') {
-                    console.log('🐛 DEBUG: Calling renderVehicleGrid after Excel import');
-                    await renderVehicleGrid();
-                } else if (module === 'subscription') {
-                    console.log('🐛 DEBUG: Calling renderSubscriptionList after Excel import');
-                    await renderSubscriptionList();
-                    console.log('🐛 DEBUG: Calling renderSubscriptionSummary after Excel import');
-                    await renderSubscriptionSummary();
-                } else if (module === 'goals') {
-                    console.log('🐛 DEBUG: Calling renderGoalsGrid after Excel import');
-                    await renderGoalsGrid();
-                }
-                console.log('🐛 DEBUG: Excel view refresh completed');
-                
-            } catch (excelError) {
-                console.error('🐛 DEBUG: Excel processing error', excelError);
-                console.error('🐛 DEBUG: Excel error details', {
-                    message: excelError.message,
-                    stack: excelError.stack,
-                    name: excelError.name
-                });
-                showNotification('❌ Failed to process Excel file: ' + excelError.message, 'error');
-            }
-        }
-        
-    } catch (error) {
-        console.error('🐛 DEBUG: Import error occurred', error);
-        console.error('🐛 DEBUG: Import error details', {
-            message: error.message,
-            stack: error.stack,
-            name: error.name,
-            module,
-            format
-        });
-        showNotification('❌ Import failed: ' + error.message, 'error');
-    }
-    
-    // Reset file input
-    console.log('🐛 DEBUG: Resetting file input');
-    fileInput.value = '';
-    console.log('🐛 DEBUG: importData function completed');
-}
-
-// Module Import Function for Settings
-async function importModuleData(module, fileInput) {
-    try {
-        const file = fileInput.files[0];
-        if (!file) return;
-        
-        showNotification(`📥 Reading ${module} module data...`, 'info');
-        
-        const reader = new FileReader();
-        reader.onload = async (e) => {
-            try {
-                let importData;
-                
-                // Check file extension
-                if (file.name.endsWith('.json')) {
-                    importData = JSON.parse(e.target.result);
-                } else if (file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
-                    importData = await readExcelFile(file);
-                } else {
-                    showNotification('❌ Unsupported file format', 'error');
-                    return;
-                }
-                
-                // Show preview before importing
-                const confirmed = await showImportPreview(importData, module);
-                if (!confirmed) return;
-                
-                showNotification(`🔄 Importing ${module} module data...`, 'info');
-                
-                // Process import based on module
-                switch(module) {
-                    case 'insurance':
-                        await processInsuranceImport(importData);
-                        break;
-                    case 'vehicle':
-                        await processVehicleImport(importData);
-                        break;
-                    case 'subscription':
-                        await processSubscriptionImport(importData);
-                        break;
-                    case 'goals':
-                        await processGoalsImport(importData);
-                        break;
-                    case 'custom':
-                        await processCustomImport(importData);
-                        break;
-                    default:
-                        showNotification('❌ Unknown module for import', 'error');
-                        return;
-                }
-                
-                showNotification(`✅ ${module} module imported successfully!`, 'success');
-                
-                // Refresh relevant views
-                if (module === 'insurance') {
-                    renderInsuranceList();
-                    renderInsuranceStats();
-                } else if (module === 'vehicle') {
-                    renderVehicleGrid();
-                } else if (module === 'subscription') {
-                    renderSubscriptionList();
-                    renderSubscriptionStats();
-                } else if (module === 'goals') {
-                    renderGoalsGrid();
-                }
-                
-            } catch (parseError) {
-                console.error('Parse error:', parseError);
-                showNotification('❌ Failed to parse import file', 'error');
-            }
-        };
-        
-        reader.readAsText(file);
-    } catch (error) {
-        console.error('Import error:', error);
-        showNotification('❌ Import failed: ' + error.message, 'error');
-    }
-    
-    // Reset file input
-    fileInput.value = '';
-}
-
-// Import All Data Function
-async function importAllData(format, fileInputOrFile) {
-    const isFileInput = !!(fileInputOrFile && typeof fileInputOrFile === 'object' && 'files' in fileInputOrFile);
-    const file = isFileInput ? fileInputOrFile.files[0] : fileInputOrFile;
-
-    try {
-        if (!file) {
-            showNotification('❌ No file selected', 'error');
-            return;
-        }
-
-        showNotification(`📥 Reading ${format.toUpperCase()} file...`, 'info');
-
-        if (format === 'json') {
-            const reader = new FileReader();
-            reader.onload = async (e) => {
-                try {
-                    const importData = JSON.parse(e.target.result);
-
-                    // FIX: Normalize import schema.
-                    // Full backup uses: { exportDate, version, modules: { calendar: {...}, tracker: {...}, ... } }
-                    // Module export uses: { version, scope, data: { holidays: [...], ... } }
-                    // Legacy backup used: { data: { holidays: [...], ... } }
-                    let flatData = {};
-                    if (importData.modules && typeof importData.modules === 'object') {
-                        // Full backup — flatten all module sub-objects into one map
-                        for (const mod of Object.values(importData.modules)) {
-                            if (mod && typeof mod === 'object') Object.assign(flatData, mod);
-                        }
-                    } else if (importData.data && typeof importData.data === 'object') {
-                        // Module or legacy export
-                        flatData = importData.data;
-                    } else {
-                        showNotification('❌ Invalid import file format — no data or modules found', 'error');
-                        return;
-                    }
-
-                    const totalRecords = Object.values(flatData).filter(Array.isArray).reduce((s, a) => s + a.length, 0);
-                    if (totalRecords === 0) {
-                        showNotification('⚠️ Import file appears to be empty', 'warning');
-                        return;
-                    }
-
-                    const confirmed = confirm(
-                        `This will replace all current data with ${totalRecords} records from the backup.
-
-` +
-                        `Modules found: ${Object.keys(flatData).filter(k => Array.isArray(flatData[k]) && flatData[k].length > 0).join(', ')}
-
-` +
-                        `Are you sure? This cannot be undone.`
-                    );
-                    if (!confirmed) return;
-
-                    showNotification('🔄 Importing data...', 'info');
-
-                    // DB map — covers all stores
-                    const _dbMap = {
-                        holidays:        enhancedHolidayDB,
-                        notes:           enhancedNoteDB,
-                        income:          enhancedIncomeDB,
-                        expenses:        enhancedExpenseDB,
-                        shopping:        enhancedShoppingDB,
-                        budgets:         enhancedBudgetDB,
-                        bills:           enhancedBillDB,
-                        goals:           enhancedGoalDB,
-                        recurring:       enhancedRecurringDB,
-                        insurance:       enhancedInsuranceDB,
-                        vehicles:        enhancedVehicleDB,
-                        vehicleServices: enhancedVehicleServiceDB,
-                        subscriptions:   enhancedSubscriptionDB,
-                        customTypes:     enhancedCustomTypeDB,
-                        customItems:     enhancedCustomItemDB,
-                    };
-
-                    // Clear only stores that have incoming data (safer than clear-all)
-                    for (const [key, db] of Object.entries(_dbMap)) {
-                        if (Array.isArray(flatData[key]) && flatData[key].length > 0) {
-                            try { await db.clear(); } catch(_) {}
-                        }
-                    }
-
-                    // Restore data — strip old ids so DB auto-assigns new ones
-                    let imported = 0;
-                    for (const [key, db] of Object.entries(_dbMap)) {
-                        const items = flatData[key];
-                        if (!Array.isArray(items)) continue;
-                        for (const item of items) {
-                            try {
-                                const { id, ...rest } = item;
-                                await db.add(rest);
-                                imported++;
-                            } catch (e) {
-                                console.warn(`Failed to import item in ${key}:`, e);
-                            }
-                        }
-                    }
-
-                    // Restore settings
-                    if (importData.settings) {
-                        if (importData.settings.defaultCurrency) {
-                            localStorage.setItem('defaultCurrency', importData.settings.defaultCurrency);
-                        }
-                        if (importData.settings.theme) {
-                            localStorage.setItem('theme', importData.settings.theme);
-                        }
-                    }
-
-                    showNotification(`✅ Data imported successfully! ${imported} records restored.`, 'success');
-                    setTimeout(() => {
-                        location.reload();
-                    }, 1000);
-                } catch (parseError) {
-                    console.error('Parse error:', parseError);
-                    showNotification('❌ Failed to parse import file', 'error');
-                }
-            };
-
-            reader.onerror = () => {
-                showNotification('❌ Failed to read file', 'error');
-            };
-
-            reader.readAsText(file);
-        } else if (format === 'excel') {
-            showNotification('📊 Processing Excel file...', 'info');
-
-            try {
-                const data = await readExcelFile(file);
-                if (!data || !data.data) {
-                    showNotification('❌ Invalid Excel file format', 'error');
-                    return;
-                }
-
-                const confirmed = confirm('This will replace all current data. Are you sure?');
-                if (!confirmed) return;
-
-                showNotification('🔄 Importing Excel data...', 'info');
-                await importAllData('json', new File([JSON.stringify(data)], 'import.json', { type: 'application/json' }));
-            } catch (excelError) {
-                console.error('Excel processing error:', excelError);
-                showNotification('❌ Failed to process Excel file: ' + excelError.message, 'error');
-            }
-        } else if (format === 'csv') {
-            showNotification('📋 Processing CSV file...', 'info');
-
-            try {
-                const reader = new FileReader();
-                reader.onload = async (e) => {
-                    try {
-                        const csvData = JSON.parse(e.target.result);
-                        if (!csvData) {
-                            showNotification('❌ Invalid CSV file format', 'error');
-                            return;
-                        }
-
-                        const importData = {
-                            version: '2.0.0',
-                            timestamp: new Date().toISOString(),
-                            data: csvData
-                        };
-
-                        const jsonFile = new File([JSON.stringify(importData)], 'import.json', { type: 'application/json' });
-                        await importAllData('json', jsonFile);
-                    } catch (csvError) {
-                        console.error('CSV processing error:', csvError);
-                        showNotification('❌ Failed to process CSV file: ' + csvError.message, 'error');
-                    }
-                };
-
-                reader.onerror = () => {
-                    showNotification('❌ Failed to read file', 'error');
-                };
-
-                reader.readAsText(file);
-            } catch (error) {
-                console.error('CSV import error:', error);
-                showNotification('❌ CSV import failed: ' + error.message, 'error');
-            }
-        }
-    } catch (error) {
-        console.error('Import error:', error);
-        showNotification('❌ Import failed: ' + error.message, 'error');
-    } finally {
-        if (isFileInput && fileInputOrFile && typeof fileInputOrFile.value === 'string') {
-            fileInputOrFile.value = '';
-        }
-    }
-}
 
 // Clear All Data Function
 async function clearAllData() {
@@ -6118,7 +4519,6 @@ async function checkUpcomingAlerts() {
 
     // Log alerts
     if (alerts.length > 0) {
-        console.log('🔔 Upcoming Alerts:', alerts);
     }
 
     return alerts;
@@ -6222,7 +4622,6 @@ async function processGoalsImport(data) {
 
 // Process Insurance Import
 async function processInsuranceImport(data) {
-    console.log('🐛 DEBUG: processInsuranceImport called', { data });
     
     try {
         // Handle both direct and nested data structures
@@ -6231,31 +4630,15 @@ async function processInsuranceImport(data) {
         if (data.insurance && Array.isArray(data.insurance)) {
             // Direct structure: { "insurance": [...] }
             insuranceData = data.insurance;
-            console.log('🐛 DEBUG: Using direct insurance data structure');
         } else if (data.data && data.data.insurance && Array.isArray(data.data.insurance)) {
             // Nested structure: { "data": { "insurance": [...] } }
             insuranceData = data.data.insurance;
-            console.log('🐛 DEBUG: Using nested data structure');
         } else {
-            console.error('🐛 DEBUG: No insurance data found or invalid format', { 
-                hasInsurance: !!data.insurance,
-                hasData: !!data.data,
-                hasNestedInsurance: !!(data.data && data.data.insurance),
-                isArray: Array.isArray(data.insurance),
-                isNestedArray: !!(data.data && Array.isArray(data.data.insurance)),
-                dataKeys: Object.keys(data),
-                dataType: typeof data,
-                fullData: data
-            });
             showNotification('⚠️ No insurance data found in import file', 'warning');
             return;
         }
         
-        console.log('🐛 DEBUG: Found insurance array', { length: insuranceData.length });
-        
-        console.log('🐛 DEBUG: Getting existing insurance from DB');
         const existingInsurance = await enhancedInsuranceDB.getAll();
-        console.log('🐛 DEBUG: Existing insurance retrieved', { count: existingInsurance.length });
         
         const existingKeys = new Set();
         existingInsurance.forEach(insurance => {
@@ -6265,17 +4648,10 @@ async function processInsuranceImport(data) {
             const key = `${company.toString().toLowerCase().trim()}-${policyNumber.toString().toLowerCase().trim()}`;
             existingKeys.add(key);
         });
-        console.log('🐛 DEBUG: Existing keys created', { count: existingKeys.size });
         
         let addedCount = 0, duplicateCount = 0, errorCount = 0;
         
         for (const [index, insurance] of insuranceData.entries()) {
-            console.log(`🐛 DEBUG: Processing insurance item ${index + 1}/${insuranceData.length}`, {
-                name: insurance.name,
-                provider: insurance.provider,
-                company: insurance.company,
-                policyNumber: insurance.policyNumber
-            });
             
             try {
                 const { id, ...insuranceItemData } = insurance;
@@ -6284,10 +4660,7 @@ async function processInsuranceImport(data) {
                 const policyNumber = insuranceItemData.policyNumber || '';
                 const key = `${company.toString().toLowerCase().trim()}-${policyNumber.toString().toLowerCase().trim()}`;
                 
-                console.log(`🐛 DEBUG: Checking duplicate key`, { key });
-                
                 if (!existingKeys.has(key)) {
-                    console.log(`🐛 DEBUG: Adding new insurance item`, { key });
                     
                     // Ensure required fields
                     const processedData = {
@@ -6306,93 +4679,51 @@ async function processInsuranceImport(data) {
                         createdAt: insuranceItemData.createdAt || new Date().toISOString()
                     };
                     
-                    console.log(`🐛 DEBUG: Processed insurance data`, processedData);
-                    
                     await enhancedInsuranceDB.add(processedData);
                     existingKeys.add(key);
                     addedCount++;
                     
-                    console.log(`🐛 DEBUG: Successfully added insurance item`, { 
-                        addedCount, 
-                        name: processedData.name,
-                        company: processedData.company
-                    });
                 } else {
-                    console.log(`🐛 DEBUG: Duplicate found, skipping`, { key });
                     duplicateCount++;
                 }
             } catch (itemError) {
-                console.error(`🐛 DEBUG: Error processing insurance item ${index + 1}`, itemError);
-                console.error(`🐛 DEBUG: Item error details`, {
-                    message: itemError.message,
-                    stack: itemError.stack,
-                    insuranceData: insurance
-                });
                 errorCount++;
             }
         }
         
-        console.log(`🐛 DEBUG: Insurance import processing completed`, {
-            totalItems: insuranceData.length,
-            addedCount,
-            duplicateCount,
-            errorCount
-        });
-        
         showNotification(`✅ Insurance import complete! Added: ${addedCount}, Duplicates skipped: ${duplicateCount}, Errors: ${errorCount}`, 'success');
         
-        console.log('🐛 DEBUG: Calling renderInsuranceList after import');
         await renderInsuranceList();
-        console.log('🐛 DEBUG: Calling renderInsuranceStats after import');
         await renderInsuranceStats();
-        console.log('🐛 DEBUG: processInsuranceImport completed successfully');
         
     } catch (error) {
-        console.error('🐛 DEBUG: processInsuranceImport error occurred', error);
-        console.error('🐛 DEBUG: ProcessInsuranceImport error details', {
-            message: error.message,
-            stack: error.stack,
-            name: error.name,
-            dataReceived: !!data,
-            dataType: typeof data
-        });
         showNotification('❌ Insurance import failed: ' + error.message, 'error');
     }
 }
 
 // Process Vehicle Import
 async function processVehicleImport(data) {
-    console.log('🐛 DEBUG: processVehicleImport called', { data });
     
     try {
         if (data.vehicles && Array.isArray(data.vehicles)) {
-            console.log('🐛 DEBUG: Found vehicles array', { length: data.vehicles.length });
             
             const existingVehicles = await enhancedVehicleDB.getAll();
-            console.log('🐛 DEBUG: Existing vehicles retrieved', { count: existingVehicles.length });
             
             const existingKeys = new Set();
             existingVehicles.forEach(vehicle => {
                 const key = `${vehicle.make.toLowerCase().trim()}-${vehicle.model.toLowerCase().trim()}-${vehicle.licensePlate.toLowerCase().trim()}`;
                 existingKeys.add(key);
             });
-            console.log('🐛 DEBUG: Vehicle existing keys created', { count: existingKeys.size });
             
             let addedCount = 0, duplicateCount = 0, errorCount = 0;
             
             for (const [index, vehicle] of data.vehicles.entries()) {
-                console.log(`🐛 DEBUG: Processing vehicle item ${index + 1}/${data.vehicles.length}`, {
-                    make: vehicle.make,
-                    model: vehicle.model,
-                    licensePlate: vehicle.licensePlate
-                });
                 
                 try {
                     const { id, ...vehicleData } = vehicle;
                     const key = `${vehicleData.make?.toLowerCase().trim() || ''}-${vehicleData.model?.toLowerCase().trim() || ''}-${vehicleData.licensePlate?.toLowerCase().trim() || ''}`;
                     
                     if (!existingKeys.has(key)) {
-                        console.log(`🐛 DEBUG: Adding new vehicle item`, { key });
                         
                         const processedData = {
                             make: vehicleData.make || '',
@@ -6411,43 +4742,22 @@ async function processVehicleImport(data) {
                         existingKeys.add(key);
                         addedCount++;
                         
-                        console.log(`🐛 DEBUG: Successfully added vehicle item`, { 
-                            addedCount, 
-                            make: processedData.make,
-                            model: processedData.model
-                        });
                     } else {
-                        console.log(`🐛 DEBUG: Vehicle duplicate found, skipping`, { key });
                         duplicateCount++;
                     }
                 } catch (itemError) {
-                    console.error(`🐛 DEBUG: Error processing vehicle item ${index + 1}`, itemError);
                     errorCount++;
                 }
             }
             
-            console.log(`🐛 DEBUG: Vehicle import processing completed`, {
-                totalItems: data.vehicles.length,
-                addedCount,
-                duplicateCount,
-                errorCount
-            });
-            
             showNotification(`✅ Vehicle import complete! Added: ${addedCount}, Duplicates skipped: ${duplicateCount}, Errors: ${errorCount}`, 'success');
         } else {
-            console.error('🐛 DEBUG: No vehicle data found', { 
-                hasVehicles: !!data.vehicles,
-                isArray: Array.isArray(data.vehicles)
-            });
             showNotification('⚠️ No vehicle data found in import file', 'warning');
         }
         
-        console.log('🐛 DEBUG: Calling renderVehicleGrid after import');
         await renderVehicleGrid();
-        console.log('🐛 DEBUG: processVehicleImport completed');
         
     } catch (error) {
-        console.error('🐛 DEBUG: processVehicleImport error', error);
         showNotification('❌ Vehicle import failed: ' + error.message, 'error');
     }
 }
@@ -6970,22 +5280,17 @@ function updateSMSProcessButton() {
     const pendingTransactions = JSON.parse(localStorage.getItem('pendingTrackerTransactions') || '[]');
     const processBtn = document.getElementById('processSMSBtn');
     
-    console.log('🔄 Updating SMS Process Button - Pending transactions:', pendingTransactions.length);
-    
     if (processBtn) {
         if (pendingTransactions.length > 0) {
             processBtn.textContent = `🔄 Process SMS (${pendingTransactions.length})`;
             processBtn.classList.add('btn-warning');
             processBtn.classList.remove('btn-secondary');
-            console.log('✅ SMS Process Button updated to show pending count:', pendingTransactions.length);
         } else {
             processBtn.textContent = '🔄 Process SMS';
             processBtn.classList.remove('btn-warning');
             processBtn.classList.add('btn-secondary');
-            console.log('✅ SMS Process Button updated to normal state');
         }
     } else {
-        console.log('❌ SMS Process Button not found in DOM');
     }
 }
 
@@ -7008,37 +5313,7 @@ let exchangeRates = {
     EUR: 0.0069,
     INR: 0.63
 };
-function showImportPreview(data, module) {
-    // FIX: Delegate to import-export.js's rich preview modal if available.
-    // import-export.js sets window.showImportPreview to its manager's method.
-    // Since app.js loads after import-export.js, this function definition
-    // would normally shadow it — so we explicitly check and delegate.
-    if (window.importExportManager && typeof window.importExportManager.showImportPreview === 'function') {
-        return window.importExportManager.showImportPreview(data, module);
-    }
-    // Fallback: simple confirm dialog
-    return new Promise((resolve) => {
-        // Normalize data to count records across all schemas
-        let flat = {};
-        if (data && data.modules) {
-            for (const mod of Object.values(data.modules)) {
-                if (mod && typeof mod === 'object') Object.assign(flat, mod);
-            }
-        } else if (data && data.data) {
-            flat = data.data;
-        } else {
-            flat = data || {};
-        }
-        const counts = Object.entries(flat)
-            .filter(([, v]) => Array.isArray(v) && v.length > 0)
-            .map(([key, arr]) => `${key}: ${arr.length} records`)
-            .join('\n');
-        const message = counts
-            ? `Import ${module} data?\n\n${counts}\n\nDuplicates will be skipped.`
-            : `Import ${module} data? (no records detected)`;
-        resolve(confirm(message));
-    });
-}
+
 
 window.openSMSParser = openSMSParser;
 window.updateSMSProcessButton = updateSMSProcessButton;
@@ -7246,7 +5521,6 @@ document.addEventListener('click', function(e) {
         // Initialize SMS parser module if selected
         if (module === 'smsParser') {
             // Initialize SMS parser module
-            console.log('SMS parser module initialized');
         }
     }
 });
@@ -7273,24 +5547,13 @@ document.addEventListener('DOMContentLoaded', function() {
         const medicineExportBtn = document.getElementById('medicineExportBtn');
         const medicineImportBtn = document.getElementById('medicineImportBtn');
         
-        console.log('🔧 Medicine tracker buttons setup:', {
-            addMedicineBtn: !!addMedicineBtn,
-            addFamilyMemberBtn: !!addFamilyMemberBtn,
-            medicineExportBtn: !!medicineExportBtn,
-            medicineImportBtn: !!medicineImportBtn,
-            showMedicineForm: typeof showMedicineForm,
-            showFamilyMemberForm: typeof showFamilyMemberForm
-        });
-        
         if (addMedicineBtn) {
             addMedicineBtn.addEventListener('click', function(e) {
                 e.preventDefault();
-                console.log('📋 Add Medicine button clicked');
                 try {
                     if (typeof showMedicineForm === 'function') {
                         showMedicineForm();
                     } else {
-                        console.error('❌ showMedicineForm function not available');
                         showNotification('Medicine form function not available', 'error');
                     }
                 } catch (error) {
@@ -7299,18 +5562,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             });
         } else {
-            console.error('❌ Add Medicine button not found');
         }
         
         if (addFamilyMemberBtn) {
             addFamilyMemberBtn.addEventListener('click', function(e) {
                 e.preventDefault();
-                console.log('👪 Add Family Member button clicked');
                 try {
                     if (typeof showFamilyMemberForm === 'function') {
                         showFamilyMemberForm();
                     } else {
-                        console.error('❌ showFamilyMemberForm function not available');
                         showNotification('Family member form function not available', 'error');
                     }
                 } catch (error) {
@@ -7319,7 +5579,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             });
         } else {
-            console.error('❌ Add Family Member button not found');
         }
         
         // Export dropdown toggle
@@ -7340,7 +5599,6 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
         
-        console.log('🔧 Medicine tracker buttons initialized');
     }, 500);
 });
 
