@@ -570,6 +570,21 @@ let currentCalendarView = 'month';
 let selectedDate = null;
 let defaultCurrency = 'NPR';
 
+const incomeDB = enhancedIncomeDB;
+const expenseDB = enhancedExpenseDB;
+const noteDB = enhancedNoteDB;
+const holidayDB = enhancedHolidayDB;
+const shoppingDB = enhancedShoppingDB;
+const billDB = enhancedBillDB;
+const budgetDB = enhancedBudgetDB;
+const goalDB = enhancedGoalDB;
+const recurringDB = enhancedRecurringDB;
+const insuranceDB = enhancedInsuranceDB;
+const vehicleDB = enhancedVehicleDB;
+const vehicleServiceDB = enhancedVehicleServiceDB;
+const subscriptionDB = enhancedSubscriptionDB;
+const customTypeDB = enhancedCustomTypeDB;
+const customItemDB = enhancedCustomItemDB;
 /**
  * ========================================
  * SHOW NOTE FORM
@@ -1326,7 +1341,7 @@ async function deleteNote(id) {
     await enhancedNoteDB.delete(id);
     showNotification('✅ Note deleted', 'success');
     renderNotes();
-    renderCalendar(currentYear, currentMonth);
+    renderCalendar();
 }
 
 async function deleteHoliday(id) {
@@ -1334,7 +1349,7 @@ async function deleteHoliday(id) {
     await enhancedHolidayDB.delete(id);
     showNotification('✅ Holiday deleted', 'success');
     renderHolidayList();
-    renderCalendar(currentYear, currentMonth);
+    renderCalendar();
 }
 
 async function deleteRecurring(id) {
@@ -1725,11 +1740,19 @@ async function importCalendarData(scope, fileInput) {
 
         const text = await file.text();
         const payload = JSON.parse(text);
-        const importData = payload?.data;
-        if (!importData) {
-            showNotification('❌ Invalid calendar import file', 'error');
-            return;
-        }
+        let importData = payload?.data;
+    if (!importData && payload?.modules) {
+        // Full backup file — extract the calendar sub-object
+        const calMod = payload.modules.calendar || {};
+        importData = {
+            holidays: calMod.holidays || [],
+            notes:    calMod.notes    || []
+        };
+    }
+    if (!importData) {
+        showNotification('❌ Invalid calendar import file', 'error');
+        return;
+    }
 
         const confirmed = confirm('This will import items and skip duplicates. Continue?');
         if (!confirmed) return;
@@ -1842,12 +1865,21 @@ async function importTrackerData(scope, fileInput) {
 
         const text = await file.text();
         const payload = JSON.parse(text);
-        const importData = payload?.data;
-        if (!importData) {
-            showNotification('❌ Invalid tracker import file', 'error');
-            return;
-        }
-
+        
+let importData = payload?.data;
+    if (!importData && payload?.modules) {
+        // Full backup file — extract the tracker sub-object
+        const trackerMod = payload.modules.tracker || {};
+        importData = {
+            income:    trackerMod.income    || [],
+            expenses:  trackerMod.expenses  || [],
+            recurring: trackerMod.recurring || []
+        };
+    }
+    if (!importData) {
+        showNotification('❌ Invalid tracker import file', 'error');
+        return;
+    }
         const confirmed = confirm('This will import items and skip duplicates. Continue?');
         if (!confirmed) return;
 
@@ -4087,7 +4119,7 @@ async function openDateDrawer(bsDate, adDate) {
         html += `
             <div class="drawer-section">
                 <h4>📝 Notes</h4>
-                <button class="btn-primary" onclick="showNoteForm('${bsDate}')">+ Note</button>
+                								<button class="btn-primary" onclick="showNoteForm()">+ Note</button>	
                 <div style="margin-top: 1rem;">
         `;
 
@@ -4793,15 +4825,29 @@ function mapBankTransactionToCategory(transaction) {
 }
 
 // Helper function to determine transaction type
+
 async function determineTransactionType(trackerData) {
     const category = trackerData.category;
-    const description = trackerData.description.toLowerCase();
+    const description = (trackerData.description || '').toLowerCase();
     
-    // Income categories
-    const incomeCategories = ['Salary', 'Business', 'Investment', 'Freelance', 'Other'];
-    return incomeCategories.includes(category) || description.includes('credit');
+    // Check explicit debit/credit markers first
+    if (description.includes('debit')) return false;
+    if (description.includes('credit')) return true;
+    
+    // Strict income-only categories
+    const incomeCategories = ['Salary', 'Freelance', 'Investment'];
+    const expenseCategories = [
+        'Food', 'Transport', 'Shopping', 'Bills',
+        'Healthcare', 'Education', 'Entertainment',
+        'Cash Withdrawal', 'Transfer', 'Other Expense'
+    ];
+    
+    if (incomeCategories.includes(category)) return true;
+    if (expenseCategories.includes(category)) return false;
+    
+    // Default ambiguous categories to expense (safer)
+    return false;
 }
-
 // Helper function to create transaction signature for duplicate checking
 function createTransactionSignature(transaction) {
     return `${transaction.date_bs}-${transaction.amount}-${transaction.description}-${transaction.category}`;
@@ -5778,122 +5824,82 @@ async function importAllData(format, fileInputOrFile) {
                 try {
                     const importData = JSON.parse(e.target.result);
 
-                    // Validate import structure
-                    if (!importData.data) {
-                        showNotification('❌ Invalid import file format', 'error');
+                    // FIX: Normalize import schema.
+                    // Full backup uses: { exportDate, version, modules: { calendar: {...}, tracker: {...}, ... } }
+                    // Module export uses: { version, scope, data: { holidays: [...], ... } }
+                    // Legacy backup used: { data: { holidays: [...], ... } }
+                    let flatData = {};
+                    if (importData.modules && typeof importData.modules === 'object') {
+                        // Full backup — flatten all module sub-objects into one map
+                        for (const mod of Object.values(importData.modules)) {
+                            if (mod && typeof mod === 'object') Object.assign(flatData, mod);
+                        }
+                    } else if (importData.data && typeof importData.data === 'object') {
+                        // Module or legacy export
+                        flatData = importData.data;
+                    } else {
+                        showNotification('❌ Invalid import file format — no data or modules found', 'error');
                         return;
                     }
 
-                    const confirmed = confirm('This will replace all current data. Are you sure?');
+                    const totalRecords = Object.values(flatData).filter(Array.isArray).reduce((s, a) => s + a.length, 0);
+                    if (totalRecords === 0) {
+                        showNotification('⚠️ Import file appears to be empty', 'warning');
+                        return;
+                    }
+
+                    const confirmed = confirm(
+                        `This will replace all current data with ${totalRecords} records from the backup.
+
+` +
+                        `Modules found: ${Object.keys(flatData).filter(k => Array.isArray(flatData[k]) && flatData[k].length > 0).join(', ')}
+
+` +
+                        `Are you sure? This cannot be undone.`
+                    );
                     if (!confirmed) return;
 
                     showNotification('🔄 Importing data...', 'info');
 
-                    // Clear all databases first
-                    await enhancedHolidayDB.clear();
-                    await enhancedIncomeDB.clear();
-                    await enhancedExpenseDB.clear();
-                    await enhancedNoteDB.clear();
-                    await enhancedShoppingDB.clear();
-                    await enhancedBudgetDB.clear();
-                    await enhancedBillDB.clear();
-                    await enhancedGoalDB.clear();
-                    await enhancedRecurringDB.clear();
-                    await enhancedInsuranceDB.clear();
-                    await enhancedVehicleDB.clear();
-                    await enhancedVehicleServiceDB.clear();
-                    await enhancedSubscriptionDB.clear();
-                    await enhancedCustomTypeDB.clear();
-                    await enhancedCustomItemDB.clear();
+                    // DB map — covers all stores
+                    const _dbMap = {
+                        holidays:        enhancedHolidayDB,
+                        notes:           enhancedNoteDB,
+                        income:          enhancedIncomeDB,
+                        expenses:        enhancedExpenseDB,
+                        shopping:        enhancedShoppingDB,
+                        budgets:         enhancedBudgetDB,
+                        bills:           enhancedBillDB,
+                        goals:           enhancedGoalDB,
+                        recurring:       enhancedRecurringDB,
+                        insurance:       enhancedInsuranceDB,
+                        vehicles:        enhancedVehicleDB,
+                        vehicleServices: enhancedVehicleServiceDB,
+                        subscriptions:   enhancedSubscriptionDB,
+                        customTypes:     enhancedCustomTypeDB,
+                        customItems:     enhancedCustomItemDB,
+                    };
 
-                    // Restore data by store
-                    if (importData.data.holidays) {
-                        for (const holiday of importData.data.holidays) {
-                            await enhancedHolidayDB.add(holiday);
+                    // Clear only stores that have incoming data (safer than clear-all)
+                    for (const [key, db] of Object.entries(_dbMap)) {
+                        if (Array.isArray(flatData[key]) && flatData[key].length > 0) {
+                            try { await db.clear(); } catch(_) {}
                         }
                     }
 
-                    if (importData.data.income) {
-                        for (const income of importData.data.income) {
-                            await enhancedIncomeDB.add(income);
-                        }
-                    }
-
-                    if (importData.data.expenses) {
-                        for (const expense of importData.data.expenses) {
-                            await enhancedExpenseDB.add(expense);
-                        }
-                    }
-
-                    if (importData.data.notes) {
-                        for (const note of importData.data.notes) {
-                            await enhancedNoteDB.add(note);
-                        }
-                    }
-
-                    if (importData.data.shopping) {
-                        for (const item of importData.data.shopping) {
-                            await enhancedShoppingDB.add(item);
-                        }
-                    }
-
-                    if (importData.data.budgets) {
-                        for (const budget of importData.data.budgets) {
-                            await enhancedBudgetDB.add(budget);
-                        }
-                    }
-
-                    if (importData.data.bills) {
-                        for (const bill of importData.data.bills) {
-                            await enhancedBillDB.add(bill);
-                        }
-                    }
-
-                    if (importData.data.goals) {
-                        for (const goal of importData.data.goals) {
-                            await enhancedGoalDB.add(goal);
-                        }
-                    }
-
-                    if (importData.data.recurring) {
-                        for (const recurring of importData.data.recurring) {
-                            await enhancedRecurringDB.add(recurring);
-                        }
-                    }
-
-                    if (importData.data.insurance) {
-                        for (const insurance of importData.data.insurance) {
-                            await enhancedInsuranceDB.add(insurance);
-                        }
-                    }
-
-                    if (importData.data.vehicles) {
-                        for (const vehicle of importData.data.vehicles) {
-                            await enhancedVehicleDB.add(vehicle);
-                        }
-                    }
-
-                    if (importData.data.vehicleServices) {
-                        for (const service of importData.data.vehicleServices) {
-                            await enhancedVehicleServiceDB.add(service);
-                        }
-                    }
-
-                    if (importData.data.subscriptions) {
-                        for (const subscription of importData.data.subscriptions) {
-                            await enhancedSubscriptionDB.add(subscription);
-                        }
-                    }
-
-                    if (importData.data.customTypes) {
-                        for (const customType of importData.data.customTypes) {
-                            await enhancedCustomTypeDB.add(customType);
-                        }
-                    }
-
-                    if (importData.data.customItems) {
-                        for (const customItem of importData.data.customItems) {
-                            await enhancedCustomItemDB.add(customItem);
+                    // Restore data — strip old ids so DB auto-assigns new ones
+                    let imported = 0;
+                    for (const [key, db] of Object.entries(_dbMap)) {
+                        const items = flatData[key];
+                        if (!Array.isArray(items)) continue;
+                        for (const item of items) {
+                            try {
+                                const { id, ...rest } = item;
+                                await db.add(rest);
+                                imported++;
+                            } catch (e) {
+                                console.warn(`Failed to import item in ${key}:`, e);
+                            }
                         }
                     }
 
@@ -5905,12 +5911,9 @@ async function importAllData(format, fileInputOrFile) {
                         if (importData.settings.theme) {
                             localStorage.setItem('theme', importData.settings.theme);
                         }
-                        if (importData.settings.exchangeRates) {
-                            exchangeRates = importData.settings.exchangeRates;
-                        }
                     }
 
-                    showNotification('✅ Data imported successfully!', 'success');
+                    showNotification(`✅ Data imported successfully! ${imported} records restored.`, 'success');
                     setTimeout(() => {
                         location.reload();
                     }, 1000);
@@ -6984,6 +6987,57 @@ function updateSMSProcessButton() {
     } else {
         console.log('❌ SMS Process Button not found in DOM');
     }
+}
+
+// ADD these stubs to prevent ReferenceError crashes:
+
+function updateCalendarHeader() {
+    const yearSelect = document.getElementById('yearSelect');
+    const monthSelect = document.getElementById('monthSelect');
+    if (yearSelect) yearSelect.value = currentBsYear;
+    if (monthSelect) monthSelect.value = currentBsMonth;
+}
+
+function updateCalendarControls() {
+    updateCalendarHeader();
+}
+
+let exchangeRates = {
+    NPR: 1,
+    USD: 0.0075,
+    EUR: 0.0069,
+    INR: 0.63
+};
+function showImportPreview(data, module) {
+    // FIX: Delegate to import-export.js's rich preview modal if available.
+    // import-export.js sets window.showImportPreview to its manager's method.
+    // Since app.js loads after import-export.js, this function definition
+    // would normally shadow it — so we explicitly check and delegate.
+    if (window.importExportManager && typeof window.importExportManager.showImportPreview === 'function') {
+        return window.importExportManager.showImportPreview(data, module);
+    }
+    // Fallback: simple confirm dialog
+    return new Promise((resolve) => {
+        // Normalize data to count records across all schemas
+        let flat = {};
+        if (data && data.modules) {
+            for (const mod of Object.values(data.modules)) {
+                if (mod && typeof mod === 'object') Object.assign(flat, mod);
+            }
+        } else if (data && data.data) {
+            flat = data.data;
+        } else {
+            flat = data || {};
+        }
+        const counts = Object.entries(flat)
+            .filter(([, v]) => Array.isArray(v) && v.length > 0)
+            .map(([key, arr]) => `${key}: ${arr.length} records`)
+            .join('\n');
+        const message = counts
+            ? `Import ${module} data?\n\n${counts}\n\nDuplicates will be skipped.`
+            : `Import ${module} data? (no records detected)`;
+        resolve(confirm(message));
+    });
 }
 
 window.openSMSParser = openSMSParser;
