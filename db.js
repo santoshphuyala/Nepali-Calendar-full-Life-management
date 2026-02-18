@@ -38,21 +38,9 @@ async function initDB() {
             console.log('🔄 Database upgrade needed...');
             db = event.target.result;
             
-            // Delete old object stores if they exist
-            const oldStores = ['notes', 'holidays', 'income', 'expenses', 'shopping', 
-                              'budgets', 'bills', 'goals', 'recurring', 'insurance', 
-                              'vehicles', 'vehicleServices', 'subscriptions', 
-                              'customTypes', 'customItems', 'medicines', 
-                              'familyMembers', 'prescriptions', 'dosageSchedule'];
-            
-            oldStores.forEach(storeName => {
-                if (db.objectStoreNames.contains(storeName)) {
-                    console.log(`🗑️ Deleting old store: ${storeName}`);
-                    db.deleteObjectStore(storeName);
-                }
-            });
-            
-            // Create all object stores with proper indexes
+                        // DO NOT DELETE EXISTING STORES.
+            // Only create new object stores with proper indexes if they do not exist
+
             createStore('notes', 'id', [
                 { name: 'date_bs' },
                 { name: 'title' },
