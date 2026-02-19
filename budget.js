@@ -438,6 +438,28 @@ async function markBillPaid(id) {
     }
 
     await enhancedBillDB.update(bill);
+
+    // Record payment history + fire paid notification
+    if (typeof NotificationManager !== 'undefined') {
+        // nextDueDate: if recurring, find the new due date; else use same dueDate
+        const nextDue = bill.isRecurring ? (() => {
+            const [y, m, d] = bill.dueDate.split('/').map(Number);
+            let ny = y, nm = m;
+            if (bill.frequency === 'monthly') { nm++; if (nm > 12) { nm = 1; ny++; } }
+            else if (bill.frequency === 'yearly') { ny++; }
+            const daysInMo = typeof getDaysInBSMonth === 'function' ? getDaysInBSMonth(ny, nm) : 32;
+            return formatBsDate(ny, nm, Math.min(d, daysInMo - 1));
+        })() : bill.dueDate;
+
+        await NotificationManager.notifyRenewal({
+            type: 'BILL',
+            item: bill,
+            newDueDateBs: nextDue,
+            amount: bill.amount,
+            currency: 'NPR',
+        });
+    }
+
     await renderBillsList();
     await renderUpcomingBillsList();
     updateMonthlySummary();

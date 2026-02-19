@@ -283,6 +283,18 @@ async function renewSubscription(id) {
     sub.renewalDate = formatBsDate(newYear, newMonth, day);
     await enhancedSubscriptionDB.update(sub);
 
+    // Record payment history + fire renewal notification
+    if (typeof NotificationManager !== 'undefined') {
+        await NotificationManager.notifyRenewal({
+            type: 'SUBSCRIPTION',
+            item: sub,
+            newDueDateBs: sub.renewalDate,
+            amount: sub.cost,
+            currency: sub.currency || 'NPR',
+            paymentMethod: sub.paymentMethod || '—',
+        });
+    }
+
     await renderSubscriptionList();
     await renderSubscriptionSummary();
     alert('Subscription renewed and expense added!');

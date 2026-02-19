@@ -181,6 +181,17 @@ function showInsuranceForm(policy = null) {
                 data.id = policy.id;
                 const result = await enhancedInsuranceDB.update(data);
                 console.log('🐛 DEBUG: Policy updated successfully:', result);
+
+                // Record payment history + fire renewal notification
+                if (typeof NotificationManager !== 'undefined') {
+                    await NotificationManager.notifyRenewal({
+                        type: 'INSURANCE',
+                        item: data,
+                        newDueDateBs: data.expiryDate,
+                        amount: data.premium,
+                        currency: 'NPR',
+                    });
+                }
             } else {
                 console.log('🐛 DEBUG: Adding new policy');
                 const result = await enhancedInsuranceDB.add(data);

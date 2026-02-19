@@ -1114,7 +1114,7 @@ body {
         margin-top: 0.5rem;
     }
 
-    /* Navigation */
+        /* Navigation */
     .nav-tabs {
         overflow-x: auto;
         overflow-y: hidden;
@@ -1124,6 +1124,7 @@ body {
         margin: 0;
         background: var(--card-bg);
         box-shadow: var(--shadow);
+        display: flex; /* Ensure flexbox is active */
     }
 
     .nav-tabs::-webkit-scrollbar {
@@ -1131,17 +1132,19 @@ body {
     }
 
     .nav-tab {
-        flex: 1;
-        min-width: 80px;
+        flex: 0 0 auto; /* FIX: Stops tabs from squishing together */
+        min-width: max-content; /* FIX: Ensures width fits the text */
         font-size: 0.8rem;
-        padding: 0.75rem 0.5rem;
+        padding: 0.75rem 1rem; /* FIX: Better touch target padding */
         text-align: center;
         border-bottom: 2px solid transparent;
+        white-space: nowrap; /* FIX: Keeps text on one line */
     }
 
     .nav-tab.active {
         border-bottom-color: var(--primary-color);
     }
+
 
     /* Main Container */
     .main-container {

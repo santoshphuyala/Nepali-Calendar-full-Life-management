@@ -21,6 +21,15 @@
             </div>
         </div>
         <button class="today-btn" id="todayBtn">📍 Today</button>
+
+        <!-- ① Notification Bell (NotificationManager injects its own bell too,
+             but having it here ensures correct header placement) -->
+        <button class="notif-bell-btn" id="notifBell"
+                title="Notifications &amp; Payment History"
+                aria-label="Open notifications"
+                onclick="NotificationManager.showNotificationCenter()">
+            🔔<span id="notifBadge" class="notif-badge" style="display:none"></span>
+        </button>
     </header>
 
     <!-- Navigation Tabs -->
@@ -233,6 +242,8 @@
                     <div class="action-group">
                         <button class="btn-info" id="openSMSParserBtn" onclick="openSMSParser()">📱 SMS Parser</button>
                         <button class="btn-warning" id="processSMSBtn" onclick="processPendingSMSTransactions()">🔄 Process SMS</button>
+                        <!-- ② Payment History shortcut in Finance Tracker -->
+                        <button class="btn-secondary" onclick="NotificationManager.showPaymentHistory()">📜 Payment History</button>
                     </div>
                     
                     <!-- Import and Export Buttons -->
@@ -474,6 +485,9 @@
                         <button class="btn-info" id="addSubscriptionBtn">+ Add Subscription</button>
                         <button class="btn-warning" id="addShoppingBtn">+ Add Shopping Item</button>
                         <button class="btn-secondary" id="addCustomTypeBtn">+ New Custom Type</button>
+                        <!-- ④ Bills / Subscriptions history shortcuts -->
+                        <button class="btn-secondary" onclick="NotificationManager.showPaymentHistory('bill')">🧾 Bill History</button>
+                        <button class="btn-secondary" onclick="NotificationManager.showPaymentHistory('subscription')">📡 Sub History</button>
                     </div>
                     
                     <!-- Import and Export Buttons -->
@@ -731,6 +745,9 @@
                     <div class="action-group">
                         <button class="btn-primary" id="addInsuranceBtn">+ Add Policy</button>
                         <button class="btn-success" id="addVehicleBtn">+ Add Vehicle</button>
+                        <!-- ③ Insurance / Vehicle payment history shortcut -->
+                        <button class="btn-secondary" onclick="NotificationManager.showPaymentHistory('insurance')">🛡️ Insurance History</button>
+                        <button class="btn-secondary" onclick="NotificationManager.showPaymentHistory('vehicle')">🚗 Vehicle History</button>
                     </div>
                     
                     <!-- Import and Export Buttons -->
@@ -1289,6 +1306,8 @@
     <script src="nepali-date-picker.js"></script>
     <script src="debug.js"></script>
     <script src="app.js"></script>
+    <!-- ⑤ Notification Manager + Payment History (must come after app.js & db.js) -->
+    <script src="notification.js"></script>
     
     <!-- Service Worker Registration - FIXED -->
     <script>
@@ -1348,6 +1367,7 @@
         console.log('subscription.js loaded:', typeof showSubscriptionForm !== 'undefined');
         console.log('custom.js loaded:', typeof showCustomTypeForm !== 'undefined');
         console.log('app.js loaded:', typeof renderCalendar !== 'undefined');
+        console.log('notification.js loaded:', typeof NotificationManager !== 'undefined');
         console.log('=== END LOAD CHECK ===');
     </script>
 
@@ -1361,11 +1381,6 @@
             </div>
             <div class="developer-details">
                 <span class="developer">Developed by: Santosh Phuyal</span>
-                <span class="contact">📧 hisantoshphuyal@gmail.com</span>
+                <span class="contact">📧 <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="86eeeff5e7e8f2e9f5eef6eef3ffe7eac6e1ebe7efeaa8e5e9eb">[email&#160;protected]</a></span>
             </div>
-        </div>
-    </footer>
-<script src="https://cdn.jsdelivr.net/npm/eruda"></script>
-<script>eruda.init();</script>
-</body>
-</html>
+        </div

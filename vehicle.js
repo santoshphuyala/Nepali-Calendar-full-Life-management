@@ -328,6 +328,19 @@ function addServiceRecord(vehicleId) {
                 createdAt: new Date().toISOString()
             });
 
+            // Record payment history for insurance/registration renewals
+            const renewalTypes = ['Insurance Renewal', 'Tax/Registration'];
+            if (typeof NotificationManager !== 'undefined' && renewalTypes.includes(data.type)) {
+                const vehicle = await enhancedVehicleDB.get(vehicleId);
+                await NotificationManager.notifyRenewal({
+                    type: 'VEHICLE',
+                    item: { ...vehicle, name: `${vehicle.name} — ${data.type}` },
+                    newDueDateBs: data.nextDue || data.date,
+                    amount: data.cost,
+                    currency: 'NPR',
+                });
+            }
+
             closeModal();
             showServiceHistory(vehicleId);
             alert('Service record added!');

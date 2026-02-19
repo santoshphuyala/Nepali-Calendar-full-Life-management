@@ -9,7 +9,7 @@
 console.log('✅ db.js loading...');
 
 const DB_NAME = 'NepaliCalendarDB';
-const DB_VERSION = 5; // Increased version for clean upgrade
+const DB_VERSION = 6; // v6: added paymentHistory store for notification.js
 let db = null;
 let isDBReady = false;
 
@@ -159,6 +159,17 @@ async function initDB() {
                 { name: 'date' },
                 { name: 'time' },
                 { name: 'status' }
+            ]);
+
+            // ── Payment History (notification.js) ──────────────────────────
+            // Stores every paid bill / renewed insurance / subscription / recurring
+            createStore('paymentHistory', 'id', [
+                { name: 'source' },        // 'insurance' | 'bill' | 'subscription' | 'recurring' | 'vehicle'
+                { name: 'itemId' },        // FK to the original item
+                { name: 'paidDateBs' },    // BS date payment was recorded
+                { name: 'dueDateBs' },     // BS due/renewal date that was settled
+                { name: 'amount' },
+                { name: 'recordedAt' }     // ISO timestamp for sorting
             ]);
             
             console.log('✅ Database upgrade completed successfully');
@@ -360,6 +371,8 @@ const enhancedMedicineDB = new EnhancedDBManager('medicines');
 const enhancedFamilyMembersDB = new EnhancedDBManager('familyMembers');
 const enhancedPrescriptionsDB = new EnhancedDBManager('prescriptions');
 const enhancedDosageScheduleDB = new EnhancedDBManager('dosageSchedule');
+// ── Payment History DB (used by notification.js) ─────────────────────────────
+const enhancedPaymentHistoryDB = new EnhancedDBManager('paymentHistory');
 
 async function initializeEnhancedDB() {
     try {
@@ -396,5 +409,7 @@ window.enhancedMedicineDB = enhancedMedicineDB;
 window.enhancedFamilyMembersDB = enhancedFamilyMembersDB;
 window.enhancedPrescriptionsDB = enhancedPrescriptionsDB;
 window.enhancedDosageScheduleDB = enhancedDosageScheduleDB;
+// Payment History
+window.enhancedPaymentHistoryDB = enhancedPaymentHistoryDB;
 
 console.log('✅ db.js loaded completely');

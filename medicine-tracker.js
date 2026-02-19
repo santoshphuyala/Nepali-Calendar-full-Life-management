@@ -292,13 +292,17 @@ async function renderMedicineList() {
 }
 
 async function checkLowStockMedicines(medicines) {
-    const lowStockMedicines = medicines.filter(m => 
-        m.stockQuantity <= 7 && m.stockQuantity > 0 && m.status === 'active'
-    );
-    
-    if (lowStockMedicines.length > 0) {
-        const medicineNames = lowStockMedicines.map(m => m.name).join(', ');
-        showNotification(`⚠️ Low Stock Alert: ${medicineNames} need to be restocked soon!`, 'warning');
+    // Delegate to NotificationManager for full inbox + browser push alerts.
+    // Falls back to a simple UI toast if NotificationManager isn't loaded yet.
+    if (typeof NotificationManager !== 'undefined' && NotificationManager.checkMedicines) {
+        await NotificationManager.checkMedicines();
+        return;
+    }
+    // Fallback: plain toast for medicines with stock ≤ 7
+    const low = medicines.filter(m => m.stockQuantity <= 7 && m.stockQuantity > 0 && m.status === 'active');
+    if (low.length > 0) {
+        const names = low.map(m => `${m.name} (${m.stockQuantity} left)`).join(', ');
+        showNotification(`⚠️ Low Stock: ${names}`, 'warning');
     }
 }
 
@@ -583,7 +587,13 @@ async function markDoseTaken(medicineId) {
         // Decrement stock quantity
         const medicine = await enhancedMedicineDB.get(medicineId);
         if (medicine && medicine.stockQuantity > 0) {
-            await enhancedMedicineDB.update({ ...medicine, stockQuantity: medicine.stockQuantity - 1, updatedAt: new Date().toISOString() });
+            const newStock = medicine.stockQuantity - 1;
+            await enhancedMedicineDB.update({ ...medicine, stockQuantity: newStock, updatedAt: new Date().toISOString() });
+
+            // Immediately check if stock has dropped to a warning level
+            if (typeof NotificationManager !== 'undefined' && NotificationManager.checkMedicines) {
+                await NotificationManager.checkMedicines();
+            }
         }
         
         showNotification('Dose marked as taken', 'success');
@@ -1094,6 +1104,17 @@ async function buyMedicine(medicineId, medicineName, currentStock) {
             if (medicine) {
                 const newStock = (medicine.stockQuantity || 0) + quantity;
                 await enhancedMedicineDB.update({ ...medicine, stockQuantity: newStock, updatedAt: new Date().toISOString() });
+
+                // Fire restock notification + clear any low-stock alerts
+                if (typeof NotificationManager !== 'undefined' && NotificationManager.notifyMedicineRestocked) {
+                    await NotificationManager.notifyMedicineRestocked({
+                        medicine: { ...medicine, stockQuantity: medicine.stockQuantity || 0 },
+                        quantityAdded: quantity,
+                        newStock,
+                        amount: quantity * price,
+                        store,
+                    });
+                }
             }
             
             closeModal();
