@@ -7,15 +7,22 @@
  * ========================================
  */
 
-// Global state
+ // Global state
 let currentBsYear, currentBsMonth, currentBsDay;
 let currentView = 'calendar';
 let currentCalendarView = 'month';
 let selectedDate = null;
 let defaultCurrency = 'NPR';
 
+// Initialize variables inside a safe check
+const todayInit = (typeof getCurrentNepaliDate === 'function') ? getCurrentNepaliDate() : {year: 2082, month: 11, day: 7};
+currentBsYear = todayInit.year;
+currentBsMonth = todayInit.month;
+currentBsDay = todayInit.day;
+
 const incomeDB = enhancedIncomeDB;
 const expenseDB = enhancedExpenseDB;
+
 const noteDB = enhancedNoteDB;
 const holidayDB = enhancedHolidayDB;
 const shoppingDB = enhancedShoppingDB;
@@ -889,18 +896,20 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.querySelectorAll('.calendar-view-container').forEach(container => {
             container.classList.remove('active');
         });
-        document.getElementById('monthView').classList.add('active');
+                document.getElementById('monthView').classList.add('active');
         
-        renderCalendar();
         
-        // Debug: Async operations monitoring
-        updateMonthlySummary().then(() => {
-        }).catch(error => {
-        });
-        
-        updateAllCharts(currentBsYear, currentBsMonth).then(() => {
-        }).catch(error => {
-        });
+                // FIXED: Wrap initial rendering in a timeout to ensure DB is ready
+        setTimeout(() => {
+            initializeYearMonthSelectors();
+            renderCalendar();
+            updateMonthlySummary();
+            if (typeof updateAllCharts === 'function') updateAllCharts(currentBsYear, currentBsMonth);
+        }, 100);
+
+        // Debug: Theme initialization
+
+
 
         // Debug: Theme initialization
         const savedTheme = localStorage.getItem('theme');
@@ -970,18 +979,24 @@ function initializeYearMonthSelectors() {
         const option = document.createElement('option');
         option.value = year;
         option.textContent = year;
-        if (year === currentBsYear) option.selected = true;
         yearSelect.appendChild(option);
     }
 
-    NEPALI_MONTHS.forEach((month, index) => {
+    const nepaliMonthsLocal = ['बैशाख', 'जेठ', 'असार', 'श्रावण', 'भाद्र', 'असोज', 'कार्तिक', 'मंसिर', 'पुष', 'माघ', 'फाल्गुन', 'चैत्र'];
+    
+    nepaliMonthsLocal.forEach((month, index) => {
         const option = document.createElement('option');
         option.value = index + 1;
         option.textContent = month;
-        if (index + 1 === currentBsMonth) option.selected = true;
         monthSelect.appendChild(option);
     });
+
+    // Force the dropdowns to match the current global state
+    yearSelect.value = currentBsYear;
+    monthSelect.value = currentBsMonth;
 }
+
+
 
 function toggleDropdown(menuId) {
     const menu = document.getElementById(menuId);
@@ -1485,6 +1500,7 @@ function initializeEventListeners() {
     const globalDuplicateScanBtn = document.getElementById('globalDuplicateScanBtn');
     if (globalDuplicateScanBtn) globalDuplicateScanBtn.addEventListener('click', scanAllModulesForDuplicates);
 
+    
     // Module-specific Data Buttons
     const calendarDataBtn = document.getElementById('calendarDataBtn');
     const calendarDataMenu = document.getElementById('calendarDataMenu');
@@ -1495,80 +1511,41 @@ function initializeEventListeners() {
             calendarDataMenu.classList.toggle('show');
         });
     }
-    
-    const trackerDataBtn = document.getElementById('trackerDataBtn');
-    const trackerDataMenu = document.getElementById('trackerDataMenu');
-    if (trackerDataBtn) {
-        trackerDataBtn.addEventListener('click', (e) => {
+
+    const financeDataBtn = document.getElementById('financeDataBtn');
+    const financeDataMenu = document.getElementById('financeDataMenu');
+    if (financeDataBtn) {
+        financeDataBtn.addEventListener('click', (e) => {
             e.preventDefault();
             e.stopPropagation();
-            trackerDataMenu.classList.toggle('show');
+            financeDataMenu.classList.toggle('show');
         });
     }
     
-    const budgetDataBtn = document.getElementById('budgetDataBtn');
-    const budgetDataMenu = document.getElementById('budgetDataMenu');
-    if (budgetDataBtn) {
-        budgetDataBtn.addEventListener('click', (e) => {
+    const assetsDataBtn = document.getElementById('assetsDataBtn');
+    const assetsDataMenu = document.getElementById('assetsDataMenu');
+    if (assetsDataBtn) {
+        assetsDataBtn.addEventListener('click', (e) => {
             e.preventDefault();
             e.stopPropagation();
-            budgetDataMenu.classList.toggle('show');
+            assetsDataMenu.classList.toggle('show');
         });
     }
-    
-    const billsDataBtn = document.getElementById('billsDataBtn');
-    const billsDataMenu = document.getElementById('billsDataMenu');
-    if (billsDataBtn) {
-        billsDataBtn.addEventListener('click', (e) => {
+
+    const medicineDataBtn = document.getElementById('medicineDataBtn');
+    const medicineDataMenu = document.getElementById('medicineDataMenu');
+    if (medicineDataBtn) {
+        medicineDataBtn.addEventListener('click', (e) => {
             e.preventDefault();
             e.stopPropagation();
-            billsDataMenu.classList.toggle('show');
+            medicineDataMenu.classList.toggle('show');
         });
     }
-    
-    const goalsDataBtn = document.getElementById('goalsDataBtn');
-    const goalsDataMenu = document.getElementById('goalsDataMenu');
-    if (goalsDataBtn) {
-        goalsDataBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            goalsDataMenu.classList.toggle('show');
-        });
-    }
-    
-    const insuranceDataBtn = document.getElementById('insuranceDataBtn');
-    const insuranceDataMenu = document.getElementById('insuranceDataMenu');
-    if (insuranceDataBtn) {
-        insuranceDataBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            insuranceDataMenu.classList.toggle('show');
-        });
-    }
-    
-    const vehicleDataBtn = document.getElementById('vehicleDataBtn');
-    const vehicleDataMenu = document.getElementById('vehicleDataMenu');
-    if (vehicleDataBtn) {
-        vehicleDataBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            vehicleDataMenu.classList.toggle('show');
-        });
-    }
-    
-    const subscriptionDataBtn = document.getElementById('subscriptionDataBtn');
-    const subscriptionDataMenu = document.getElementById('subscriptionDataMenu');
-    if (subscriptionDataBtn) {
-        subscriptionDataBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            subscriptionDataMenu.classList.toggle('show');
-        });
-    }
-    
+
     // Close dropdowns when clicking outside
     document.addEventListener('click', (e) => {
-        if (!e.target.closest('.dropdown-container')) {
+        // FIXED: Respects both dropdown classes so menus don't instantly close
+        if (!e.target.closest('.dropdown-container') && !e.target.closest('.import-export-dropdown')) {
             closeAllDropdowns();
         }
     });
@@ -1762,131 +1739,121 @@ async function displayMonthlyHolidays() {
 async function renderYearView() {
     try {
         const grid = document.getElementById('yearGrid');
-        if (!grid) {
-            return;
-        }
-
+        if (!grid) return;
         grid.innerHTML = '';
 
         const today = getCurrentNepaliDate();
+        
+        // CRITICAL PERFORMANCE FIX: Fetch all data ONCE for the whole year
+        const [allIncome, allExpenses, allNotes, allBills, allHolidays] = await Promise.all([
+            enhancedIncomeDB.getAll(),
+            enhancedExpenseDB.getAll(),
+            enhancedNoteDB.getAll(),
+            enhancedBillDB.getAll(),
+            enhancedHolidayDB.getAll()
+        ]);
+
+        const yearData = { allIncome, allExpenses, allNotes, allBills, allHolidays };
+
         const months = [
-            { name: 'बैशाख', number: 1, english: 'Baishakh' },
-            { name: 'जेठ', number: 2, english: 'Jestha' },
-            { name: 'असार', number: 3, english: 'Ashar' },
-            { name: 'श्रावण', number: 4, english: 'Shrawan' },
-            { name: 'भाद्र', number: 5, english: 'Bhadra' },
-            { name: 'असोज', number: 6, english: 'Ashwin' },
-            { name: 'कार्तिक', number: 7, english: 'Kartik' },
-            { name: 'मंसिर', number: 8, english: 'Mangsir' },
-            { name: 'पुष', number: 9, english: 'Poush' },
-            { name: 'माघ', number: 10, english: 'Magh' },
-            { name: 'फाल्गुन', number: 11, english: 'Falgun' },
-            { name: 'चैत्र', number: 12, english: 'Chaitra' }
+            { name: 'बैशाख', number: 1 }, { name: 'जेठ', number: 2 }, { name: 'असार', number: 3 },
+            { name: 'श्रावण', number: 4 }, { name: 'भाद्र', number: 5 }, { name: 'असोज', number: 6 },
+            { name: 'कार्तिक', number: 7 }, { name: 'मंसिर', number: 8 }, { name: 'पुष', number: 9 },
+            { name: 'माघ', number: 10 }, { name: 'फाल्गुन', number: 11 }, { name: 'चैत्र', number: 12 }
         ];
 
-        for (let i = 0; i < months.length; i++) {
-            const month = months[i];
-            const monthCard = createYearMonthCard(month, currentBsYear, today);
+        for (const month of months) {
+            // Pass the pre-fetched yearData to the card creator
+            const monthCard = createYearMonthCard(month, currentBsYear, today, yearData);
             grid.appendChild(monthCard);
         }
 
-        // Display yearly holidays and summary after rendering year view
-        displayYearlyHolidays();
-        displayYearlySummary();
+        displayYearlyHolidays(allHolidays); 
+        displayYearlySummary(yearData);
 
     } catch (error) {
         console.error('❌ Year view render error:', error);
     }
 }
 
-function createYearMonthCard(month, year, today) {
+
+
+
+    
+    
+function createYearMonthCard(month, year, today, yearData) {
     const card = document.createElement('div');
     card.className = 'year-month-card';
-    
-    // Check if current month
-    if (month.number === today.month && year === today.year) {
-        card.classList.add('current-month');
-    }
+    if (month.number === today.month && year === today.year) card.classList.add('current-month');
 
-    // Month header
     const header = document.createElement('div');
     header.className = 'year-month-header';
-    
-    const monthName = document.createElement('div');
-    monthName.className = 'year-month-name';
-    monthName.textContent = month.name;
-    
-    const monthNumber = document.createElement('div');
-    monthNumber.className = 'year-month-number';
-    monthNumber.textContent = month.number;
-    
-    header.appendChild(monthName);
-    header.appendChild(monthNumber);
+    header.innerHTML = `<span class="year-month-name">${month.name}</span><span class="year-month-number">${month.number}</span>`;
     card.appendChild(header);
 
-    // Mini calendar
     const miniCalendar = document.createElement('div');
-    miniCalendar.className = 'year-month-days';
+    miniCalendar.className = 'year-month-days'; 
     
-    // Day headers (Nepali day names)
-    const dayHeaders = ['आ', 'सो', 'मं', 'बु', 'बि', 'शु', 'श'];
-    dayHeaders.forEach(day => {
-        const dayHeader = document.createElement('div');
-        dayHeader.className = 'year-month-day-header';
-        dayHeader.textContent = day;
-        miniCalendar.appendChild(dayHeader);
+    // Day Name Headers
+    ['आ', 'सो', 'मं', 'बु', 'बि', 'शु', 'श'].forEach(d => {
+        const h = document.createElement('div');
+        h.className = 'year-month-day-header';
+        h.textContent = d;
+        miniCalendar.appendChild(h);
     });
 
-    // Get first day of month and number of days
     const firstDayAd = bsToAd(year, month.number, 1);
-    const firstDayOfWeek = firstDayAd.date.getDay();
+    const startDay = firstDayAd.date.getDay(); 
     const daysInMonth = getDaysInBSMonth(year, month.number);
     
-    // Add empty cells for days before month starts
-    for (let i = 0; i < firstDayOfWeek; i++) {
-        const emptyDay = document.createElement('div');
-        emptyDay.className = 'year-month-day';
-        miniCalendar.appendChild(emptyDay);
+    // Add Empty Padding Cells
+    for (let i = 0; i < startDay; i++) {
+        const empty = document.createElement('div');
+        empty.className = 'year-month-day empty';
+        miniCalendar.appendChild(empty);
     }
     
-    // Add days of the month
-    for (let day = 1; day <= daysInMonth; day++) {
-        const dayElement = document.createElement('div');
-        dayElement.className = 'year-month-day';
-        dayElement.textContent = day;
+    // Add Day Cells
+    for (let d = 1; d <= daysInMonth; d++) {
+        const dayEl = document.createElement('div');
+        dayEl.className = 'year-month-day';
+        dayEl.textContent = d;
         
-        const bsDateStr = formatBsDate(year, month.number, day);
-        const adDate = bsToAd(year, month.number, day);
+        const bsDateStr = formatBsDate(year, month.number, d);
+        const adDate = bsToAd(year, month.number, d);
         
-        // Check if today
-        if (year === today.year && month.number === today.month && day === today.day) {
-            dayElement.classList.add('today');
-        }
+        // Check Status
+        if (year === today.year && month.number === today.month && d === today.day) dayEl.classList.add('today');
+        if (adDate.date.getDay() === 6) dayEl.classList.add('saturday');
         
-        // Check if Saturday
-        if (adDate.date.getDay() === 6) {
-            dayElement.classList.add('saturday');
-        }
+        const isHoliday = yearData.allHolidays.some(h => h.date_bs === bsDateStr);
+        if (isHoliday) dayEl.classList.add('holiday');
         
-        // Check if holiday
-        checkHolidayForYearView(bsDateStr, dayElement);
-        
-        // Click event to navigate to month view
-        dayElement.addEventListener('click', () => {
+        dayEl.onclick = (e) => {
+            e.stopPropagation();
             currentBsYear = year;
             currentBsMonth = month.number;
-            currentBsDay = day;
-            switchCalendarView('month');
+            currentBsDay = d;
+            switchCalendarView('day');
             updateCalendarControls();
-        });
-        
-        miniCalendar.appendChild(dayElement);
+            renderDayView();
+        };
+        miniCalendar.appendChild(dayEl);
     }
     
     card.appendChild(miniCalendar);
-
-    // Load month events and holidays asynchronously
-    loadYearMonthData(card, year, month.number);
+    
+    // Quick Event Dots Check
+    const monthHasEvents = checkMonthEvents(year, month.number, yearData);
+    if (monthHasEvents) {
+        const dotContainer = document.createElement('div');
+        dotContainer.className = 'year-month-events';
+        const dot = document.createElement('div');
+        dot.className = 'year-month-event-dot active';
+        dot.style.cssText = 'width: 6px; height: 6px; border-radius: 50%; background: var(--primary-color); margin: 0 auto;';
+        dotContainer.appendChild(dot);
+        card.appendChild(dotContainer);
+    }
 
     // Click event for month card (navigate to month view)
     card.addEventListener('click', (e) => {
@@ -1896,6 +1863,7 @@ function createYearMonthCard(month, year, today) {
             currentBsDay = 1;
             switchCalendarView('month');
             updateCalendarControls();
+            renderCalendar();
         }
     });
 
@@ -2024,90 +1992,41 @@ async function displayYearlyHolidays() {
 /**
  * Display Yearly Summary Below Year View
  */
-async function displayYearlySummary() {
-    try {
-        const summaryContent = document.getElementById('yearlySummaryContent');
-        if (!summaryContent) return;
+async function displayYearlySummary(yearData) {
+    const summaryContent = document.getElementById('yearlySummaryContent');
+    if (!summaryContent) return;
 
-        // Initialize yearly totals
-        let totalIncome = 0;
-        let totalExpense = 0;
-        let totalHolidays = 0;
-        let totalEvents = 0;
-        let totalNotes = 0;
-        let totalBills = 0;
+    // Filter all data for the current year once from memory
+    const yearIncome = yearData.allIncome.filter(i => i.date_bs.startsWith(`${currentBsYear}/`));
+    const yearExpense = yearData.allExpenses.filter(e => e.date_bs.startsWith(`${currentBsYear}/`));
+    const yearHolidays = yearData.allHolidays.filter(h => h.date_bs.startsWith(`${currentBsYear}/`));
 
-        // Calculate yearly totals
-        for (let month = 1; month <= 12; month++) {
-            for (let day = 1; day <= getDaysInBSMonth(currentBsYear, month); day++) {
-                const bsDateStr = formatBsDate(currentBsYear, month, day);
-                
-                // Count holidays
-                const holidays = await enhancedHolidayDB.getByIndex('date_bs', bsDateStr);
-                if (holidays && holidays.length > 0) {
-                    totalHolidays += holidays.length;
-                }
-                
-                // Count events
-                const dateData = await getDateData(bsDateStr);
-                totalIncome += dateData.income.reduce((sum, item) => sum + parseFloat(item.amount || 0), 0);
-                totalExpense += dateData.expenses.reduce((sum, item) => sum + parseFloat(item.amount || 0), 0);
-                totalNotes += dateData.notes.length;
-                totalBills += dateData.bills.length;
-                totalEvents += dateData.income.length + dateData.expenses.length + dateData.notes.length + dateData.bills.length;
-            }
-        }
+    const totalIncome = yearIncome.reduce((sum, item) => sum + parseFloat(item.amount || 0), 0);
+    const totalExpense = yearExpense.reduce((sum, item) => sum + parseFloat(item.amount || 0), 0);
+    const netAmount = totalIncome - totalExpense;
 
-        const netAmount = totalIncome - totalExpense;
-
-        // Create summary HTML
-        summaryContent.innerHTML = `
-            <div class="yearly-summary-grid">
-                <div class="yearly-summary-card income">
-                    <h5>Total Income</h5>
-                    <div class="amount">Rs. ${totalIncome.toLocaleString()}</div>
-                    <div class="description">Yearly income from all sources</div>
-                </div>
-                <div class="yearly-summary-card expense">
-                    <h5>Total Expenses</h5>
-                    <div class="amount">Rs. ${totalExpense.toLocaleString()}</div>
-                    <div class="description">Yearly expenses across all categories</div>
-                </div>
-                <div class="yearly-summary-card income">
-                    <h5>Net Amount</h5>
-                    <div class="amount ${netAmount >= 0 ? '' : 'negative'}">Rs. ${Math.abs(netAmount).toLocaleString()}</div>
-                    <div class="description">${netAmount >= 0 ? 'Net savings' : 'Net deficit'}</div>
-                </div>
-                <div class="yearly-summary-card holiday">
-                    <h5>Total Holidays</h5>
-                    <div class="count">${totalHolidays}</div>
-                    <div class="description">Holidays and special days</div>
-                </div>
-                <div class="yearly-summary-card event">
-                    <h5>Total Events</h5>
-                    <div class="count">${totalEvents}</div>
-                    <div class="description">All calendar events</div>
-                </div>
-                <div class="yearly-summary-card event">
-                    <h5>Notes & Bills</h5>
-                    <div class="count">${totalNotes + totalBills}</div>
-                    <div class="description">Notes: ${totalNotes}, Bills: ${totalBills}</div>
-                </div>
+    summaryContent.innerHTML = `
+        <div class="yearly-summary-grid">
+            <div class="yearly-summary-card income">
+                <h5>Yearly Income</h5>
+                <div class="amount">Rs. ${totalIncome.toLocaleString()}</div>
             </div>
-        `;
-
-        // Add negative styling for net loss
-        if (netAmount < 0) {
-            const netCard = summaryContent.querySelector('.yearly-summary-card.income:last-child .amount');
-            if (netCard) {
-                netCard.style.color = 'var(--danger-color)';
-            }
-        }
-
-    } catch (error) {
-        console.error('Error displaying yearly summary:', error);
-    }
+            <div class="yearly-summary-card expense">
+                <h5>Yearly Expenses</h5>
+                <div class="amount">Rs. ${totalExpense.toLocaleString()}</div>
+            </div>
+            <div class="yearly-summary-card ${netAmount >= 0 ? 'income' : 'expense'}">
+                <h5>Net Balance</h5>
+                <div class="amount">Rs. ${Math.abs(netAmount).toLocaleString()}</div>
+            </div>
+            <div class="yearly-summary-card holiday">
+                <h5>Total Holidays</h5>
+                <div class="count">${yearHolidays.length}</div>
+            </div>
+        </div>
+    `;
 }
+
 
 /**
  * Display Weekly Holidays Below Week View
@@ -2477,20 +2396,24 @@ function createWeekTimeSlot(label) {
  */
 async function renderDayView() {
     const container = document.getElementById('dayDetail');
+    if (!container) return;
+
     const today = getCurrentNepaliDate();
-    const day = currentBsDay || today.day;
+    // Ensure we have a valid day selected
+    if (!currentBsDay) currentBsDay = today.day;
     
-    const bsDateStr = formatBsDate(currentBsYear, currentBsMonth, day);
-    const adDate = bsToAd(currentBsYear, currentBsMonth, day);
+    const bsDateStr = formatBsDate(currentBsYear, currentBsMonth, currentBsDay);
+    const adDate = bsToAd(currentBsYear, currentBsMonth, currentBsDay);
     const dateData = await getDateData(bsDateStr);
 
     let html = `
         <div class="day-detail-header">
-            <div class="day-detail-date">${day}</div>
+            <div class="day-detail-date">${currentBsDay}</div>
             <div class="day-detail-month">${getNepaliMonthName(currentBsMonth)} ${currentBsYear}</div>
-            <div class="day-detail-month">${adDate.month}/${adDate.day}/${adDate.year} AD</div>
+            <div class="day-detail-ad">${adDate.month}/${adDate.day}/${adDate.year} AD</div>
         </div>
     `;
+
 
     if (dateData.holidays.length > 0) {
         html += `<div class="day-events-section"><h4 style="color: var(--danger-color);">🎉 Holidays</h4>`;
@@ -2947,26 +2870,23 @@ async function loadCellData(cell, bsDateStr) {
  */
 async function getDateData(bsDateStr) {
     try {
-        const [year, month, day] = bsDateStr.split('/').map(Number);
-        
-        // Get all data for the date
-        const allIncome = await enhancedIncomeDB.getAll();
-        const allExpenses = await enhancedExpenseDB.getAll();
-        const allNotes = await enhancedNoteDB.getAll();
-        const allBills = await enhancedBillDB.getAll();
-        
-        // Filter by date
-        const income = allIncome.filter(item => item.date_bs === bsDateStr);
-        const expenses = allExpenses.filter(item => item.date_bs === bsDateStr);
-        const notes = allNotes.filter(item => item.date_bs === bsDateStr);
-        const bills = allBills.filter(item => item.dueDate === bsDateStr);
+        // Get all data stores including holidays
+        const [allIncome, allExpenses, allNotes, allBills, allHolidays] = await Promise.all([
+            enhancedIncomeDB.getAll(),
+            enhancedExpenseDB.getAll(),
+            enhancedNoteDB.getAll(),
+            enhancedBillDB.getAll(),
+            enhancedHolidayDB.getAll()
+        ]);
         
         return {
-            income,
-            expenses,
-            notes,
-            bills
+            income: allIncome.filter(item => item.date_bs === bsDateStr),
+            expenses: allExpenses.filter(item => item.date_bs === bsDateStr),
+            notes: allNotes.filter(item => item.date_bs === bsDateStr),
+            bills: allBills.filter(item => item.dueDate === bsDateStr),
+            holidays: allHolidays.filter(item => item.date_bs === bsDateStr)
         };
+
     } catch (error) {
         console.error('Error getting date data:', error);
         return {
@@ -5639,6 +5559,20 @@ document.addEventListener('click', function(e) {
         }
     }
 });
+
+// ✅ Add this to the bottom of app.js to make Year View dots work
+function checkMonthEvents(year, month, yearData) {
+    const monthPrefix = `${year}/${String(month).padStart(2, '0')}`;
+    
+    // Check all data sources for activity in this month
+    const hasIncome = yearData.allIncome.some(i => i.date_bs.startsWith(monthPrefix));
+    const hasExpense = yearData.allExpenses.some(e => e.date_bs.startsWith(monthPrefix));
+    const hasNote = yearData.allNotes.some(n => n.date_bs.startsWith(monthPrefix));
+    const hasBill = yearData.allBills.some(b => b.dueDate.startsWith(monthPrefix));
+    
+    return hasIncome || hasExpense || hasNote || hasBill;
+}
+
 
 // Make functions globally accessible
 if (typeof showMedicineForm === 'function') window.showMedicineForm = showMedicineForm;

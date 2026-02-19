@@ -1181,7 +1181,20 @@
                                     <input type="file" id="assetsModuleImport" accept=".json,.xlsx,.xls" style="display: none;" onchange="importModuleData('assets', this)">
                                 </div>
                             </div>
-                        </div>
+                       
+                            	                            <div class="import-export-dropdown">
+                                <button class="import-export-btn small" id="medicineDataBtn">
+                                    💊 Medicine Manager
+                                </button>
+                                <div class="dropdown-menu" id="medicineDataMenu">
+                                    <button class="dropdown-item" onclick="exportMedicineData('complete', 'json')">📄 JSON</button>
+                                    <button class="dropdown-item" onclick="exportMedicineData('complete', 'excel')">📊 Excel</button>
+                                    <button class="dropdown-item" onclick="document.getElementById('medicineModuleImport').click()">📥 Import</button>
+                                    <input type="file" id="medicineModuleImport" accept=".json,.xlsx,.xls" style="display: none;" onchange="importMedicineData('json', this)">
+                                </div>
+                            </div>
+
+                            </div>
                     </div>
                     
                     <!-- Data Operations -->

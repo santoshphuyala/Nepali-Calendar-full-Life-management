@@ -38,9 +38,10 @@ async function initDB() {
             console.log('🔄 Database upgrade needed...');
             db = event.target.result;
             
-                        // DO NOT DELETE EXISTING STORES.
-            // Only create new object stores with proper indexes if they do not exist
-
+            // DO NOT DELETE EXISTING STORES (Prevents data wiping bug)
+            // Only create stores and indexes if they don't already exist
+            
+            // Create all object stores with proper indexes
             createStore('notes', 'id', [
                 { name: 'date_bs' },
                 { name: 'title' },
@@ -224,263 +225,118 @@ class EnhancedDBManager {
         }
     }
     
-    /**
-     * Add data with guaranteed transaction completion
-     */
     async add(data) {
         try {
             await this.ensureDB();
-            console.log(`🔄 Adding to ${this.storeName}:`, data);
-            
             return new Promise((resolve, reject) => {
                 const transaction = db.transaction([this.storeName], 'readwrite');
                 const store = transaction.objectStore(this.storeName);
                 const request = store.add(data);
-                
                 let requestResult = null;
-                
-                request.onsuccess = () => {
-                    console.log(`✅ Added to ${this.storeName}:`, request.result);
-                    requestResult = request.result;
-                };
-                
-                request.onerror = () => {
-                    console.error(`❌ Add error in ${this.storeName}:`, request.error);
-                    reject(request.error);
-                };
-                
-                // CRITICAL: Wait for transaction completion before resolving
-                transaction.oncomplete = () => {
-                    console.log(`✅ Transaction completed for ${this.storeName} (add)`);
-                    resolve(requestResult);
-                };
-                
-                transaction.onerror = () => {
-                    console.error(`❌ Transaction error in ${this.storeName}:`, transaction.error);
-                    reject(transaction.error);
-                };
+                request.onsuccess = () => { requestResult = request.result; };
+                request.onerror = () => { reject(request.error); };
+                transaction.oncomplete = () => { resolve(requestResult); };
+                transaction.onerror = () => { reject(transaction.error); };
             });
-        } catch (error) {
-            console.error(`❌ Error adding to ${this.storeName}:`, error);
-            throw error;
-        }
+        } catch (error) { throw error; }
     }
     
-    /**
-     * Update data with guaranteed transaction completion
-     */
     async update(data) {
         try {
             await this.ensureDB();
-            console.log(`🔄 Updating in ${this.storeName}:`, data);
-            
             return new Promise((resolve, reject) => {
                 const transaction = db.transaction([this.storeName], 'readwrite');
                 const store = transaction.objectStore(this.storeName);
                 const request = store.put(data);
-                
                 let requestResult = null;
-                
-                request.onsuccess = () => {
-                    console.log(`✅ Updated in ${this.storeName}:`, request.result);
-                    requestResult = request.result;
-                };
-                
-                request.onerror = () => {
-                    console.error(`❌ Update error in ${this.storeName}:`, request.error);
-                    reject(request.error);
-                };
-                
-                // CRITICAL: Wait for transaction completion before resolving
-                transaction.oncomplete = () => {
-                    console.log(`✅ Transaction completed for ${this.storeName} (update)`);
-                    resolve(requestResult);
-                };
-                
-                transaction.onerror = () => {
-                    console.error(`❌ Transaction error in ${this.storeName}:`, transaction.error);
-                    reject(transaction.error);
-                };
+                request.onsuccess = () => { requestResult = request.result; };
+                request.onerror = () => { reject(request.error); };
+                transaction.oncomplete = () => { resolve(requestResult); };
+                transaction.onerror = () => { reject(transaction.error); };
             });
-        } catch (error) {
-            console.error(`❌ Error updating in ${this.storeName}:`, error);
-            throw error;
-        }
+        } catch (error) { throw error; }
     }
     
-    /**
-     * Delete data with guaranteed transaction completion
-     */
     async delete(id) {
         try {
             await this.ensureDB();
-            console.log(`🔄 Deleting from ${this.storeName}:`, id);
-            
             return new Promise((resolve, reject) => {
                 const transaction = db.transaction([this.storeName], 'readwrite');
                 const store = transaction.objectStore(this.storeName);
                 const request = store.delete(id);
-                
-                request.onsuccess = () => {
-                    console.log(`✅ Deleted from ${this.storeName}:`, id);
-                };
-                
-                request.onerror = () => {
-                    console.error(`❌ Delete error in ${this.storeName}:`, request.error);
-                    reject(request.error);
-                };
-                
-                // CRITICAL: Wait for transaction completion before resolving
-                transaction.oncomplete = () => {
-                    console.log(`✅ Transaction completed for ${this.storeName} (delete)`);
-                    resolve();
-                };
-                
-                transaction.onerror = () => {
-                    console.error(`❌ Transaction error in ${this.storeName}:`, transaction.error);
-                    reject(transaction.error);
-                };
+                request.onerror = () => { reject(request.error); };
+                transaction.oncomplete = () => { resolve(); };
+                transaction.onerror = () => { reject(transaction.error); };
             });
-        } catch (error) {
-            console.error(`❌ Error deleting from ${this.storeName}:`, error);
-            throw error;
-        }
+        } catch (error) { throw error; }
     }
     
-    /**
-     * Get single item
-     */
     async get(id) {
         try {
             await this.ensureDB();
-            
             return new Promise((resolve, reject) => {
                 const transaction = db.transaction([this.storeName], 'readonly');
                 const store = transaction.objectStore(this.storeName);
                 const request = store.get(id);
-                
                 request.onsuccess = () => resolve(request.result);
                 request.onerror = () => reject(request.error);
             });
-        } catch (error) {
-            console.error(`❌ Error getting from ${this.storeName}:`, error);
-            return null;
-        }
+        } catch (error) { return null; }
     }
     
-    /**
-     * Get all items
-     */
     async getAll() {
         try {
             await this.ensureDB();
-            
             return new Promise((resolve, reject) => {
                 const transaction = db.transaction([this.storeName], 'readonly');
                 const store = transaction.objectStore(this.storeName);
                 const request = store.getAll();
-                
-                request.onsuccess = () => {
-                    const result = request.result || [];
-                    console.log(`📊 Retrieved ${result.length} items from ${this.storeName}`);
-                    resolve(result);
-                };
-                
+                request.onsuccess = () => { resolve(request.result || []); };
                 request.onerror = () => reject(request.error);
             });
-        } catch (error) {
-            console.error(`❌ Error getting all from ${this.storeName}:`, error);
-            return [];
-        }
+        } catch (error) { return []; }
     }
     
-    /**
-     * Get items by index
-     */
     async getByIndex(indexName, value) {
         try {
             await this.ensureDB();
-            
             return new Promise((resolve, reject) => {
                 const transaction = db.transaction([this.storeName], 'readonly');
                 const store = transaction.objectStore(this.storeName);
-                
-                if (!store.indexNames.contains(indexName)) {
-                    console.warn(`Index '${indexName}' not found in ${this.storeName}`);
-                    resolve([]);
-                    return;
-                }
-                
+                if (!store.indexNames.contains(indexName)) { resolve([]); return; }
                 const index = store.index(indexName);
                 const request = index.getAll(value);
-                
                 request.onsuccess = () => resolve(request.result || []);
                 request.onerror = () => reject(request.error);
             });
-        } catch (error) {
-            console.error(`❌ Error in getByIndex (${this.storeName}.${indexName}):`, error);
-            return [];
-        }
+        } catch (error) { return []; }
     }
     
-    /**
-     * Clear all data with guaranteed transaction completion
-     */
     async clear() {
         try {
             await this.ensureDB();
-            console.log(`🔄 Clearing ${this.storeName}`);
-            
             return new Promise((resolve, reject) => {
                 const transaction = db.transaction([this.storeName], 'readwrite');
                 const store = transaction.objectStore(this.storeName);
                 const request = store.clear();
-                
-                request.onsuccess = () => {
-                    console.log(`✅ Cleared ${this.storeName}`);
-                };
-                
-                request.onerror = () => {
-                    console.error(`❌ Clear error in ${this.storeName}:`, request.error);
-                    reject(request.error);
-                };
-                
-                // CRITICAL: Wait for transaction completion before resolving
-                transaction.oncomplete = () => {
-                    console.log(`✅ Transaction completed for ${this.storeName} (clear)`);
-                    resolve();
-                };
-                
-                transaction.onerror = () => {
-                    console.error(`❌ Transaction error in ${this.storeName}:`, transaction.error);
-                    reject(transaction.error);
-                };
+                request.onerror = () => { reject(request.error); };
+                transaction.oncomplete = () => { resolve(); };
+                transaction.onerror = () => { reject(transaction.error); };
             });
-        } catch (error) {
-            console.error(`❌ Error clearing ${this.storeName}:`, error);
-            throw error;
-        }
+        } catch (error) { throw error; }
     }
     
-    /**
-     * Count items
-     */
     async count() {
         try {
             await this.ensureDB();
-            
             return new Promise((resolve, reject) => {
                 const transaction = db.transaction([this.storeName], 'readonly');
                 const store = transaction.objectStore(this.storeName);
                 const request = store.count();
-                
                 request.onsuccess = () => resolve(request.result);
                 request.onerror = () => reject(request.error);
             });
-        } catch (error) {
-            console.error(`❌ Error counting in ${this.storeName}:`, error);
-            return 0;
-        }
+        } catch (error) { return 0; }
     }
 }
 
@@ -505,14 +361,9 @@ const enhancedFamilyMembersDB = new EnhancedDBManager('familyMembers');
 const enhancedPrescriptionsDB = new EnhancedDBManager('prescriptions');
 const enhancedDosageScheduleDB = new EnhancedDBManager('dosageSchedule');
 
-/**
- * Initialize the enhanced database system
- */
 async function initializeEnhancedDB() {
     try {
-        console.log('🚀 Initializing Enhanced Database System...');
         await initDB();
-        console.log('✅ Enhanced Database System Ready!');
         return true;
     } catch (error) {
         console.error('❌ Failed to initialize Enhanced Database:', error);
@@ -526,8 +377,6 @@ initializeEnhancedDB();
 // Export for global use
 window.EnhancedDBManager = EnhancedDBManager;
 window.initializeEnhancedDB = initializeEnhancedDB;
-
-// Export all database instances
 window.enhancedNoteDB = enhancedNoteDB;
 window.enhancedHolidayDB = enhancedHolidayDB;
 window.enhancedIncomeDB = enhancedIncomeDB;
