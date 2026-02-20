@@ -11,8 +11,11 @@ let trendChart, categoryChart, budgetChart;
  * Render Income vs Expense Trend Chart
  */
 async function renderTrendChart(bsYear, bsMonth) {
-    const ctx = document.getElementById('trendChart');
-    if (!ctx) return;
+    const ctx = safeGetElementById('trendChart');
+    if (!ctx) {
+        console.warn('Trend chart canvas not found');
+        return;
+    }
 
     // Get last 6 months data
     const months = [];
@@ -99,8 +102,11 @@ async function renderTrendChart(bsYear, bsMonth) {
  * Render Category Pie Chart
  */
 async function renderCategoryChart(bsYear, bsMonth) {
-    const ctx = document.getElementById('categoryChart');
-    if (!ctx) return;
+    const ctx = safeGetElementById('categoryChart');
+    if (!ctx) {
+        console.warn('Category chart canvas not found');
+        return;
+    }
 
     const { expenses } = await getMonthlyTransactions(bsYear, bsMonth);
 
@@ -166,8 +172,11 @@ async function renderCategoryChart(bsYear, bsMonth) {
  * Render Budget Chart
  */
 async function renderBudgetChart(bsYear, bsMonth) {
-    const ctx = document.getElementById('budgetChart');
-    if (!ctx) return;
+    const ctx = safeGetElementById('budgetChart');
+    if (!ctx) {
+        console.warn('Budget chart canvas not found');
+        return;
+    }
 
     const budgets = await getMonthBudget(bsYear, bsMonth);
     const { expenses } = await getMonthlyTransactions(bsYear, bsMonth);

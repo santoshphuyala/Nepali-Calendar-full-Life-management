@@ -55,6 +55,20 @@ function getDaysInBSMonth(year, month) {
  * Convert BS date to AD date
  */
 function bsToAd(bsYear, bsMonth, bsDay) {
+    // Input validation
+    if (!bsYear || !bsMonth || !bsDay || 
+        typeof bsYear !== 'number' || typeof bsMonth !== 'number' || typeof bsDay !== 'number' ||
+        bsMonth < 1 || bsMonth > 12 || bsDay < 1 || bsDay > 32 ||
+        bsYear < 2082 || bsYear > 2092) {
+        throw new Error('Invalid BS date parameters');
+    }
+    
+    // Validate day against month
+    const maxDays = getDaysInBSMonth(bsYear, bsMonth);
+    if (bsDay > maxDays) {
+        throw new Error(`Invalid day ${bsDay} for BS month ${bsMonth} in year ${bsYear}`);
+    }
+    
     let daysDiff = 0;
     
     // Calculate days from reference BS date
@@ -110,6 +124,14 @@ function bsToAd(bsYear, bsMonth, bsDay) {
  * Convert AD date to BS date
  */
 function adToBs(adYear, adMonth, adDay) {
+    // Input validation
+    if (!adYear || !adMonth || !adDay || 
+        typeof adYear !== 'number' || typeof adMonth !== 'number' || typeof adDay !== 'number' ||
+        adMonth < 1 || adMonth > 12 || adDay < 1 || adDay > 31 ||
+        adYear < 2020 || adYear > 2100) {
+        throw new Error('Invalid AD date parameters');
+    }
+    
     const targetDate = new Date(adYear, adMonth - 1, adDay);
     const refDate = new Date(BS_AD_REFERENCE.adDate);
     

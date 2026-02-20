@@ -20,10 +20,10 @@ async function renderInsuranceStats() {
         
         const today = getCurrentNepaliDate();
         const todayStr = formatBsDate(today.year, today.month, today.day);
-        const in30Days = addDaysToBsDate(todayStr, 30);
+        const in15Days = addDaysToBsDate(todayStr, 15); // Changed from 30 to 15 days
         
         const expiringSoon = activePolicies.filter(p => {
-            return p.expiryDate >= todayStr && p.expiryDate <= in30Days;
+            return p.expiryDate >= todayStr && p.expiryDate <= in15Days;
         });
         console.log('🐛 DEBUG: Found expiring soon policies', { count: expiringSoon.length });
 
@@ -36,10 +36,11 @@ async function renderInsuranceStats() {
         }, 0);
         console.log('🐛 DEBUG: Calculated annual premium', { amount: annualPremium });
 
-        const totalPoliciesElement = document.getElementById('totalPolicies');
-        const activePoliciesElement = document.getElementById('activePolicies');
-        const totalPremiumElement = document.getElementById('totalPremium');
-        const expiringSoonElement = document.getElementById('expiringSoon');
+        // Use safe DOM access
+        const totalPoliciesElement = safeGetElementById('totalPolicies');
+        const activePoliciesElement = safeGetElementById('activePolicies');
+        const totalPremiumElement = safeGetElementById('totalPremium');
+        const expiringSoonElement = safeGetElementById('expiringSoon');
         
         console.log('🐛 DEBUG: Found DOM elements', {
             totalPolicies: !!totalPoliciesElement,
@@ -213,7 +214,7 @@ function showInsuranceForm(policy = null) {
                 await renderInsuranceList();
                 await renderInsuranceStats();
             }
-            alert('Insurance policy saved successfully!');
+            safeShowNotification('Insurance policy saved successfully!', 'success');
         } catch (error) {
             console.error('🐛 DEBUG: Error saving insurance:', error);
             console.error('🐛 DEBUG: Error details:', {
@@ -221,7 +222,7 @@ function showInsuranceForm(policy = null) {
                 stack: error.stack,
                 name: error.name
             });
-            alert('Error saving policy. Please try again.');
+            safeShowNotification('Error saving policy. Please try again.', 'error');
         }
     });
 }
@@ -278,7 +279,7 @@ async function renderInsuranceList() {
         console.log('🐛 DEBUG: Generating HTML for policies', { count: policies.length });
         const html = policies.map(policy => {
             console.log('🐛 DEBUG: Processing policy:', policy);
-            const isExpiringSoon = policy.expiryDate >= todayStr && policy.expiryDate <= addDaysToBsDate(todayStr, 30);
+            const isExpiringSoon = policy.expiryDate >= todayStr && policy.expiryDate <= addDaysToBsDate(todayStr, 15);
             const isExpired = policy.expiryDate < todayStr;
 
             let statusClass = 'insurance-active';
@@ -382,6 +383,11 @@ async function renderInsuranceList() {
 async function viewInsuranceDetails(id) {
     const policy = await enhancedInsuranceDB.get(id);
     
+    if (!policy) {
+        safeShowNotification('Insurance policy not found', 'error');
+        return;
+    }
+    
     const typeIcons = {
         life: '👤',
         health: '🏥',
@@ -453,10 +459,10 @@ async function deleteInsurance(id) {
         await enhancedInsuranceDB.delete(id);
         await renderInsuranceList();
         await renderInsuranceStats();
-        alert('Insurance policy deleted successfully!');
+        safeShowNotification('Insurance policy deleted successfully!', 'success');
     } catch (error) {
         console.error('Error deleting insurance:', error);
-        alert('Error deleting policy.');
+        safeShowNotification('Error deleting policy.', 'error');
     }
 }
 
@@ -476,7 +482,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     console.log('🐛 DEBUG: DOMContentLoaded, checking if insurance view needs initialization');
     
     // Check if we're on the insurance view
-    const insuranceModule = document.getElementById('insuranceModule');
+    const insuranceModule = safeGetElementById('insuranceModule');
     if (insuranceModule && insuranceModule.classList.contains('active')) {
         console.log('🐛 DEBUG: Insurance module is active, initializing renderInsuranceList');
         await renderInsuranceList();
@@ -486,13 +492,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 });
 
-// Also try to initialize after a short delay to ensure everything is loaded
-setTimeout(async () => {
-    console.log('🐛 DEBUG: Delayed initialization check for insurance');
-    const insuranceModule = document.getElementById('insuranceModule');
-    if (insuranceModule && insuranceModule.classList.contains('active')) {
-        console.log('🐛 DEBUG: Delayed - Insurance module is active, initializing renderInsuranceList');
-        await renderInsuranceList();
-        await renderInsuranceStats();
-    }
-}, 1000);
+// Global function to manually trigger insurance stats update
+window.updateInsuranceStats = async function() {
+    console.log('🐛 DEBUG: Manual insurance stats update triggered');
+    await renderInsuranceStats();
+};

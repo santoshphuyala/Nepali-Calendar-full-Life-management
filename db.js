@@ -6,8 +6,6 @@
  * ========================================
  */
 
-console.log('✅ db.js loading...');
-
 const DB_NAME = 'NepaliCalendarDB';
 const DB_VERSION = 6; // v6: added paymentHistory store for notification.js
 let db = null;
@@ -18,8 +16,6 @@ let isDBReady = false;
  */
 async function initDB() {
     return new Promise((resolve, reject) => {
-        console.log('🔄 Initializing Enhanced IndexedDB...');
-        
         const request = indexedDB.open(DB_NAME, DB_VERSION);
         
         request.onerror = () => {
@@ -28,18 +24,32 @@ async function initDB() {
         };
         
         request.onsuccess = () => {
-            console.log('✅ Database opened successfully');
             db = request.result;
             isDBReady = true;
             resolve(db);
         };
         
         request.onupgradeneeded = (event) => {
-            console.log('🔄 Database upgrade needed...');
             db = event.target.result;
+            
+            const currentVersion = event.oldVersion;
+            const newVersion = event.newVersion;
             
             // DO NOT DELETE EXISTING STORES (Prevents data wiping bug)
             // Only create stores and indexes if they don't already exist
+            
+            // Version-specific migrations
+            if (currentVersion < 6 && newVersion >= 6) {
+                // Create paymentHistory store for notification.js
+                createStore('paymentHistory', 'id', [
+                    { name: 'source' },        // 'insurance' | 'bill' | 'subscription' | 'recurring' | 'vehicle'
+                    { name: 'itemId' },        // FK to the original item
+                    { name: 'paidDateBs' },    // BS date payment was recorded
+                    { name: 'dueDateBs' },     // BS due/renewal date that was settled
+                    { name: 'amount' },
+                    { name: 'recordedAt' }     // ISO timestamp for sorting
+                ]);
+            }
             
             // Create all object stores with proper indexes
             createStore('notes', 'id', [
@@ -163,14 +173,17 @@ async function initDB() {
 
             // ── Payment History (notification.js) ──────────────────────────
             // Stores every paid bill / renewed insurance / subscription / recurring
-            createStore('paymentHistory', 'id', [
-                { name: 'source' },        // 'insurance' | 'bill' | 'subscription' | 'recurring' | 'vehicle'
-                { name: 'itemId' },        // FK to the original item
-                { name: 'paidDateBs' },    // BS date payment was recorded
-                { name: 'dueDateBs' },     // BS due/renewal date that was settled
-                { name: 'amount' },
-                { name: 'recordedAt' }     // ISO timestamp for sorting
-            ]);
+            // Only create if not already created in migration
+            if (currentVersion < 6) {
+                createStore('paymentHistory', 'id', [
+                    { name: 'source' },        // 'insurance' | 'bill' | 'subscription' | 'recurring' | 'vehicle'
+                    { name: 'itemId' },        // FK to the original item
+                    { name: 'paidDateBs' },    // BS date payment was recorded
+                    { name: 'dueDateBs' },     // BS due/renewal date that was settled
+                    { name: 'amount' },
+                    { name: 'recordedAt' }     // ISO timestamp for sorting
+                ]);
+            }
             
             console.log('✅ Database upgrade completed successfully');
         };

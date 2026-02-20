@@ -1,9 +1,9 @@
 /**
- * SERVICE WORKER v2.0 - ERROR TOLERANT
+ * SERVICE WORKER v2.1 - ERROR TOLERANT
  * Handles missing files gracefully
  */
 
-const CACHE_NAME = 'nepali-calendar-v2.0';
+const CACHE_NAME = 'nepali-calendar-v2.1';
 
 // Files to cache (relative paths)
 const urlsToCache = [
@@ -18,6 +18,10 @@ const urlsToCache = [
     './insurance.js',
     './vehicle.js',
     './subscription.js',
+    './notification.js',
+    './medicine-tracker.js',
+    './debug.js',
+    './utils.js',
     './custom.js',
     './import-export.js',
     './manifest.json'
@@ -29,7 +33,7 @@ self.addEventListener('install', (event) => {
     event.waitUntil(
         caches.open(CACHE_NAME)
             .then((cache) => {
-                console.log('Opened cache v2.0');
+                console.log('Opened cache v2.1');
                 // Cache files one by one to avoid failure on missing files
                 return Promise.allSettled(
                     urlsToCache.map(url => 

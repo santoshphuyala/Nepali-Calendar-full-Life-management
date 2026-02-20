@@ -22,9 +22,13 @@ async function renderSubscriptionSummary() {
 
     const annualTotal = monthlyTotal * 12;
 
-    document.getElementById('monthlySubCost').textContent = `Rs. ${monthlyTotal.toLocaleString()}`;
-    document.getElementById('annualSubCost').textContent = `Rs. ${annualTotal.toLocaleString()}`;
-    document.getElementById('activeSubCount').textContent = activeSubs.length;
+    const monthlySubCost = document.getElementById('monthlySubCost');
+    const annualSubCost = document.getElementById('annualSubCost');
+    const activeSubCount = document.getElementById('activeSubCount');
+    
+    if (monthlySubCost) monthlySubCost.textContent = `Rs. ${monthlyTotal.toLocaleString()}`;
+    if (annualSubCost) annualSubCost.textContent = `Rs. ${annualTotal.toLocaleString()}`;
+    if (activeSubCount) activeSubCount.textContent = activeSubs.length;
 }
 
 /**
@@ -148,10 +152,14 @@ function showSubscriptionForm(subscription = null) {
                 await renderSubscriptionList();
                 await renderSubscriptionSummary();
             }
-            alert('Subscription saved!');
+            safeShowNotification('Subscription saved!', 'success');
         } catch (error) {
             console.error('Error saving subscription:', error);
-            alert('Error saving subscription.');
+            if (typeof showNotification === 'function') {
+                showNotification('Error saving subscription.', 'error');
+            } else {
+                alert('Error saving subscription.');
+            }
         }
     });
 }
@@ -161,8 +169,17 @@ function showSubscriptionForm(subscription = null) {
  */
 async function renderSubscriptionList() {
     const container = document.getElementById('subscriptionList');
+    if (!container) {
+        console.error('Subscription list container not found');
+        return;
+    }
+    
     const activeFilter = document.querySelector('#subscriptionView .filter-btn.active');
-    const filter = activeFilter ? activeFilter.dataset.filter : 'all';
+    if (!activeFilter) {
+        console.warn('Subscription filter buttons not found');
+        return;
+    }
+    const filter = activeFilter.dataset.filter || 'all';
 
     let subscriptions = await enhancedSubscriptionDB.getAll();
 
@@ -233,7 +250,7 @@ async function renderSubscriptionList() {
 
                 <div class="sub-actions">
                     ${sub.status === 'active' ? `<button class="btn-secondary btn-sm" onclick="renewSubscription(${sub.id})">🔄 Renew</button>` : ''}
-                    <button class="btn-primary btn-sm" onclick='showSubscriptionForm(${JSON.stringify(sub).replace(/'/g, "&apos;")})'>✏️ Edit</button>
+                    <button class="btn-primary btn-sm" onclick='showSubscriptionForm(${safeJsonStringify(sub)})'>✏️ Edit</button>
                     <button class="btn-danger btn-sm" onclick="deleteSubscription(${sub.id})">🗑️ Delete</button>
                 </div>
             </div>
@@ -297,7 +314,7 @@ async function renewSubscription(id) {
 
     await renderSubscriptionList();
     await renderSubscriptionSummary();
-    alert('Subscription renewed and expense added!');
+    safeShowNotification('Subscription renewed and expense added!', 'success');
 }
 
 /**
@@ -310,10 +327,10 @@ async function deleteSubscription(id) {
         await enhancedSubscriptionDB.delete(id);
         await renderSubscriptionList();
         await renderSubscriptionSummary();
-        alert('Subscription deleted!');
+        safeShowNotification('Subscription deleted!', 'success');
     } catch (error) {
         console.error('Error deleting subscription:', error);
-        alert('Error deleting subscription.');
+        safeShowNotification('Error deleting subscription.', 'error');
     }
 }
 
@@ -322,7 +339,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     console.log('🐛 DEBUG: DOMContentLoaded, checking if subscription view needs initialization');
     
     // Check if we're on the subscription view
-    const subscriptionModule = document.getElementById('subscriptionModule');
+    const subscriptionModule = safeGetElementById('subscriptionModule');
     if (subscriptionModule && subscriptionModule.classList.contains('active')) {
         console.log('🐛 DEBUG: Subscription module is active, initializing renderSubscriptionList');
         await renderSubscriptionList();

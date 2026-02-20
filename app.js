@@ -157,26 +157,32 @@ function showNoteForm(note = null) {
     
     // Initialize Nepali date picker for date field
     setTimeout(() => {
-        const dateInput = document.getElementById('noteDateBs');
+        const dateInput = safeGetElementById('noteDateBs');
         if (dateInput && !dateInput.hasAttribute('data-nepali-picker')) {
             new NepaliDatePicker(dateInput);
         }
     }, 100);
     
-    document.getElementById('noteForm').addEventListener('submit', async (e) => {
+    const noteForm = safeGetElementById('noteForm');
+    if (!noteForm) {
+        console.error('Note form not found');
+        return;
+    }
+    
+    noteForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         
         const noteData = {
-            date_bs: document.getElementById('noteDateBs').value,
-            title: document.getElementById('noteTitle').value,
-            description: document.getElementById('noteDescription').value,
-            eventType: document.getElementById('noteEventType').value,
-            category: document.getElementById('noteCategory').value,
-            isReminder: document.getElementById('noteIsReminder').checked,
-            reminderTime: document.getElementById('noteReminderTime').value,
-            reminderAdvance: parseInt(document.getElementById('noteReminderAdvance').value),
-            repeatYearly: document.getElementById('noteRepeatYearly').checked,
-            priority: document.querySelector('input[name="priority"]:checked').value,
+            date_bs: safeGetElementById('noteDateBs')?.value || '',
+            title: safeGetElementById('noteTitle')?.value || '',
+            description: safeGetElementById('noteDescription')?.value || '',
+            eventType: safeGetElementById('noteEventType')?.value || 'note',
+            category: safeGetElementById('noteCategory')?.value || 'other',
+            isReminder: safeGetElementById('noteIsReminder')?.checked || false,
+            reminderTime: safeGetElementById('noteReminderTime')?.value || '09:00',
+            reminderAdvance: parseInt(safeGetElementById('noteReminderAdvance')?.value || 0),
+            repeatYearly: safeGetElementById('noteRepeatYearly')?.checked || false,
+            priority: document.querySelector('input[name="priority"]:checked')?.value || 'low',
             createdAt: new Date().toISOString()
         };
         
@@ -184,10 +190,10 @@ function showNoteForm(note = null) {
             if (note?.id) {
                 noteData.id = note.id;
                 await enhancedNoteDB.update(noteData);
-                showNotification('✅ Note updated successfully!', 'success');
+                safeShowNotification('✅ Note updated successfully!', 'success');
             } else {
                 await enhancedNoteDB.add(noteData);
-                showNotification('✅ Note added successfully!', 'success');
+                safeShowNotification('✅ Note added successfully!', 'success');
             }
             
             // Schedule browser notification if reminder is set
@@ -200,7 +206,7 @@ function showNoteForm(note = null) {
             renderCalendar(); // ✅ NO PARAMETERS
         } catch (error) {
             console.error('Error saving note:', error);
-            showNotification('❌ Failed to save note', 'error');
+            safeShowNotification('❌ Failed to save note', 'error');
         }
     });
 }
@@ -302,7 +308,7 @@ function showBrowserNotification(note) {
  */
 async function displayMonthlyNotes() {
     try {
-        const notesContent = document.getElementById('monthlyNotesContent');
+        const notesContent = safeGetElementById('monthlyNotesContent');
         if (!notesContent) return;
 
         // Get all notes
@@ -387,7 +393,7 @@ async function editNote(id) {
         }
     } catch (error) {
         console.error('Error editing note:', error);
-        showNotification('❌ Failed to edit note', 'error');
+        safeShowNotification('❌ Failed to edit note', 'error');
     }
 }
 
@@ -396,13 +402,13 @@ async function deleteNote(id) {
     
     try {
         await enhancedNoteDB.delete(id);
-        showNotification('✅ Note deleted successfully!', 'success');
+        safeShowNotification('✅ Note deleted successfully!', 'success');
         closeModal();
         renderNotes();
         renderCalendar();
     } catch (error) {
         console.error('Error deleting note:', error);
-        showNotification('❌ Failed to delete note', 'error');
+        safeShowNotification('❌ Failed to delete note', 'error');
     }
 }
 
@@ -462,31 +468,37 @@ function showHolidayForm(holiday = null) {
     
     // Initialize Nepali date picker for holiday BS date
     setTimeout(() => {
-        const dateInput = document.getElementById('holidayDateBs');
+        const dateInput = safeGetElementById('holidayDateBs');
         if (dateInput && !dateInput.hasAttribute('data-nepali-picker')) {
             new NepaliDatePicker(dateInput);
         }
     }, 100);
     
-    document.getElementById('holidayForm').addEventListener('submit', async (e) => {
+    const holidayForm = safeGetElementById('holidayForm');
+    if (!holidayForm) {
+        console.error('Holiday form not found');
+        return;
+    }
+    
+    holidayForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         
         const holidayData = {
-            date_bs: document.getElementById('holidayDateBs').value,
-            date_ad: document.getElementById('holidayDateAd').value || '',
-            name: document.getElementById('holidayName').value,
-            type: document.getElementById('holidayType').value,
-            description: document.getElementById('holidayDescription').value
+            date_bs: safeGetElementById('holidayDateBs')?.value || '',
+            date_ad: safeGetElementById('holidayDateAd')?.value || '',
+            name: safeGetElementById('holidayName')?.value || '',
+            type: safeGetElementById('holidayType')?.value || 'public',
+            description: safeGetElementById('holidayDescription')?.value || ''
         };
         
         try {
             if (holiday?.id) {
                 holidayData.id = holiday.id;
                 await enhancedHolidayDB.update(holidayData);
-                showNotification('✅ Holiday updated successfully!', 'success');
+                safeShowNotification('✅ Holiday updated successfully!', 'success');
             } else {
                 await enhancedHolidayDB.add(holidayData);
-                showNotification('✅ Holiday added successfully!', 'success');
+                safeShowNotification('✅ Holiday added successfully!', 'success');
             }
             
             closeModal();
@@ -494,10 +506,11 @@ function showHolidayForm(holiday = null) {
             renderCalendar(); // ✅ NO PARAMETERS
         } catch (error) {
             console.error('Error saving holiday:', error);
-            showNotification('❌ Failed to save holiday', 'error');
+            safeShowNotification('❌ Failed to save holiday', 'error');
         }
     });
 }
+
 /**
  * ========================================
  * SHOW RECURRING TRANSACTION FORM
@@ -596,8 +609,8 @@ function showRecurringForm(recurring = null) {
     
     // Initialize Nepali date pickers for recurring dates
     setTimeout(() => {
-        const startDateInput = document.getElementById('recurringStartDate');
-        const endDateInput = document.getElementById('recurringEndDate');
+        const startDateInput = safeGetElementById('recurringStartDate');
+        const endDateInput = safeGetElementById('recurringEndDate');
         
         if (startDateInput && !startDateInput.hasAttribute('data-nepali-picker')) {
             new NepaliDatePicker(startDateInput);
@@ -608,19 +621,25 @@ function showRecurringForm(recurring = null) {
         }
     }, 100);
     
-    document.getElementById('recurringForm').addEventListener('submit', async (e) => {
+    const recurringForm = safeGetElementById('recurringForm');
+    if (!recurringForm) {
+        console.error('Recurring form not found');
+        return;
+    }
+    
+    recurringForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         
         const recurringData = {
-            type: document.getElementById('recurringType').value,
-            description: document.getElementById('recurringDescription').value,
-            amount: parseFloat(document.getElementById('recurringAmount').value),
-            currency: document.getElementById('recurringCurrency').value,
-            category: document.getElementById('recurringCategory').value,
-            frequency: document.getElementById('recurringFrequency').value,
-            startDate: document.getElementById('recurringStartDate').value,
-            endDate: document.getElementById('recurringEndDate').value || null,
-            isActive: document.getElementById('recurringIsActive').checked,
+            type: safeGetElementById('recurringType')?.value || 'income',
+            description: safeGetElementById('recurringDescription')?.value || '',
+            amount: parseFloat(safeGetElementById('recurringAmount')?.value || 0),
+            currency: safeGetElementById('recurringCurrency')?.value || 'NPR',
+            category: safeGetElementById('recurringCategory')?.value || 'salary',
+            frequency: safeGetElementById('recurringFrequency')?.value || 'monthly',
+            startDate: safeGetElementById('recurringStartDate')?.value || '',
+            endDate: safeGetElementById('recurringEndDate')?.value || null,
+            isActive: safeGetElementById('recurringIsActive')?.checked || true,
             createdAt: new Date().toISOString()
         };
         
@@ -628,10 +647,10 @@ function showRecurringForm(recurring = null) {
             if (recurring?.id) {
                 recurringData.id = recurring.id;
                 await enhancedRecurringDB.update(recurringData);
-                showNotification('✅ Recurring transaction updated!', 'success');
+                safeShowNotification('✅ Recurring transaction updated!', 'success');
             } else {
                 await enhancedRecurringDB.add(recurringData);
-                showNotification('✅ Recurring transaction added!', 'success');
+                safeShowNotification('✅ Recurring transaction added!', 'success');
             }
             
             closeModal();
@@ -639,15 +658,16 @@ function showRecurringForm(recurring = null) {
             renderTrackerList();
         } catch (error) {
             console.error('Error saving recurring transaction:', error);
-            showNotification('❌ Failed to save recurring transaction', 'error');
+            safeShowNotification('❌ Failed to save recurring transaction', 'error');
         }
     });
 }
+
 /**
  * Render Notes List
  */
 async function renderNotes() {
-    const notesList = document.getElementById('notesList');
+    const notesList = safeGetElementById('notesList');
     if (!notesList) return;
     
     const notes = await enhancedNoteDB.getAll();
@@ -708,7 +728,7 @@ async function renderNotes() {
  * Render Holiday List
  */
 async function renderHolidayList() {
-    const holidayList = document.getElementById('holidayList');
+    const holidayList = safeGetElementById('holidayList');
     if (!holidayList) return;
     
     const holidays = await enhancedHolidayDB.getAll();
@@ -740,7 +760,7 @@ async function renderHolidayList() {
  * Render Recurring List
  */
 async function renderRecurringList() {
-    const recurringList = document.getElementById('recurringList');
+    const recurringList = safeGetElementById('recurringList');
     if (!recurringList) return;
     
     const recurring = await enhancedRecurringDB.getAll();
@@ -780,7 +800,7 @@ async function editNote(id) {
         }
     } catch (error) {
         console.error('Error editing note:', error);
-        showNotification('❌ Failed to edit note', 'error');
+        safeShowNotification('❌ Failed to edit note', 'error');
     }
 }
 
@@ -790,7 +810,7 @@ async function editNote(id) {
 async function deleteNote(id) {
     if (!confirm('Delete this note?')) return;
     await enhancedNoteDB.delete(id);
-    showNotification('✅ Note deleted', 'success');
+    safeShowNotification('✅ Note deleted', 'success');
     renderNotes();
     renderCalendar();
 }
@@ -798,7 +818,7 @@ async function deleteNote(id) {
 async function deleteHoliday(id) {
     if (!confirm('Delete this holiday?')) return;
     await enhancedHolidayDB.delete(id);
-    showNotification('✅ Holiday deleted', 'success');
+    safeShowNotification('✅ Holiday deleted', 'success');
     renderHolidayList();
     renderCalendar();
 }
@@ -806,7 +826,7 @@ async function deleteHoliday(id) {
 async function deleteRecurring(id) {
     if (!confirm('Delete this recurring transaction?')) return;
     await enhancedRecurringDB.delete(id);
-    showNotification('✅ Recurring transaction deleted', 'success');
+    safeShowNotification('✅ Recurring transaction deleted', 'success');
     renderRecurringList();
 }
 
@@ -815,7 +835,7 @@ async function deleteRecurring(id) {
  * NOTIFICATION SYSTEM
  * ========================================
  */
-function showNotification(message, type = 'info') {
+function safeShowNotification(message, type = 'info') {
     // Create notification element
     const notification = document.createElement('div');
     notification.className = `notification notification-${type}`;
@@ -890,16 +910,20 @@ document.addEventListener('DOMContentLoaded', async () => {
         
         currentCalendarView = 'month';
         
-        document.querySelectorAll('.view-switch-btn').forEach(btn => {
+        const viewSwitchBtns = document.querySelectorAll('.view-switch-btn');
+        viewSwitchBtns.forEach(btn => {
             btn.classList.toggle('active', btn.dataset.calendarView === 'month');
         });
-        document.querySelectorAll('.calendar-view-container').forEach(container => {
+        const calendarViewContainers = document.querySelectorAll('.calendar-view-container');
+        calendarViewContainers.forEach(container => {
             container.classList.remove('active');
         });
-                document.getElementById('monthView').classList.add('active');
+        const monthView = safeGetElementById('monthView');
+        if (monthView) {
+            monthView.classList.add('active');
+        }
         
-        
-                // FIXED: Wrap initial rendering in a timeout to ensure DB is ready
+        // FIXED: Wrap initial rendering in a timeout to ensure DB is ready
         setTimeout(() => {
             initializeYearMonthSelectors();
             renderCalendar();
@@ -915,7 +939,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const savedTheme = localStorage.getItem('theme');
         if (savedTheme === 'dark') {
             document.body.setAttribute('data-theme', 'dark');
-            const darkModeToggle = document.getElementById('darkModeToggle');
+            const darkModeToggle = safeGetElementById('darkModeToggle');
             if (darkModeToggle) {
                 darkModeToggle.checked = true;
             }
@@ -946,7 +970,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     } catch (error) {
         console.error('❌ App initialization error:', error);
-        alert('Error initializing app: ' + error.message + '\n\nPlease make sure you are running this on a local server (http://localhost), not by opening the file directly.');
+        safeShowNotification('Error initializing app: ' + error.message + '\n\nPlease make sure you are running this on a local server (http://localhost), not by opening the file directly.', 'error');
     }
 });
 
@@ -959,16 +983,23 @@ function initializeHeader() {
     const today = getCurrentNepaliDate();
     const adToday = new Date();
     
-    document.getElementById('headerBSDate').textContent = 
-        `BS: ${formatBsDate(today.year, today.month, today.day)} (${getNepaliMonthName(today.month)})`;
+    const headerBSDate = safeGetElementById('headerBSDate');
+    const headerADDate = safeGetElementById('headerADDate');
     
-    document.getElementById('headerADDate').textContent = 
-        `AD: ${adToday.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}`;
+    if (headerBSDate) {
+        headerBSDate.textContent = 
+            `BS: ${formatBsDate(today.year, today.month, today.day)} (${getNepaliMonthName(today.month)})`;
+    }
+    
+    if (headerADDate) {
+        headerADDate.textContent = 
+            `AD: ${adToday.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}`;
+    }
 }
 
 function initializeYearMonthSelectors() {
-    const yearSelect = document.getElementById('yearSelect');
-    const monthSelect = document.getElementById('monthSelect');
+    const yearSelect = safeGetElementById('yearSelect');
+    const monthSelect = safeGetElementById('monthSelect');
 
     if (!yearSelect || !monthSelect) return;
 
@@ -992,35 +1023,8 @@ function initializeYearMonthSelectors() {
     });
 
     // Force the dropdowns to match the current global state
-    yearSelect.value = currentBsYear;
-    monthSelect.value = currentBsMonth;
-}
-
-
-
-function toggleDropdown(menuId) {
-    const menu = document.getElementById(menuId);
-    if (!menu) return;
-
-    const isOpening = !menu.classList.contains('show');
-    closeAllDropdowns();
-    menu.classList.toggle('show', isOpening);
-}
-
-function closeAllDropdowns() {
-    document.querySelectorAll('.dropdown-menu.show').forEach(menu => {
-        menu.classList.remove('show');
-    });
-}
-
-
-async function renderUpcomingReminders() {
-    const container = document.getElementById('remindersList');
-    if (!container) return;
-
-    if (typeof getUpcomingReminders !== 'function') {
-        container.innerHTML = '';
-        return;
+    if (yearSelect) {
+        yearSelect.value = currentBsYear;
     }
 
     const reminders = await getUpcomingReminders();
@@ -1084,55 +1088,58 @@ async function removeDuplicateHolidays() {
 
 
 function initializeEventListeners() {
+    // Use performance optimizer for event listener management
+    const perf = window.performanceOptimizer;
+
     // Import/Export Dropdown Event Listeners
-    const calendarExportBtn = document.getElementById('calendarExportBtn');
-    const calendarImportBtn = document.getElementById('calendarImportBtn');
-    const trackerExportBtn = document.getElementById('trackerExportBtn');
-    const trackerImportBtn = document.getElementById('trackerImportBtn');
+    const calendarExportBtn = perf.getCachedElement('#calendarExportBtn');
+    const calendarImportBtn = perf.getCachedElement('#calendarImportBtn');
+    const trackerExportBtn = perf.getCachedElement('#trackerExportBtn');
+    const trackerImportBtn = perf.getCachedElement('#trackerImportBtn');
 
     // Budget Import/Export
-    const budgetExportBtn = document.getElementById('budgetExportBtn');
-    const budgetImportBtn = document.getElementById('budgetImportBtn');
-    
+    const budgetExportBtn = perf.getCachedElement('#budgetExportBtn');
+    const budgetImportBtn = perf.getCachedElement('#budgetImportBtn');
+
     // Bills Import/Export
-    const billsExportBtn = document.getElementById('billsExportBtn');
-    const billsImportBtn = document.getElementById('billsImportBtn');
-    
+    const billsExportBtn = perf.getCachedElement('#billsExportBtn');
+    const billsImportBtn = perf.getCachedElement('#billsImportBtn');
+
     // Goals Import/Export
-    const goalsExportBtn = document.getElementById('goalsExportBtn');
-    const goalsImportBtn = document.getElementById('goalsImportBtn');
-    
+    const goalsExportBtn = perf.getCachedElement('#goalsExportBtn');
+    const goalsImportBtn = perf.getCachedElement('#goalsImportBtn');
+
     // Insurance Import/Export
-    const insuranceExportBtn = document.getElementById('insuranceExportBtn');
-    const insuranceImportBtn = document.getElementById('insuranceImportBtn');
-    
+    const insuranceExportBtn = perf.getCachedElement('#insuranceExportBtn');
+    const insuranceImportBtn = perf.getCachedElement('#insuranceImportBtn');
+
     // Vehicle Import/Export
-    const vehicleExportBtn = document.getElementById('vehicleExportBtn');
-    const vehicleImportBtn = document.getElementById('vehicleImportBtn');
-    
+    const vehicleExportBtn = perf.getCachedElement('#vehicleExportBtn');
+    const vehicleImportBtn = perf.getCachedElement('#vehicleImportBtn');
+
     // Subscription Import/Export
-    const subscriptionExportBtn = document.getElementById('subscriptionExportBtn');
-    const subscriptionImportBtn = document.getElementById('subscriptionImportBtn');
-    
+    const subscriptionExportBtn = perf.getCachedElement('#subscriptionExportBtn');
+    const subscriptionImportBtn = perf.getCachedElement('#subscriptionImportBtn');
+
     // Custom Import/Export
-    const customExportBtn = document.getElementById('customExportBtn');
-    const customImportBtn = document.getElementById('customImportBtn');
-    
+    const customExportBtn = perf.getCachedElement('#customExportBtn');
+    const customImportBtn = perf.getCachedElement('#customImportBtn');
+
     // Shopping Import/Export
-    const shoppingExportBtn = document.getElementById('shoppingExportBtn');
-    const shoppingImportBtn = document.getElementById('shoppingImportBtn');
-    
+    const shoppingExportBtn = perf.getCachedElement('#shoppingExportBtn');
+    const shoppingImportBtn = perf.getCachedElement('#shoppingImportBtn');
+
     // Calendar Export Dropdown
     if (calendarExportBtn) {
-        calendarExportBtn.addEventListener('click', (e) => {
+        perf.addTrackedListener(calendarExportBtn, 'click', (e) => {
             e.stopPropagation();
             toggleDropdown('calendarExportMenu');
         });
     }
-    
+
     // Calendar Import Dropdown
     if (calendarImportBtn) {
-        calendarImportBtn.addEventListener('click', (e) => {
+        perf.addTrackedListener(calendarImportBtn, 'click', (e) => {
             e.stopPropagation();
             toggleDropdown('calendarImportMenu');
         });
@@ -1627,6 +1634,10 @@ function switchView(viewName) {
             renderGoalsGrid();
             break;
         case 'insurance':
+            renderInsuranceList();
+            renderInsuranceStats();
+            break;
+        case 'assets':
             renderInsuranceList();
             renderInsuranceStats();
             break;
@@ -5258,6 +5269,137 @@ window.showCustomTypeForm = showCustomTypeForm;
 window.closeModal = closeModal;
 
 // UI Functions for SMS Parser Module
+
+// Holds the last successfully parsed SMS result
+let currentParsedSMS = null;
+
+/**
+ * parseSMS(smsText)
+ * Parses a Nepali bank / digital-wallet SMS and returns a structured object.
+ * Supports: Nabil, Global IME, Sanima, NIC Asia, Himalayan, Laxmi, Citizens,
+ *           Machhapuchhre, Kumari, Everest, Siddhartha, Prime, Sunrise, Prabhu,
+ *           Muktinath, eSewa, Khalti, IME Pay, ConnectIPS, FonePay + generic patterns.
+ *
+ * @param  {string} smsText  Raw SMS string
+ * @returns {{ amount, type, bank, date, remarks, confidence, rawSMS } | null}
+ */
+function parseSMS(smsText) {
+    if (!smsText || typeof smsText !== 'string') return null;
+
+    const raw  = smsText.trim();
+    const text = raw.toLowerCase();
+
+    // ── 1. Transaction type ──────────────────────────────────────────────────
+    let type = null;
+
+    const creditKw = [
+        'credited','credit','received','deposited','deposit',
+        'added','refund','cashback','cr.','inward',
+        'payment received','fund received','amount received',
+        'to your account','to your a/c','to a/c'
+    ];
+    const debitKw = [
+        'debited','debit','withdrawn','withdrawal','sent',
+        'paid','purchase','transferred','transfer','spent',
+        'dr.','outward','payment done','payment sent',
+        'cash out','atm','from your account','from your a/c','from a/c'
+    ];
+
+    for (const kw of creditKw) { if (text.includes(kw)) { type = 'credit'; break; } }
+    if (!type) {
+        for (const kw of debitKw) { if (text.includes(kw)) { type = 'debit'; break; } }
+    }
+
+    // ── 2. Amount ────────────────────────────────────────────────────────────
+    let amount = null;
+    const amtPatterns = [
+        /(?:rs\.?|npr|inr)\s*([0-9,]+(?:\.[0-9]{1,2})?)/i,
+        /([0-9,]+(?:\.[0-9]{1,2})?)\s*(?:rs\.?|npr|inr)/i,
+        /(?:amount|amt)[:\s]+(?:rs\.?|npr)?\s*([0-9,]+(?:\.[0-9]{1,2})?)/i,
+        /(?:debited|credited|of|for)\s+(?:rs\.?|npr)?\s*([0-9,]+(?:\.[0-9]{1,2})?)/i,
+    ];
+    for (const pat of amtPatterns) {
+        const m = raw.match(pat);
+        if (m) {
+            const val = parseFloat(m[1].replace(/,/g, ''));
+            if (!isNaN(val) && val > 0) { amount = val; break; }
+        }
+    }
+
+    // ── 3. Bank / wallet ─────────────────────────────────────────────────────
+    const bankMap = [
+        [/\bnabil\b/i,               'Nabil Bank'],
+        [/\bglobal\s*ime\b/i,        'Global IME Bank'],
+        [/\bsanima\b/i,              'Sanima Bank'],
+        [/\bnic\s*asia\b/i,          'NIC Asia Bank'],
+        [/\bhimalayan\b/i,           'Himalayan Bank'],
+        [/\blaxmi\b/i,               'Laxmi Bank'],
+        [/\bcitizens\b/i,            'Citizens Bank'],
+        [/\bmachhapuchhre\b|\bmbbl\b/i, 'Machhapuchhre Bank'],
+        [/\bkumari\b/i,              'Kumari Bank'],
+        [/\beverest\b/i,             'Everest Bank'],
+        [/\bsiddhartha\b/i,          'Siddhartha Bank'],
+        [/\bprime\s*bank\b/i,        'Prime Bank'],
+        [/\bsunrise\b/i,             'Sunrise Bank'],
+        [/\bprabhu\b/i,              'Prabhu Bank'],
+        [/\bmuktinath\b/i,           'Muktinath Bikas Bank'],
+        [/\besewa\b/i,               'eSewa'],
+        [/\bkhalti\b/i,              'Khalti'],
+        [/\bime\s*pay\b/i,           'IME Pay'],
+        [/\bconnectips\b/i,          'ConnectIPS'],
+        [/\bfonepay\b/i,             'FonePay'],
+    ];
+    let bank = 'Unknown Bank';
+    for (const [pat, name] of bankMap) {
+        if (pat.test(raw)) { bank = name; break; }
+    }
+
+    // ── 4. Date ──────────────────────────────────────────────────────────────
+    let date = new Date();
+    const datePats = [
+        /(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{2,4})/,
+        /(\d{4})-(\d{1,2})-(\d{1,2})/,
+    ];
+    for (const pat of datePats) {
+        const m = raw.match(pat);
+        if (m) {
+            let d;
+            if (m[1].length === 4) {
+                d = new Date(+m[1], +m[2] - 1, +m[3]);
+            } else {
+                const yr = m[3].length === 2 ? 2000 + +m[3] : +m[3];
+                d = new Date(yr, +m[2] - 1, +m[1]);
+            }
+            if (!isNaN(d.getTime())) { date = d; break; }
+        }
+    }
+
+    // ── 5. Remarks ───────────────────────────────────────────────────────────
+    let remarks = '';
+    const remPats = [
+        /(?:remarks?|narration|description|ref(?:erence)?)[:\s]+([^\n\.]{3,60})/i,
+        /(?:for|to|from)[:\s]+([A-Za-z0-9 &,\.\/\-]{3,60})/i,
+        /(?:at|via)[:\s]+([A-Za-z0-9 &,\.\/\-]{3,40})/i,
+    ];
+    for (const pat of remPats) {
+        const m = raw.match(pat);
+        if (m) { remarks = m[1].trim(); break; }
+    }
+
+    // ── 6. Confidence ────────────────────────────────────────────────────────
+    let confidence = 0;
+    if (amount)                confidence += 40;
+    if (type)                  confidence += 30;
+    if (bank !== 'Unknown Bank') confidence += 20;
+    if (remarks)               confidence += 10;
+
+    // Need at least an amount to be useful
+    if (!amount) return null;
+    if (!type)   type = 'debit'; // safe default
+
+    return { amount, type, bank, date, remarks, confidence, rawSMS: raw };
+}
+
 function parseAndPreviewSMS() {
     const smsInput = document.getElementById('smsInput');
     const smsText = smsInput.value.trim();
@@ -5414,34 +5556,102 @@ async function readClipboardSMS() {
 function updateRecentSMSTransactions() {
     const recentSmsList = document.getElementById('recentSmsList');
     if (!recentSmsList) return;
-    
-    // Get recent transactions from SMS parser
-    // This would ideally query the database for recent SMS-sourced transactions
-    // For now, show a placeholder
-    recentSmsList.innerHTML = `
-        <div class="empty-state">
-            <p>No recent SMS transactions found</p>
-        </div>
-    `;
+
+    recentSmsList.innerHTML = '<div class="empty-state"><p>⏳ Loading...</p></div>';
+
+    Promise.all([incomeDB.getAll(), expenseDB.getAll()]).then(function(results) {
+        const allIncome   = results[0] || [];
+        const allExpenses = results[1] || [];
+
+        const smsTxns = [
+            ...allIncome.map(function(t)   { return Object.assign({}, t, { _kind: 'income'  }); }),
+            ...allExpenses.map(function(t) { return Object.assign({}, t, { _kind: 'expense' }); })
+        ]
+        .filter(function(t) { return t.source === 'sms_parser'; })
+        .sort(function(a, b) { return (b.id || 0) - (a.id || 0); })
+        .slice(0, 20);
+
+        if (smsTxns.length === 0) {
+            recentSmsList.innerHTML =
+                '<div class="empty-state"><p>📭 No SMS transactions yet. Parse an SMS above to get started.</p></div>';
+            return;
+        }
+
+        recentSmsList.innerHTML = smsTxns.map(function(t) {
+            const isIncome = t._kind === 'income';
+            const color    = isIncome ? '#10b981' : '#ef4444';
+            const icon     = isIncome ? '⬇️' : '⬆️';
+            const amt      = (t.amount || 0).toLocaleString();
+            const bankTag  = t.bank
+                ? '<span style="background:#e5e7eb;border-radius:4px;padding:1px 6px;font-size:11px;">' + t.bank + '</span>'
+                : '';
+            return '<div style="display:flex;align-items:center;justify-content:space-between;' +
+                       'padding:10px 12px;margin-bottom:8px;border-radius:8px;' +
+                       'background:#f9fafb;border-left:4px solid ' + color + ';">' +
+                     '<div style="flex:1;">' +
+                       '<div style="font-weight:600;color:' + color + ';">' + icon + ' Rs. ' + amt + '</div>' +
+                       '<div style="font-size:12px;color:#6b7280;margin-top:2px;">' +
+                         (t.description || 'Bank Transaction') + ' ' + bankTag +
+                       '</div>' +
+                       '<div style="font-size:11px;color:#9ca3af;">' + (t.date_bs || '') + '</div>' +
+                     '</div>' +
+                     '<button onclick="deleteSMSTransaction(' + t.id + ',\'' + t._kind + '\')" ' +
+                       'style="background:none;border:none;color:#ef4444;cursor:pointer;font-size:16px;padding:4px 8px;" ' +
+                       'title="Delete">🗑️</button>' +
+                   '</div>';
+        }).join('');
+    }).catch(function(err) {
+        console.error('Error loading recent SMS transactions:', err);
+        recentSmsList.innerHTML = '<div class="empty-state"><p>⚠️ Error loading transactions.</p></div>';
+    });
 }
 
-// Module tab switching for tracker
-document.addEventListener('click', function(e) {
-    if (e.target.classList.contains('module-tab')) {
-        const module = e.target.dataset.module;
-        
-        // Update active tab
-        document.querySelectorAll('.module-tab').forEach(tab => tab.classList.remove('active'));
-        e.target.classList.add('active');
-        
-        // Show corresponding module
-        document.querySelectorAll('.finance-module').forEach(mod => mod.classList.remove('active'));
-        document.getElementById(module + 'Module').classList.add('active');
-        
-        // Initialize SMS parser module if selected
-        if (module === 'smsParser') {
-            // Initialize SMS parser module
+async function deleteSMSTransaction(id, kind) {
+    if (!id) return;
+    try {
+        if (kind === 'income') {
+            await incomeDB.delete(id);
+        } else {
+            await expenseDB.delete(id);
         }
+        showNotification('Transaction deleted', 'success');
+        updateRecentSMSTransactions();
+        await renderTrackerList();
+    } catch (err) {
+        console.error('Error deleting SMS transaction:', err);
+        showNotification('Error deleting transaction', 'error');
+    }
+}
+window.deleteSMSTransaction = deleteSMSTransaction;
+
+// Module tab switching for Finance Tracker
+// Scoped to #trackerView to avoid colliding with Medicine Tracker's .module-tab buttons
+document.addEventListener('click', function(e) {
+    const tab = e.target.closest('.module-tab');
+    if (!tab) return;
+
+    const trackerView = tab.closest('#trackerView');
+    if (!trackerView) return;          // not our tabs – let other handler deal with it
+
+    const module = tab.dataset.module;
+    if (!module) return;
+
+    // Activate tab
+    trackerView.querySelectorAll('.module-tab').forEach(function(t) { t.classList.remove('active'); });
+    tab.classList.add('active');
+
+    // Show module
+    trackerView.querySelectorAll('.finance-module').forEach(function(m) { m.classList.remove('active'); });
+    var target = document.getElementById(module + 'Module');
+    if (target) {
+        target.classList.add('active');
+    } else {
+        console.warn('Finance Tracker: element not found →', module + 'Module');
+    }
+
+    // Refresh SMS list whenever that tab is opened
+    if (module === 'smsParser') {
+        updateRecentSMSTransactions();
     }
 });
 
@@ -5522,6 +5732,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }, 500);
 });
 
+window.parseSMS = parseSMS;
 window.parseAndPreviewSMS = parseAndPreviewSMS;
 window.addParsedTransaction = addParsedTransaction;
 window.clearSMSInput = clearSMSInput;

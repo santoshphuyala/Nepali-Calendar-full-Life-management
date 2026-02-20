@@ -246,13 +246,13 @@ async function renderMedicineList() {
                             </div>
                         </div>
                         <div class="medicine-actions">
-                            <button class="btn btn-sm btn-primary" onclick="showMedicineForm(${JSON.stringify(medicine).replace(/"/g, '&quot;')})">
+                            <button class="btn btn-sm btn-primary" onclick="showMedicineForm(${safeJsonStringify(medicine)})">
                                 <i class="fas fa-edit"></i>
                             </button>
                             <button class="btn btn-sm btn-info" onclick="markDoseTaken(${medicine.id})">
                                 <i class="fas fa-check"></i>
                             </button>
-                            <button class="btn btn-sm btn-success" onclick="buyMedicine(${medicine.id}, '${(medicine.name || '').replace(/'/g, "\\'").replace(/"/g, '\\"')}', ${medicine.stockQuantity || 0})">
+                            <button class="btn btn-sm btn-success" onclick="buyMedicine(${medicine.id}, '${safeJsonStringify(medicine.name || '').replace(/"/g, '&quot;')}', ${medicine.stockQuantity || 0})">
                                 <i class="fas fa-shopping-cart"></i>
                             </button>
                         </div>
@@ -513,7 +513,7 @@ async function renderFamilyMembersList() {
                                 <p class="relationship">${member.relationship || 'Not specified'}</p>
                             </div>
                             <div class="member-actions">
-                                <button class="btn btn-sm btn-primary" onclick="showFamilyMemberForm(${JSON.stringify(member).replace(/"/g, '&quot;')})">
+                                <button class="btn btn-sm btn-primary" onclick="showFamilyMemberForm(${safeJsonStringify(member)})">
                                     <i class="fas fa-edit"></i>
                                 </button>
                             </div>

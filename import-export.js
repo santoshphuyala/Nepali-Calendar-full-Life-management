@@ -184,6 +184,23 @@ class ImportExportManager {
         });
     }
 
+    _toggleDropdown(button) {
+        const dropdown = button.nextElementSibling;
+        if (!dropdown || !dropdown.classList.contains('dropdown-menu')) return;
+        
+        // Close all other dropdowns
+        this._closeAllDropdowns();
+        
+        // Toggle current dropdown
+        dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
+    }
+
+    _closeAllDropdowns() {
+        document.querySelectorAll('.dropdown-menu').forEach(menu => {
+            menu.style.display = 'none';
+        });
+    }
+
     async importAllData(format, fileInputOrFile) {
         const isInput = !!(fileInputOrFile && typeof fileInputOrFile === 'object' && 'files' in fileInputOrFile);
         const file    = isInput ? fileInputOrFile.files[0] : fileInputOrFile;

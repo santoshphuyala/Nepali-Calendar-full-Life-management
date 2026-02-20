@@ -15,29 +15,39 @@ async function updateBudgetOverview(bsYear, bsMonth) {
     const remaining = totalBudget - spent;
     const percentage = totalBudget > 0 ? (spent / totalBudget) * 100 : 0;
 
-    document.getElementById('budgetTotal').textContent = `Rs. ${totalBudget.toLocaleString()}`;
-    document.getElementById('budgetSpent').textContent = `Rs. ${spent.toLocaleString()}`;
-    document.getElementById('budgetRemaining').textContent = `Rs. ${remaining.toLocaleString()}`;
-
-    const progressFill = document.getElementById('budgetProgress');
-    progressFill.style.width = `${Math.min(percentage, 100)}%`;
-
-    // Change color based on percentage
-    progressFill.classList.remove('warning', 'danger');
-    if (percentage >= 100) {
-        progressFill.classList.add('danger');
-    } else if (percentage >= 80) {
-        progressFill.classList.add('warning');
+    const budgetTotal = safeGetElementById('budgetTotal');
+    const budgetSpent = safeGetElementById('budgetSpent');
+    const budgetRemaining = safeGetElementById('budgetRemaining');
+    const progressFill = safeGetElementById('budgetProgress');
+    const budgetPercentage = safeGetElementById('budgetPercentage');
+    
+    if (budgetTotal) budgetTotal.textContent = `Rs. ${totalBudget.toLocaleString()}`;
+    if (budgetSpent) budgetSpent.textContent = `Rs. ${spent.toLocaleString()}`;
+    if (budgetRemaining) budgetRemaining.textContent = `Rs. ${remaining.toLocaleString()}`;
+    
+    if (progressFill) {
+        progressFill.style.width = `${Math.min(percentage, 100)}%`;
+        // Change color based on percentage
+        progressFill.classList.remove('warning', 'danger');
+        if (percentage >= 100) {
+            progressFill.classList.add('danger');
+        } else if (percentage >= 80) {
+            progressFill.classList.add('warning');
+        }
     }
-
-    document.getElementById('budgetPercentage').textContent = `${percentage.toFixed(1)}%`;
+    
+    if (budgetPercentage) budgetPercentage.textContent = `${percentage.toFixed(1)}%`;
 }
 
 /**
  * Render budget categories
  */
 async function renderBudgetCategories(bsYear, bsMonth) {
-    const container = document.getElementById('budgetCategories');
+    const container = safeGetElementById('budgetCategories');
+    if (!container) {
+        console.error('Budget categories container not found');
+        return;
+    }
     const budgets = await getMonthBudget(bsYear, bsMonth);
     const { expenses } = await getMonthlyTransactions(bsYear, bsMonth);
 
@@ -71,7 +81,7 @@ async function renderBudgetCategories(bsYear, bsMonth) {
                         <span class="budget-category-amount ${remaining < 0 ? 'over' : ''}">
                             Rs. ${remaining.toLocaleString()}
                         </span>
-                        <button class="icon-btn" onclick='showBudgetForm(${JSON.stringify(budget).replace(/'/g, "&apos;")})' title="Edit Budget">
+                        <button class="icon-btn" onclick='showBudgetForm(${safeJsonStringify(budget)})' title="Edit Budget">
                             ✏️
                         </button>
                         <button class="icon-btn" onclick="deleteBudget(${budget.id})" title="Delete Budget">

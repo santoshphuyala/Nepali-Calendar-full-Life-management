@@ -116,10 +116,10 @@ function showVehicleForm(vehicle = null) {
 
             closeModal();
             if (currentView === 'vehicle') renderVehicleGrid();
-            alert('Vehicle saved successfully!');
+            safeShowNotification('Vehicle saved successfully!', 'success');
         } catch (error) {
             console.error('Error saving vehicle:', error);
-            alert('Error saving vehicle.');
+            safeShowNotification('Error saving vehicle.', 'error');
         }
     });
 }
@@ -128,7 +128,12 @@ function showVehicleForm(vehicle = null) {
  * Render vehicle grid
  */
 async function renderVehicleGrid() {
-    const container = document.getElementById('vehicleGrid');
+    const container = safeGetElementById('vehicleGrid');
+    if (!container) {
+        console.error('Vehicle grid container not found');
+        return;
+    }
+    
     const vehicles = await enhancedVehicleDB.getAll();
 
     if (vehicles.length === 0) {
@@ -186,7 +191,7 @@ async function renderVehicleGrid() {
                 </div>
 
                 <div class="vehicle-actions">
-                    <button class="btn-primary btn-sm" onclick='showVehicleForm(${JSON.stringify(vehicle).replace(/'/g, "&apos;")})'>✏️ Edit</button>
+                    <button class="btn-primary btn-sm" onclick='showVehicleForm(${safeJsonStringify(vehicle)})'>✏️ Edit</button>
                     <button class="btn-danger btn-sm" onclick="deleteVehicle(${vehicle.id})">🗑️ Delete</button>
                 </div>
             </div>
@@ -343,10 +348,14 @@ function addServiceRecord(vehicleId) {
 
             closeModal();
             showServiceHistory(vehicleId);
-            alert('Service record added!');
+            safeShowNotification('Service record added!', 'success');
         } catch (error) {
             console.error('Error adding service:', error);
-            alert('Error adding service record.');
+            if (typeof showNotification === 'function') {
+                showNotification('Error adding service record.', 'error');
+            } else {
+                alert('Error adding service record.');
+            }
         }
     });
 }
@@ -362,6 +371,11 @@ async function deleteService(id) {
         closeModal();
     } catch (error) {
         console.error('Error deleting service:', error);
+        if (typeof showNotification === 'function') {
+            showNotification('Error deleting service record.', 'error');
+        } else {
+            alert('Error deleting service.');
+        }
     }
 }
 
@@ -451,7 +465,7 @@ async function addFuelExpense(vehicleId) {
 
             closeModal();
             renderVehicleGrid();
-            alert('Fuel expense added!');
+            safeShowNotification('Fuel expense added!', 'success');
         } catch (error) {
             console.error('Error adding fuel:', error);
             alert('Error adding fuel expense.');
@@ -471,7 +485,7 @@ async function updateMileage(vehicleId) {
     vehicle.mileage = parseFloat(newMileage);
     await enhancedVehicleDB.update(vehicle);
     renderVehicleGrid();
-    alert('Mileage updated!');
+    safeShowNotification('Mileage updated!', 'success');
 }
 
 /**
@@ -488,10 +502,10 @@ async function deleteVehicle(id) {
 
         await enhancedVehicleDB.delete(id);
         renderVehicleGrid();
-        alert('Vehicle deleted!');
+        safeShowNotification('Vehicle deleted!', 'success');
     } catch (error) {
         console.error('Error deleting vehicle:', error);
-        alert('Error deleting vehicle.');
+        safeShowNotification('Error deleting vehicle.', 'error');
     }
 }
 
@@ -500,7 +514,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     console.log('🐛 DEBUG: DOMContentLoaded, checking if vehicle view needs initialization');
     
     // Check if we're on the vehicle view
-    const vehicleModule = document.getElementById('vehicleModule');
+    const vehicleModule = safeGetElementById('vehicleModule');
     if (vehicleModule && vehicleModule.classList.contains('active')) {
         console.log('🐛 DEBUG: Vehicle module is active, initializing renderVehicleGrid');
         await renderVehicleGrid();
