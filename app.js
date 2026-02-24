@@ -1,5 +1,20 @@
 /**
  * ========================================
+ * GLOBAL UTILITY FUNCTIONS
+ * ========================================
+ */
+
+// Debounce function for performance optimization
+function debounce(func, delay = 100) {
+    let timeoutId;
+    return (...args) => {
+        clearTimeout(timeoutId);
+        timeoutId = setTimeout(() => func.apply(this, args), delay);
+    };
+}
+
+/**
+ * ========================================
  * NEPALI CALENDAR PWA - COMPLETE APP v2.0 FIXED
  * Developer: Santosh Phuyal
  * Email: hisantoshphuyal@gmail.com
@@ -56,21 +71,10 @@ function showNoteForm(note = null) {
                 </div>
                 
                 <div class="form-group">
-                    <label>⏰ Reminder Time</label>
-                    <input type="time" id="noteReminderTime" value="${note?.reminderTime || '09:00'}">
+                    <label>📄 Description</label>
+                    <textarea id="noteDescription" rows="4" 
+                              placeholder="Enter note details">${note?.description || ''}</textarea>
                 </div>
-            </div>
-            
-            <div class="form-group">
-                <label>📝 Note Title</label>
-                <input type="text" id="noteTitle" value="${note?.title || ''}" 
-                       placeholder="Enter note title" required>
-            </div>
-            
-            <div class="form-group">
-                <label>📄 Description</label>
-                <textarea id="noteDescription" rows="4" 
-                          placeholder="Enter note details">${note?.description || ''}</textarea>
             </div>
             
             <div class="form-group">
@@ -84,6 +88,7 @@ function showNoteForm(note = null) {
                     <option value="deadline" ${note?.eventType === 'deadline' ? 'selected' : ''}>⏰ Deadline</option>
                     <option value="celebration" ${note?.eventType === 'celebration' ? 'selected' : ''}>🎉 Celebration</option>
                     <option value="travel" ${note?.eventType === 'travel' ? 'selected' : ''}>✈️ Travel</option>
+                    <option value="other" ${note?.eventType === 'other' ? 'selected' : ''}>📌 Other</option>
                 </select>
             </div>
             
@@ -94,7 +99,7 @@ function showNoteForm(note = null) {
                     <option value="work" ${note?.category === 'work' ? 'selected' : ''}>💼 Work</option>
                     <option value="finance" ${note?.category === 'finance' ? 'selected' : ''}>💰 Finance</option>
                     <option value="health" ${note?.category === 'health' ? 'selected' : ''}>🏥 Health</option>
-                    <option value="family" ${note?.category === 'family' ? 'selected' : ''}>👨‍👩‍👧‍👦 Family</option>
+                    <option value="family" ${note?.category === 'family' ? 'selected' : ''}>👨‍👩‍👦 Family</option>
                     <option value="education" ${note?.category === 'education' ? 'selected' : ''}>📚 Education</option>
                     <option value="social" ${note?.category === 'social' ? 'selected' : ''}>🎉 Social</option>
                     <option value="other" ${note?.category === 'other' ? 'selected' : ''}>📌 Other</option>
@@ -116,9 +121,12 @@ function showNoteForm(note = null) {
                             <option value="30" ${note?.reminderAdvance === 30 ? 'selected' : ''}>30 minutes</option>
                             <option value="60" ${note?.reminderAdvance === 60 ? 'selected' : ''}>1 hour</option>
                             <option value="1440" ${note?.reminderAdvance === 1440 ? 'selected' : ''}>1 day</option>
-                            <option value="2880" ${note?.reminderAdvance === 2880 ? 'selected' : ''}>2 days</option>
-                            <option value="10080" ${note?.reminderAdvance === 10080 ? 'selected' : ''}>1 week</option>
+                            <option value="2880" ${note?.reminderAdvance === 2880 ? 'selected' : ''}>1 week</option>
                         </select>
+                    </div>
+                    <div class="form-group">
+                        <label>⏰ Reminder Time</label>
+                        <input type="time" id="noteReminderTime" value="${note?.reminderTime || '09:00'}">
                     </div>
                     <label class="checkbox-label">
                         <input type="checkbox" id="noteRepeatYearly" ${note?.repeatYearly ? 'checked' : ''}>
@@ -635,11 +643,11 @@ function showRecurringForm(recurring = null) {
             description: safeGetElementById('recurringDescription')?.value || '',
             amount: parseFloat(safeGetElementById('recurringAmount')?.value || 0),
             currency: safeGetElementById('recurringCurrency')?.value || 'NPR',
-            category: safeGetElementById('recurringCategory')?.value || 'salary',
+            category: safeGetElementById('recurringCategory')?.value || 'other',
             frequency: safeGetElementById('recurringFrequency')?.value || 'monthly',
             startDate: safeGetElementById('recurringStartDate')?.value || '',
-            endDate: safeGetElementById('recurringEndDate')?.value || null,
-            isActive: safeGetElementById('recurringIsActive')?.checked || true,
+            endDate: safeGetElementById('recurringEndDate')?.value || '',
+            isActive: safeGetElementById('recurringIsActive')?.checked !== false,
             createdAt: new Date().toISOString()
         };
         
@@ -647,15 +655,14 @@ function showRecurringForm(recurring = null) {
             if (recurring?.id) {
                 recurringData.id = recurring.id;
                 await enhancedRecurringDB.update(recurringData);
-                safeShowNotification('✅ Recurring transaction updated!', 'success');
+                safeShowNotification('✅ Recurring transaction updated successfully!', 'success');
             } else {
                 await enhancedRecurringDB.add(recurringData);
-                safeShowNotification('✅ Recurring transaction added!', 'success');
+                safeShowNotification('✅ Recurring transaction added successfully!', 'success');
             }
             
             closeModal();
             renderRecurringList();
-            renderTrackerList();
         } catch (error) {
             console.error('Error saving recurring transaction:', error);
             safeShowNotification('❌ Failed to save recurring transaction', 'error');
@@ -1640,7 +1647,7 @@ async function renderUpcomingReminders() {
  * VIEW SWITCHING
  * ========================================
  */
-function switchView(viewName) {
+async function switchView(viewName) {
     currentView = viewName;
     
     document.querySelectorAll('.nav-tab').forEach(tab => {
@@ -1680,8 +1687,10 @@ function switchView(viewName) {
             renderInsuranceStats();
             break;
         case 'assets':
-            renderInsuranceList();
-            renderInsuranceStats();
+            await renderInsuranceList(); 
+            if (typeof initializeVehicleModule === 'function') {
+                await initializeVehicleModule(); 
+            }
             break;
         case 'vehicle':
             renderVehicleGrid();
@@ -4109,8 +4118,6 @@ async function editTransaction(type, id) {
     }
 }
 
-
-
 /**
  * ========================================
  * SHOPPING LIST
@@ -5829,7 +5836,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const medicineImportBtn = document.getElementById('medicineImportBtn');
         
         if (addMedicineBtn) {
-            addMedicineBtn.addEventListener('click', function(e) {
+            addMedicineBtn.addEventListener('click', debounce(function(e) {
                 e.preventDefault();
                 try {
                     if (typeof showMedicineForm === 'function') {
@@ -5841,12 +5848,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     console.error('❌ Error opening medicine form:', error);
                     showNotification('Error opening medicine form', 'error');
                 }
-            });
+            }, 300));
         } else {
         }
         
         if (addFamilyMemberBtn) {
-            addFamilyMemberBtn.addEventListener('click', function(e) {
+            addFamilyMemberBtn.addEventListener('click', debounce(function(e) {
                 e.preventDefault();
                 try {
                     if (typeof showFamilyMemberForm === 'function') {
@@ -5858,7 +5865,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     console.error('❌ Error opening family member form:', error);
                     showNotification('Error opening family member form', 'error');
                 }
-            });
+            }, 300));
         } else {
         }
         

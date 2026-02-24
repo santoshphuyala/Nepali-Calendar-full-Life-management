@@ -170,13 +170,11 @@ function showSubscriptionForm(subscription = null) {
 async function renderSubscriptionList() {
     const container = document.getElementById('subscriptionList');
     if (!container) {
-        console.error('Subscription list container not found');
         return;
     }
     
     const activeFilter = document.querySelector('#subscriptionView .filter-btn.active');
     if (!activeFilter) {
-        console.warn('Subscription filter buttons not found');
         return;
     }
     const filter = activeFilter.dataset.filter || 'all';
@@ -334,31 +332,15 @@ async function deleteSubscription(id) {
     }
 }
 
-// Initialize subscription list when DOM is ready
-document.addEventListener('DOMContentLoaded', async () => {
-    console.log('🐛 DEBUG: DOMContentLoaded, checking if subscription view needs initialization');
-    
+// Initialize subscription list when main app is ready
+async function initializeSubscriptionModule() {
     // Check if we're on the subscription view
     const subscriptionModule = safeGetElementById('subscriptionModule');
     if (subscriptionModule && subscriptionModule.classList.contains('active')) {
-        console.log('🐛 DEBUG: Subscription module is active, initializing renderSubscriptionList');
-        await renderSubscriptionList();
-        await renderSubscriptionSummary();
-    } else {
-        console.log('🐛 DEBUG: Subscription module is not active, skipping initialization');
-    }
-});
-
-// Also try to initialize after a short delay to ensure everything is loaded
-setTimeout(async () => {
-    console.log('🐛 DEBUG: Delayed initialization check for subscription');
-    const subscriptionModule = document.getElementById('subscriptionModule');
-    if (subscriptionModule && subscriptionModule.classList.contains('active')) {
-        console.log('🐛 DEBUG: Delayed - Subscription module is active, initializing renderSubscriptionList');
         await renderSubscriptionList();
         await renderSubscriptionSummary();
     }
-}, 1000);
+}
 
 /**
  * Get currency symbol helper

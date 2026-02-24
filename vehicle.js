@@ -429,8 +429,11 @@ async function addFuelExpense(vehicleId) {
         totalInput.value = (amount * price).toFixed(2);
     };
 
-    amountInput.addEventListener('input', calculateTotal);
-    priceInput.addEventListener('input', calculateTotal);
+    // Debounced calculation function
+    const debouncedCalculateTotal = debounce(calculateTotal, 100);
+    
+    amountInput.addEventListener('input', debouncedCalculateTotal);
+    priceInput.addEventListener('input', debouncedCalculateTotal);
     
     // Initialize Nepali date picker for fuel date
     setTimeout(() => {
@@ -509,26 +512,19 @@ async function deleteVehicle(id) {
     }
 }
 
-// Initialize vehicle grid when DOM is ready
-document.addEventListener('DOMContentLoaded', async () => {
-    console.log('🐛 DEBUG: DOMContentLoaded, checking if vehicle view needs initialization');
-    
+// Initialize vehicle grid when main app is ready
+async function initializeVehicleModule() {
     // Check if we're on the vehicle view
     const vehicleModule = safeGetElementById('vehicleModule');
     if (vehicleModule && vehicleModule.classList.contains('active')) {
-        console.log('🐛 DEBUG: Vehicle module is active, initializing renderVehicleGrid');
         await renderVehicleGrid();
-    } else {
-        console.log('🐛 DEBUG: Vehicle module is not active, skipping initialization');
     }
-});
+}
 
 // Also try to initialize after a short delay to ensure everything is loaded
 setTimeout(async () => {
-    console.log('🐛 DEBUG: Delayed initialization check for vehicle');
-    const vehicleModule = document.getElementById('vehicleModule');
+    const vehicleModule = safeGetElementById('vehicleModule');
     if (vehicleModule && vehicleModule.classList.contains('active')) {
-        console.log('🐛 DEBUG: Delayed - Vehicle module is active, initializing renderVehicleGrid');
         await renderVehicleGrid();
     }
 }, 1000);

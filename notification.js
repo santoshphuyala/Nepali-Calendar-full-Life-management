@@ -762,8 +762,16 @@ const NotificationManager = (() => {
             });
         });
 
-        document.getElementById('phFilterApply')?.addEventListener('click', () => refresh());
-        document.getElementById('phSearch')?.addEventListener('input', () => refresh());
+        // Debounced search and refresh functions
+        const debouncedRefresh = debounce(() => {
+            const source = document.getElementById('phSource')?.value || 'all';
+            const from = document.getElementById('phFromDate')?.value || '';
+            const to = document.getElementById('phToDate')?.value || '';
+            refresh();
+        }, 300);
+        
+        document.getElementById('phFilterApply')?.addEventListener('click', debouncedRefresh);
+        document.getElementById('phSearch')?.addEventListener('input', debouncedRefresh);
 
         document.getElementById('phExportBtn')?.addEventListener('click', () => {
             _exportCSV(cachedHistory, currentSource);
@@ -886,16 +894,67 @@ const NotificationManager = (() => {
         updateBadge();
     }
 
-    function _scheduleDaily() {
-        const last = _load(SK.LAST_CHECK);
-        if (!last || (Date.now() - new Date(last)) / 3600000 >= 6)
-            setTimeout(runAllChecks, 2500);
+    // Global variable to store the daily timer ID
+    let dailyTimerId = null;
 
+    // Schedule daily check at 8 AM
+    function _scheduleDailyCheck() {
+        // Clear existing timer if it exists
+        if (dailyTimerId) {
+            clearInterval(dailyTimerId);
+            dailyTimerId = null;
+            console.log('🧹 Cleared previous daily timer');
+        }
+        
         const t8am = new Date();
         t8am.setDate(t8am.getDate() + 1);
         t8am.setHours(8, 0, 0, 0);
-        setTimeout(() => { runAllChecks(); setInterval(runAllChecks, 86400000); }, t8am - Date.now());
+        
+        const timeUntil8am = t8am - Date.now();
+        
+        if (timeUntil8am > 0) {
+            dailyTimerId = setTimeout(() => {
+                runAllChecks();
+                // Set up recurring daily check
+                dailyTimerId = setInterval(runAllChecks, 86400000);
+                console.log('⏰ Daily timer scheduled - runs every 24 hours');
+            }, timeUntil8am);
+        } else {
+            // If it's already past 8 AM, start immediately
+            runAllChecks();
+            dailyTimerId = setInterval(runAllChecks, 86400000);
+            console.log('⏰ Daily timer started immediately - runs every 24 hours');
+        }
     }
+
+    function init() {
+        console.log('🔔 Notification Manager initializing...');
+        
+        // Initialize notification system
+        _injectBell();
+        _loadPersistedNotifications();
+        _updateBadge();
+        
+        _scheduleDailyCheck();
+        
+        // Run initial check after a short delay
+        setTimeout(() => runAllChecks(), 2000);
+    }
+
+    // Cleanup function to prevent memory leaks
+    function cleanup() {
+        console.log('🧹 Notification Manager cleanup...');
+        
+        if (dailyTimerId) {
+            clearInterval(dailyTimerId);
+            dailyTimerId = null;
+            console.log('✅ Daily timer cleared');
+        }
+    }
+
+    // Add cleanup on page unload to prevent memory leaks
+    window.addEventListener('beforeunload', cleanup);
+    window.addEventListener('unload', cleanup);
 
     function _injectBell() {
         if (document.getElementById('notifBell')) return;
@@ -914,7 +973,7 @@ const NotificationManager = (() => {
     function init() {
         _injectBell();
         _injectStyles();
-        _scheduleDaily();
+        _scheduleDailyCheck();
         updateBadge();
     }
 

@@ -1053,8 +1053,12 @@ async function buyMedicine(medicineId, medicineName, currentStock) {
             document.getElementById('totalPrice').value = total.toFixed(2);
         };
         
-        document.getElementById('purchaseQuantity').addEventListener('input', updateTotalPrice);
-        document.getElementById('purchasePrice').addEventListener('input', updateTotalPrice);
+        // Debounced functions for performance
+        const debouncedUpdateTotalPrice = debounce(updateTotalPrice, 100);
+        const debouncedUpdateMedicineList = debounce(renderMedicineList, 300);
+        
+        document.getElementById('purchaseQuantity').addEventListener('input', debouncedUpdateTotalPrice);
+        document.getElementById('purchasePrice').addEventListener('input', debouncedUpdateTotalPrice);
         
         document.getElementById('buyMedicineForm').onsubmit = async (e) => {
             e.preventDefault();

@@ -560,15 +560,15 @@ function addDaysToBsDate(bsDateStr, days) {
     return formatBsDate(newBs.year, newBs.month, newBs.day);
 }
 
-// Initialize insurance list when DOM is ready
-document.addEventListener('DOMContentLoaded', async () => {
+// Initialize insurance list when main app is ready
+async function initializeInsuranceModule() {
     // Check if we're on the insurance view
     const insuranceModule = safeGetElementById('insuranceModule');
     if (insuranceModule && insuranceModule.classList.contains('active')) {
         await renderInsuranceList();
         await renderInsuranceStats();
     }
-});
+}
 
 // Global function to manually trigger insurance stats update
 window.updateInsuranceStats = async function() {
