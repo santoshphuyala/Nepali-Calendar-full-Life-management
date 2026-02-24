@@ -445,6 +445,9 @@
                         <button class="btn btn-primary" onclick="parseAndPreviewSMS()">
                             <i class="fas fa-search"></i> Parse SMS
                         </button>
+                        <button class="btn btn-warning" onclick="testSMSParser()">
+                            <i class="fas fa-bug"></i> Test Parser
+                        </button>
                         <button class="btn btn-success" id="addParsedTransactionBtn" onclick="addParsedTransaction()" style="display: none;">
                             <i class="fas fa-plus"></i> Add as Transaction
                         </button>
@@ -875,6 +878,10 @@
                     <div class="stat-card">
                         <span class="stat-label">Expiring Soon</span>
                         <span class="stat-value" id="expiringSoon">0</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-label">Expired</span>
+                        <span class="stat-value" id="expiredPolicies">0</span>
                     </div>
                 </div>
 

@@ -46,6 +46,42 @@ async function checkInsuranceRenewalStatus() {
             }
         }
         
+        // Calculate annual premium
+        const annualPremium = activePolicies.reduce((sum, p) => {
+            const premium = parseFloat(p.premium) || 0;
+            if (p.frequency === 'monthly') return sum + (premium * 12);
+            if (p.frequency === 'quarterly') return sum + (premium * 4);
+            if (p.frequency === 'half-yearly') return sum + (premium * 2);
+            return sum + premium; // yearly
+        }, 0);
+        
+        // Update UI with counts
+        const expiringSoonElement = document.getElementById('expiringSoon');
+        const totalPremiumElement = document.getElementById('totalPremium');
+        const totalPoliciesElement = document.getElementById('totalPolicies');
+        const activePoliciesElement = document.getElementById('activePolicies');
+        const expiredPoliciesElement = document.getElementById('expiredPolicies');
+        
+        if (expiringSoonElement) {
+            expiringSoonElement.textContent = expiringSoon.length;
+        }
+        
+        if (totalPremiumElement) {
+            totalPremiumElement.textContent = `Rs. ${annualPremium.toLocaleString()}`;
+        }
+        
+        if (totalPoliciesElement) {
+            totalPoliciesElement.textContent = allPolicies.length;
+        }
+        
+        if (activePoliciesElement) {
+            activePoliciesElement.textContent = activePolicies.length;
+        }
+        
+        if (expiredPoliciesElement) {
+            expiredPoliciesElement.textContent = expired.length;
+        }
+        
         return {
             total: activePolicies.length,
             expiringSoon: expiringSoon.length,

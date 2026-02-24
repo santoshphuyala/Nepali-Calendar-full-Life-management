@@ -5349,6 +5349,10 @@ function parseSMS(smsText) {
 
     const raw  = smsText.trim();
     const text = raw.toLowerCase();
+    
+    console.log('🔍 SMS Parser Debug:');
+    console.log('Raw SMS:', raw);
+    console.log('Lowercase:', text);
 
     // ── 1. Transaction type ──────────────────────────────────────────────────
     let type = null;
@@ -5366,10 +5370,24 @@ function parseSMS(smsText) {
         'cash out','atm','from your account','from your a/c','from a/c'
     ];
 
-    for (const kw of creditKw) { if (text.includes(kw)) { type = 'credit'; break; } }
-    if (!type) {
-        for (const kw of debitKw) { if (text.includes(kw)) { type = 'debit'; break; } }
+    for (const kw of creditKw) { 
+        if (text.includes(kw)) { 
+            type = 'credit'; 
+            console.log('✅ Found credit keyword:', kw);
+            break; 
+        } 
     }
+    if (!type) {
+        for (const kw of debitKw) { 
+            if (text.includes(kw)) { 
+                type = 'debit'; 
+                console.log('✅ Found debit keyword:', kw);
+                break; 
+            } 
+        }
+    }
+    
+    console.log('Transaction type detected:', type);
 
     // ── 2. Amount ────────────────────────────────────────────────────────────
     let amount = null;
@@ -5383,9 +5401,15 @@ function parseSMS(smsText) {
         const m = raw.match(pat);
         if (m) {
             const val = parseFloat(m[1].replace(/,/g, ''));
-            if (!isNaN(val) && val > 0) { amount = val; break; }
+            if (!isNaN(val) && val > 0) { 
+                amount = val; 
+                console.log('✅ Amount found:', amount, 'from pattern:', pat);
+                break; 
+            }
         }
     }
+    
+    console.log('Amount detected:', amount);
 
     // ── 3. Bank / wallet ─────────────────────────────────────────────────────
     const bankMap = [
@@ -5412,8 +5436,14 @@ function parseSMS(smsText) {
     ];
     let bank = 'Unknown Bank';
     for (const [pat, name] of bankMap) {
-        if (pat.test(raw)) { bank = name; break; }
+        if (pat.test(raw)) { 
+            bank = name; 
+            console.log('✅ Bank found:', bank, 'from pattern:', pat);
+            break; 
+        }
     }
+    
+    console.log('Bank detected:', bank);
 
     // ── 4. Date ──────────────────────────────────────────────────────────────
     let date = new Date();
@@ -5462,22 +5492,56 @@ function parseSMS(smsText) {
 }
 
 function parseAndPreviewSMS() {
+    console.log('🔍 parseAndPreviewSMS() called');
+    
     const smsInput = document.getElementById('smsInput');
+    console.log('smsInput element:', smsInput);
+    
+    if (!smsInput) {
+        console.error('❌ smsInput element not found!');
+        safeShowNotification('SMS input field not found. Please refresh the page.', 'error');
+        return;
+    }
+    
     const smsText = smsInput.value.trim();
+    console.log('SMS text length:', smsText.length);
     
     if (!smsText) {
-        showNotification('Please paste an SMS message first', 'warning');
+        safeShowNotification('Please paste an SMS message first', 'warning');
         return;
     }
     
+    console.log('Calling parseSMS with:', smsText.substring(0, 100) + '...');
     const parsed = parseSMS(smsText);
+    console.log('parseSMS returned:', parsed);
     
-    if (!parsed || !parsed.amount || !parsed.type) {
-        showNotification('Could not parse transaction details. Please check the SMS format.', 'error');
+    if (!parsed) {
+        console.error('❌ parseSMS returned null');
+        safeShowNotification('SMS parsing failed. Please check the SMS format.', 'error');
         return;
     }
     
+    if (!parsed.amount || !parsed.type) {
+        console.error('❌ Missing amount or type:', { amount: parsed.amount, type: parsed.type });
+        safeShowNotification('Could not parse transaction details. Please check SMS format.', 'error');
+        return;
+    }
+    
+    console.log('✅ SMS parsed successfully:', parsed);
     currentParsedSMS = parsed;
+    
+    const previewDiv = document.getElementById('smsParsePreview');
+    const detailsDiv = document.getElementById('parsedDetails');
+    const addBtn = document.getElementById('addParsedTransactionBtn');
+    
+    console.log('DOM elements:', { previewDiv, detailsDiv, addBtn });
+    
+    if (!previewDiv || !detailsDiv || !addBtn) {
+        console.error('❌ Preview elements not found!');
+        safeShowNotification('Preview elements not found. Please refresh the page.', 'error');
+        return;
+    }
+    
     displaySMSPreview(parsed);
 }
 
@@ -5517,7 +5581,7 @@ function displaySMSPreview(parsed) {
 
 function addParsedTransaction() {
     if (!currentParsedSMS) {
-        showNotification('No parsed SMS data available', 'error');
+        safeShowNotification('No parsed SMS data available', 'error');
         return;
     }
     
@@ -5546,7 +5610,7 @@ function addParsedTransaction() {
     
     // Clear and reset
     clearSMSInput();
-    showNotification(`✅ ${transactionType === 'income' ? 'Income' : 'Expense'} of Rs. ${currentParsedSMS.amount.toLocaleString()} added successfully!`, 'success');
+    safeShowNotification(`✅ ${transactionType === 'income' ? 'Income' : 'Expense'} of Rs. ${currentParsedSMS.amount.toLocaleString()} added successfully!`, 'success');
 }
 
 function mapBankTransactionToCategory(parsedSMS) {
@@ -5593,7 +5657,7 @@ async function addSMSTransactionToTracker(transactionData, type) {
         
     } catch (error) {
         console.error('Error adding SMS transaction:', error);
-        showNotification('Error adding transaction to tracker', 'error');
+        safeShowNotification('Error adding transaction to tracker', 'error');
     }
 }
 
@@ -5608,9 +5672,9 @@ async function readClipboardSMS() {
     try {
         const text = await navigator.clipboard.readText();
         document.getElementById('smsInput').value = text;
-        showNotification('SMS text pasted from clipboard', 'success');
+        safeShowNotification('SMS text pasted from clipboard', 'success');
     } catch (error) {
-        showNotification('Could not read from clipboard. Please paste manually.', 'error');
+        safeShowNotification('Could not read from clipboard. Please paste manually.', 'error');
     }
 }
 
@@ -5675,15 +5739,41 @@ async function deleteSMSTransaction(id, kind) {
         } else {
             await expenseDB.delete(id);
         }
-        showNotification('Transaction deleted', 'success');
+        safeShowNotification('Transaction deleted', 'success');
         updateRecentSMSTransactions();
         await renderTrackerList();
     } catch (err) {
         console.error('Error deleting SMS transaction:', err);
-        showNotification('Error deleting transaction', 'error');
+        safeShowNotification('Error deleting transaction', 'error');
     }
 }
-window.deleteSMSTransaction = deleteSMSTransaction;
+function testSMSParser() {
+    console.log('🧪 Testing SMS Parser with sample messages...');
+    
+    const testMessages = [
+        'Rs.500 debited from Nabil Bank for ATM withdrawal at Kathmandu on 24-02-2026',
+        'Your account has been credited with Rs.1,000 from salary deposit via Global IME Bank',
+        'Khalti: Rs.250 sent to merchant for food purchase at Restaurant XYZ. Ref: KHT123456'
+    ];
+    
+    // Fill input with first test message
+    const smsInput = document.getElementById('smsInput');
+    if (smsInput) {
+        smsInput.value = testMessages[0];
+        safeShowNotification('Test message loaded! Click "Parse SMS" to test.', 'info');
+        
+        // Test all messages in console
+        testMessages.forEach((msg, index) => {
+            console.log(`\n📱 Test ${index + 1}: ${msg}`);
+            const parsed = parseSMS(msg);
+            console.log(`Result:`, parsed);
+        });
+    } else {
+        safeShowNotification('SMS input field not found!', 'error');
+    }
+}
+
+window.testSMSParser = testSMSParser;
 
 // Module tab switching for Finance Tracker
 // Scoped to #trackerView to avoid colliding with Medicine Tracker's .module-tab buttons
