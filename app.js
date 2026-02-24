@@ -790,21 +790,6 @@ async function renderRecurringList() {
 }
 
 /**
- * Edit Note Function
- */
-async function editNote(id) {
-    try {
-        const note = await enhancedNoteDB.get(id);
-        if (note) {
-            showNoteForm(note);
-        }
-    } catch (error) {
-        console.error('Error editing note:', error);
-        safeShowNotification('❌ Failed to edit note', 'error');
-    }
-}
-
-/**
  * Delete Functions
  */
 async function deleteNote(id) {
@@ -876,29 +861,14 @@ function safeShowNotification(message, type = 'info') {
  */
 document.addEventListener('DOMContentLoaded', async () => {
     try {
-        
-        // Debug: Check DOM elements first
-        const domStatus = window.debugCheckDOM();
-        
-        // Debug: Check script loading
-        const scripts = {
-            'conversion.js': typeof bsToAd !== 'undefined',
-            'db.js': typeof initDB !== 'undefined',
-            'charts.js': typeof Chart !== 'undefined',
-            'import-export.js': typeof ImportExportManager !== 'undefined'
-        };
-        
-        // Debug: Initialize database with error tracking
+        // Initialize database with error tracking
         try {
             await initDB();
         } catch (dbError) {
             return;
         }
         
-        // Debug: Check database connections
-        const dbStatus = await window.debugCheckDatabase();
-        
-        // Debug: Initialize app variables
+        // Initialize app variables
         const today = getCurrentNepaliDate();
         currentBsYear = today.year;
         currentBsMonth = today.month;
@@ -931,11 +901,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (typeof updateAllCharts === 'function') updateAllCharts(currentBsYear, currentBsMonth);
         }, 100);
 
-        // Debug: Theme initialization
-
-
-
-        // Debug: Theme initialization
+        // Theme initialization
         const savedTheme = localStorage.getItem('theme');
         if (savedTheme === 'dark') {
             document.body.setAttribute('data-theme', 'dark');
@@ -945,22 +911,22 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         }
 
-        // Debug: Recurring transactions
+        // Recurring transactions
         await processRecurringTransactions();
 
-        // Debug: Alerts system
+        // Alerts system
         setTimeout(async () => {
             const alerts = await checkUpcomingAlerts();
             if (alerts.length > 0) {
             }
         }, 2000);
-
-        // Debug: Final function availability check
-        const functionStatus = window.debugCheckFunctions();
         
-        if (functionStatus.missingFunctions.length > 0) {
-        } else {
-        }
+        // Check insurance renewal status
+        setTimeout(async () => {
+            if (typeof checkInsuranceRenewalStatus === 'function') {
+                await checkInsuranceRenewalStatus();
+            }
+        }, 3000);
         
         // Initialize Nepali date pickers for all date inputs
         initNepaliDatePickers();
@@ -997,7 +963,7 @@ function initializeHeader() {
     }
 }
 
-function initializeYearMonthSelectors() {
+async function initializeYearMonthSelectors() {
     const yearSelect = safeGetElementById('yearSelect');
     const monthSelect = safeGetElementById('monthSelect');
 
@@ -1026,26 +992,16 @@ function initializeYearMonthSelectors() {
     if (yearSelect) {
         yearSelect.value = currentBsYear;
     }
-
-    const reminders = await getUpcomingReminders();
-    if (!Array.isArray(reminders) || reminders.length === 0) {
-        container.innerHTML = '<div class="empty-state"><p>No upcoming reminders</p></div>';
-        return;
+    if (monthSelect) {
+        monthSelect.value = currentBsMonth;
     }
-
-    container.innerHTML = reminders.map(reminder => {
-        const title = reminder.title || 'Untitled';
-        const date = reminder.date_bs || '';
-        const time = reminder.reminderTime ? ` ⏰ ${reminder.reminderTime}` : '';
-        return `<div class="reminder-item"><strong>${title}</strong><div>${date}${time}</div></div>`;
-    }).join('');
 }
 
 async function removeDuplicateHolidays() {
     try {
         const holidays = await enhancedHolidayDB.getAll();
         if (!Array.isArray(holidays) || holidays.length === 0) {
-            showNotification('No holidays found', 'info');
+            safeShowNotification('No holidays found', 'info');
             return;
         }
 
@@ -1064,7 +1020,7 @@ async function removeDuplicateHolidays() {
         });
 
         if (duplicateIds.length === 0) {
-            showNotification('✅ No duplicate holidays found', 'success');
+            safeShowNotification('✅ No duplicate holidays found', 'success');
             return;
         }
 
@@ -1075,13 +1031,13 @@ async function removeDuplicateHolidays() {
             await enhancedHolidayDB.delete(id);
         }
 
-        showNotification(`✅ Removed ${duplicateIds.length} duplicates`, 'success');
+        safeShowNotification(`✅ Removed ${duplicateIds.length} duplicates`, 'success');
         if (typeof renderHolidayList === 'function') {
             renderHolidayList();
         }
     } catch (error) {
         console.error('Error removing duplicate holidays:', error);
-        showNotification('❌ Failed to remove duplicates', 'error');
+        safeShowNotification('❌ Failed to remove duplicates', 'error');
     }
 }
 
@@ -1090,67 +1046,99 @@ async function removeDuplicateHolidays() {
 function initializeEventListeners() {
     // Use performance optimizer for event listener management
     const perf = window.performanceOptimizer;
+    
+    // Fallback to direct DOM access if performance optimizer is not available
+    const getElement = perf && typeof perf.getCachedElement === 'function' 
+        ? (selector) => perf.getCachedElement(selector)
+        : (selector) => document.querySelector(selector);
+    
+    // Safety check: ensure getElement function exists
+    if (!getElement || typeof getElement !== 'function') {
+        console.error('❌ getElement function is not available');
+        return;
+    }
 
     // Import/Export Dropdown Event Listeners
-    const calendarExportBtn = perf.getCachedElement('#calendarExportBtn');
-    const calendarImportBtn = perf.getCachedElement('#calendarImportBtn');
-    const trackerExportBtn = perf.getCachedElement('#trackerExportBtn');
-    const trackerImportBtn = perf.getCachedElement('#trackerImportBtn');
+    const calendarExportBtn = getElement('#calendarExportBtn');
+    const calendarImportBtn = getElement('#calendarImportBtn');
+    const trackerExportBtn = getElement('#trackerExportBtn');
+    const trackerImportBtn = getElement('#trackerImportBtn');
 
     // Budget Import/Export
-    const budgetExportBtn = perf.getCachedElement('#budgetExportBtn');
-    const budgetImportBtn = perf.getCachedElement('#budgetImportBtn');
+    const budgetExportBtn = getElement('#budgetExportBtn');
+    const budgetImportBtn = getElement('#budgetImportBtn');
 
     // Bills Import/Export
-    const billsExportBtn = perf.getCachedElement('#billsExportBtn');
-    const billsImportBtn = perf.getCachedElement('#billsImportBtn');
-
-    // Goals Import/Export
-    const goalsExportBtn = perf.getCachedElement('#goalsExportBtn');
-    const goalsImportBtn = perf.getCachedElement('#goalsImportBtn');
-
-    // Insurance Import/Export
-    const insuranceExportBtn = perf.getCachedElement('#insuranceExportBtn');
-    const insuranceImportBtn = perf.getCachedElement('#insuranceImportBtn');
-
-    // Vehicle Import/Export
-    const vehicleExportBtn = perf.getCachedElement('#vehicleExportBtn');
-    const vehicleImportBtn = perf.getCachedElement('#vehicleImportBtn');
-
-    // Subscription Import/Export
-    const subscriptionExportBtn = perf.getCachedElement('#subscriptionExportBtn');
-    const subscriptionImportBtn = perf.getCachedElement('#subscriptionImportBtn');
-
-    // Custom Import/Export
-    const customExportBtn = perf.getCachedElement('#customExportBtn');
-    const customImportBtn = perf.getCachedElement('#customImportBtn');
+    const billsExportBtn = getElement('#billsExportBtn');
+    const billsImportBtn = getElement('#billsImportBtn');
 
     // Shopping Import/Export
-    const shoppingExportBtn = perf.getCachedElement('#shoppingExportBtn');
-    const shoppingImportBtn = perf.getCachedElement('#shoppingImportBtn');
+    const shoppingExportBtn = getElement('#shoppingExportBtn');
+    const shoppingImportBtn = getElement('#shoppingImportBtn');
+
+    // Goals Import/Export
+    const goalsExportBtn = getElement('#goalsExportBtn');
+    const goalsImportBtn = getElement('#goalsImportBtn');
+
+    // Insurance Import/Export
+    const insuranceExportBtn = getElement('#insuranceExportBtn');
+    const insuranceImportBtn = getElement('#insuranceImportBtn');
+
+    // Vehicle Import/Export
+    const vehicleExportBtn = getElement('#vehicleExportBtn');
+    const vehicleImportBtn = getElement('#vehicleImportBtn');
+
+    // Subscription Import/Export
+    const subscriptionExportBtn = getElement('#subscriptionExportBtn');
+    const subscriptionImportBtn = getElement('#subscriptionImportBtn');
+
+    // Custom Import/Export
+    const customExportBtn = getElement('#customExportBtn');
+    const customImportBtn = getElement('#customImportBtn');
 
     // Calendar Export Dropdown
     if (calendarExportBtn) {
-        perf.addTrackedListener(calendarExportBtn, 'click', (e) => {
-            e.stopPropagation();
-            toggleDropdown('calendarExportMenu');
-        });
+        if (perf && typeof perf.addTrackedListener === 'function') {
+            perf.addTrackedListener(calendarExportBtn, 'click', (e) => {
+                e.stopPropagation();
+                toggleDropdown('calendarExportMenu');
+            });
+        } else {
+            calendarExportBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                toggleDropdown('calendarExportMenu');
+            });
+        }
     }
 
     // Calendar Import Dropdown
     if (calendarImportBtn) {
-        perf.addTrackedListener(calendarImportBtn, 'click', (e) => {
-            e.stopPropagation();
-            toggleDropdown('calendarImportMenu');
-        });
+        if (perf && typeof perf.addTrackedListener === 'function') {
+            perf.addTrackedListener(calendarImportBtn, 'click', (e) => {
+                e.stopPropagation();
+                toggleDropdown('calendarImportMenu');
+            });
+        } else {
+            calendarImportBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                toggleDropdown('calendarImportMenu');
+            });
+        }
     }
     
     // Tracker Export Dropdown
     if (trackerExportBtn) {
-        trackerExportBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            toggleDropdown('trackerExportMenu');
-        });
+        if (perf && typeof perf.addTrackedListener === 'function') {
+            perf.addTrackedListener(trackerExportBtn, 'click', (e) => {
+                e.stopPropagation();
+                toggleDropdown('trackerExportMenu');
+            });
+        } else {
+            trackerExportBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                toggleDropdown('trackerExportMenu');
+            });
+        }
     }
     
     // Tracker Import Dropdown
@@ -1591,6 +1579,60 @@ function initializeEventListeners() {
     // Drawer - with safe check
     const drawerClose = document.querySelector('.drawer-close');
     if (drawerClose) drawerClose.addEventListener('click', closeDrawer);
+}
+
+function toggleDropdown(menuId) {
+    const menu = document.getElementById(menuId);
+    if (!menu) return;
+
+    const isOpening = !menu.classList.contains('show');
+    closeAllDropdowns();
+    menu.classList.toggle('show', isOpening);
+}
+
+function closeAllDropdowns() {
+    document.querySelectorAll('.dropdown-menu.show').forEach(menu => {
+        menu.classList.remove('show');
+    });
+}
+
+async function getUpcomingReminders() {
+    try {
+        const notes = await enhancedNoteDB.getAll();
+        const today = getCurrentNepaliDate();
+        const todayStr = formatBsDate(today.year, today.month, today.day);
+        
+        return notes
+            .filter(note => note.isReminder && note.date_bs >= todayStr)
+            .sort((a, b) => a.date_bs.localeCompare(b.date_bs))
+            .slice(0, 10);
+    } catch (error) {
+        console.error('Error getting reminders:', error);
+        return [];
+    }
+}
+
+async function renderUpcomingReminders() {
+    const container = document.getElementById('remindersList');
+    if (!container) return;
+
+    if (typeof getUpcomingReminders !== 'function') {
+        container.innerHTML = '';
+        return;
+    }
+
+    const reminders = await getUpcomingReminders();
+    if (!Array.isArray(reminders) || reminders.length === 0) {
+        container.innerHTML = '<div class="empty-state"><p>No upcoming reminders</p></div>';
+        return;
+    }
+
+    container.innerHTML = reminders.map(reminder => {
+        const title = reminder.title || 'Untitled';
+        const date = reminder.date_bs || '';
+        const time = reminder.reminderTime ? ` ⏰ ${reminder.reminderTime}` : '';
+        return `<div class="reminder-item"><strong>${title}</strong><div>${date}${time}</div></div>`;
+    }).join('');
 }
 
 /**
@@ -3275,7 +3317,7 @@ function showIncomeExpenseForm(type, date = null, existingTransaction = null) {
                 } else {
                     await enhancedExpenseDB.update(data);
                 }
-                showNotification(`✅ ${type === 'income' ? 'Income' : 'Expense'} updated successfully!`, 'success');
+                safeShowNotification(`✅ ${type === 'income' ? 'Income' : 'Expense'} updated successfully!`, 'success');
             } else {
                 // Add new transaction
                 if (type === 'income') {
@@ -3283,7 +3325,7 @@ function showIncomeExpenseForm(type, date = null, existingTransaction = null) {
                 } else {
                     await enhancedExpenseDB.add(data);
                 }
-                showNotification(`✅ ${type === 'income' ? 'Income' : 'Expense'} added successfully!`, 'success');
+                safeShowNotification(`✅ ${type === 'income' ? 'Income' : 'Expense'} added successfully!`, 'success');
             }
 
             closeModal();
@@ -3298,7 +3340,7 @@ function showIncomeExpenseForm(type, date = null, existingTransaction = null) {
             }
         } catch (error) {
             console.error('Error saving transaction:', error);
-            showNotification('❌ Error saving transaction. Please try again.', 'error');
+            safeShowNotification('❌ Error saving transaction. Please try again.', 'error');
         }
     });
 }
@@ -3311,6 +3353,25 @@ function getCurrencySymbol(currency) {
         INR: '₹'
     };
     return symbols[currency] || currency;
+}
+
+function convertCurrency(amount, fromCurrency, toCurrency) {
+    // Simple currency conversion - in production, use real exchange rates
+    const rates = {
+        NPR: 1,
+        USD: 132.5,  // 1 USD = 132.5 NPR (approximate)
+        EUR: 145.2,  // 1 EUR = 145.2 NPR (approximate)
+        INR: 1.6     // 1 INR = 1.6 NPR (approximate)
+    };
+    
+    if (fromCurrency === toCurrency) return amount;
+    
+    const fromRate = rates[fromCurrency] || 1;
+    const toRate = rates[toCurrency] || 1;
+    
+    // Convert to NPR first, then to target currency
+    const amountInNPR = amount * fromRate;
+    return amountInNPR / toRate;
 }
 
 // Continue with remaining functions...
@@ -3524,13 +3585,13 @@ function shouldProcessRecurring(lastDate, frequency, currentDate) {
 async function processPendingSMSTransactions() {
     try {
         // Show initial toast
-        showNotification('🔄 Checking for SMS transactions...', 'info');
+        safeShowNotification('🔄 Checking for SMS transactions...', 'info');
         
         // First, collect all transactions from localStorage (pending)
         const pendingTransactions = JSON.parse(localStorage.getItem('pendingTrackerTransactions') || '[]');
         
         // Debug: Log what we found
-        showNotification(`📱 Found ${pendingTransactions.length} pending transactions in localStorage`, 'info');
+        safeShowNotification(`📱 Found ${pendingTransactions.length} pending transactions in localStorage`, 'info');
         
         // Then, collect all transactions from SMS parser IndexedDB
         let smsParserTransactions = [];
@@ -3541,23 +3602,23 @@ async function processPendingSMSTransactions() {
             if (smsParserDB) {
                 const allSmsTransactions = await smsParserDB.getAll('transactions');
                 smsParserTransactions = allSmsTransactions || [];
-                showNotification(`📱 Found ${smsParserTransactions.length} transactions in SMS parser database`, 'info');
+                safeShowNotification(`📱 Found ${smsParserTransactions.length} transactions in SMS parser database`, 'info');
             } else {
-                showNotification('📱 SMS parser database not accessible', 'warning');
+                safeShowNotification('📱 SMS parser database not accessible', 'warning');
             }
         } catch (error) {
-            showNotification('⚠️ Could not access SMS parser database', 'warning');
+            safeShowNotification('⚠️ Could not access SMS parser database', 'warning');
         }
         
         // Combine all transactions
         const allTransactions = [...pendingTransactions, ...smsParserTransactions];
         
         if (allTransactions.length === 0) {
-            showNotification('📱 No SMS transactions found to import', 'warning');
+            safeShowNotification('📱 No SMS transactions found to import', 'warning');
             return;
         }
         
-        showNotification(`📱 Processing ${allTransactions.length} total SMS transactions...`, 'info');
+        safeShowNotification(`📱 Processing ${allTransactions.length} total SMS transactions...`, 'info');
         
         // Show preview before importing
         const shouldImport = await showSMSImportPreview(allTransactions);

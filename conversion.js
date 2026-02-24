@@ -4,7 +4,7 @@
  * Developer: Santosh Phuyal
  * ========================================
  */
-console.log('✅ conversion.js loaded');
+
 
 // Days in each Nepali month for years 2082-2092
 const BS_CALENDAR_DATA = {

@@ -20,7 +20,11 @@ if (typeof window.showNotification !== 'function') {
         setTimeout(() => n.parentNode && n.parentNode.removeChild(n), 3000);
     };
 }
-function showNotification(msg, type) { window.showNotification(msg, type); }
+function showNotification(msg, type) { 
+    if (window.safeShowNotification && typeof window.safeShowNotification === 'function') {
+        window.safeShowNotification(msg, type);
+    }
+}
 
 // ─── Utility: download a file to disk ────────────────────────────────────────
 function downloadFile(content, filename, type = 'application/json') {
@@ -823,5 +827,4 @@ _applyImportExportGlobals();
 
 window.addEventListener('load', () => {
     _applyImportExportGlobals(); // Run again after app.js executes to enforce single-source-of-truth
-    console.log('✅ import-export.js: all functions secured to window');
 });

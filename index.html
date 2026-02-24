@@ -1287,15 +1287,6 @@
     <script src="custom.js"></script>
     <script src="import-export.js"></script>
     <script src="medicine-tracker.js"></script>
-    <script>
-        // Wire medicine tracker buttons as soon as the script is loaded.
-        // Works regardless of which nav-tab is active on load.
-        document.addEventListener('DOMContentLoaded', function () {
-            // Patch the nav-tab click so initMedicineTracker runs on first activation
-            const medicineNavTab = document.querySelector('[data-view="medicine"]');
-            if (medicineNavTab) {
-                const _orig = medicineNavTab.onclick;
-                medicineNavTab.onclick = function (e) {
                     if (_orig) _orig.call(this, e);
                     if (typeof initMedicineTracker === 'function' && !this._medInit) {
                         this._medInit = true;
@@ -1306,72 +1297,23 @@
         });
     </script>
     <script src="nepali-date-picker.js"></script>
-    <script src="debug.js"></script>
-    <script src="utils.js"></script>
     <script src="app.js"></script>
-    <!-- ⑤ Notification Manager + Payment History (must come after app.js & db.js) -->
     <script src="notification.js"></script>
     
-    <!-- Service Worker Registration - FIXED -->
+    <!-- Service Worker Registration -->
     <script>
-        // Suppress WebSocket connection errors from development tools
-        const originalConsoleError = console.error;
-        const originalConsoleLog = console.log;
-        
-        console.error = function(...args) {
-            const message = args.join(' ');
-            // Suppress WebSocket connection errors and related development tool errors
-            if (message.includes('WebSocket connection to') && 
-                (message.includes('failed') || message.includes('closed'))) {
-                return; // Suppress WebSocket connection errors
-            }
-            return originalConsoleError.apply(console, args);
-        };
-        
-        console.log = function(...args) {
-            const message = args.join(' ');
-            // Suppress WebSocket connection errors that appear in console.log
-            if (message.includes('WebSocket connection to') && 
-                (message.includes('failed') || message.includes('closed'))) {
-                return; // Suppress WebSocket connection errors
-            }
-            return originalConsoleLog.apply(console, args);
-        };
-        
         // Only register service worker if running on http/https (not file://)
         if ('serviceWorker' in navigator && window.location.protocol !== 'file:') {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('service-worker.js')
                     .then(reg => {
-                        console.log('✅ Service Worker Registered', reg.scope);
+                        console.error('✅ Service Worker Registered', reg.scope);
                     })
                     .catch(err => {
-                        console.log('❌ Service Worker Registration Failed', err);
+                        console.error('❌ Service Worker Registration Failed', err);
                     });
             });
-        } else if (window.location.protocol === 'file:') {
-            console.log('⚠️ Service Worker not registered (file:// protocol)');
-            console.log('📌 Run on local server for full PWA features:');
-            console.log('   python -m http.server 8000');
-            console.log('   Then open: http://localhost:8000');
         }
-    </script>
-    
-    <!-- Load Verification -->
-    <script>
-        console.log('=== SCRIPT LOAD CHECK ===');
-        console.log('Chart.js loaded:', typeof Chart !== 'undefined');
-        console.log('conversion.js loaded:', typeof getCurrentNepaliDate !== 'undefined');
-        console.log('db.js loaded:', typeof initDB !== 'undefined');
-        console.log('charts.js loaded:', typeof renderTrendChart !== 'undefined');
-        console.log('budget.js loaded:', typeof updateBudgetOverview !== 'undefined');
-        console.log('insurance.js loaded:', typeof showInsuranceForm !== 'undefined');
-        console.log('vehicle.js loaded:', typeof showVehicleForm !== 'undefined');
-        console.log('subscription.js loaded:', typeof showSubscriptionForm !== 'undefined');
-        console.log('custom.js loaded:', typeof showCustomTypeForm !== 'undefined');
-        console.log('app.js loaded:', typeof renderCalendar !== 'undefined');
-        console.log('notification.js loaded:', typeof NotificationManager !== 'undefined');
-        console.log('=== END LOAD CHECK ===');
     </script>
 
     

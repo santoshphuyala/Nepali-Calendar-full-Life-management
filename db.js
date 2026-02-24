@@ -199,13 +199,11 @@ async function initDB() {
  */
 function createStore(storeName, keyPath, indexes = []) {
     if (!db.objectStoreNames.contains(storeName)) {
-        console.log(`📦 Creating store: ${storeName}`);
         const store = db.createObjectStore(storeName, { keyPath, autoIncrement: keyPath === 'id' });
         
         indexes.forEach(index => {
             const { name, options = {} } = index;
             store.createIndex(name, name, options);
-            console.log(`📋 Created index: ${name} on ${storeName}`);
         });
     }
 }
@@ -424,5 +422,3 @@ window.enhancedPrescriptionsDB = enhancedPrescriptionsDB;
 window.enhancedDosageScheduleDB = enhancedDosageScheduleDB;
 // Payment History
 window.enhancedPaymentHistoryDB = enhancedPaymentHistoryDB;
-
-console.log('✅ db.js loaded completely');

@@ -875,7 +875,6 @@ const NotificationManager = (() => {
     // ─────────────────────────────────────────────────────────────────────────
 
     async function runAllChecks() {
-        console.log('[NotifMgr] Running checks…');
         _save(SK.LAST_CHECK, new Date().toISOString());
         await _checkInsurance();
         await _checkBills();

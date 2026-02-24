@@ -1,4 +1,80 @@
 /**
+ * Check insurance renewal status and send notifications
+ */
+async function checkInsuranceRenewalStatus() {
+    try {
+        const allPolicies = await enhancedInsuranceDB.getAll();
+        const activePolicies = allPolicies.filter(p => p.status === 'active');
+        const today = getCurrentNepaliDate();
+        const todayStr = formatBsDate(today.year, today.month, today.day);
+        const in15Days = addDaysToBsDate(todayStr, 15);
+        
+        const expiringSoon = activePolicies.filter(p => {
+            return p.expiryDate >= todayStr && p.expiryDate <= in15Days;
+        });
+        
+        const expired = activePolicies.filter(p => {
+            return p.expiryDate < todayStr;
+        });
+        
+        // Send notifications for expiring policies
+        for (const policy of expiringSoon) {
+            const daysUntil = _daysUntil(policy.expiryDate);
+            if (daysUntil !== null && daysUntil >= 0 && daysUntil <= 15) {
+                const title = `🛡️ Insurance Renewal Reminder`;
+                const body = `${policy.name || 'Insurance Policy'} expires in ${daysUntil} day(s)\nProvider: ${policy.company || '—'}\nPremium: Rs.${policy.premium}`;
+                
+                // Use notification manager if available
+                if (typeof NotificationManager !== 'undefined' && NotificationManager.showNotification) {
+                    NotificationManager.showNotification(title, body, 'warning');
+                } else {
+                    safeShowNotification(`${title}: ${policy.name} expires in ${daysUntil} days`, 'warning');
+                }
+            }
+        }
+        
+        // Send notifications for expired policies
+        for (const policy of expired) {
+            const daysExpired = Math.abs(_daysUntil(policy.expiryDate) || 0);
+            const title = `⚠️ Insurance Expired`;
+            const body = `${policy.name || 'Insurance Policy'} expired ${daysExpired} day(s) ago\nProvider: ${policy.company || '—'}\nPlease renew immediately`;
+            
+            if (typeof NotificationManager !== 'undefined' && NotificationManager.showNotification) {
+                NotificationManager.showNotification(title, body, 'error');
+            } else {
+                safeShowNotification(`${title}: ${policy.name} expired ${daysExpired} days ago`, 'error');
+            }
+        }
+        
+        return {
+            total: activePolicies.length,
+            expiringSoon: expiringSoon.length,
+            expired: expired.length
+        };
+        
+    } catch (error) {
+        console.error('Error checking insurance renewal status:', error);
+        safeShowNotification('❌ Failed to check insurance renewal status', 'error');
+        return null;
+    }
+}
+
+/**
+ * Helper function to calculate days until date
+ */
+function _daysUntil(dueDateBs) {
+    try {
+        const today = getCurrentNepaliDate();
+        const todayBs = formatBsDate(today.year, today.month, today.day);
+        const [ty, tm, td] = todayBs.split('/').map(Number);
+        const [dy, dm, dd] = dueDateBs.split('/').map(Number);
+        const ms  = (y, m, d) => new Date(y, m - 1, d).getTime();
+        const tAd = bsToAd(ty, tm, td), dAd = bsToAd(dy, dm, dd);
+        return Math.round((ms(dAd.year, dAd.month, dAd.day) - ms(tAd.year, tAd.month, tAd.day)) / 86400000);
+    } catch { return null; }
+}
+
+/**
  * ========================================
  * INSURANCE MANAGER MODULE
  * Developer: Santosh Phuyal
@@ -9,24 +85,15 @@
  * Render insurance statistics
  */
 async function renderInsuranceStats() {
-    console.log('🐛 DEBUG: renderInsuranceStats called');
-    
     try {
         const allPolicies = await enhancedInsuranceDB.getAll();
-        console.log('🐛 DEBUG: Retrieved all policies from DB', { count: allPolicies.length });
-        
         const activePolicies = allPolicies.filter(p => p.status === 'active');
-        console.log('🐛 DEBUG: Filtered active policies', { count: activePolicies.length });
-        
         const today = getCurrentNepaliDate();
         const todayStr = formatBsDate(today.year, today.month, today.day);
         const in15Days = addDaysToBsDate(todayStr, 15); // Changed from 30 to 15 days
-        
         const expiringSoon = activePolicies.filter(p => {
             return p.expiryDate >= todayStr && p.expiryDate <= in15Days;
         });
-        console.log('🐛 DEBUG: Found expiring soon policies', { count: expiringSoon.length });
-
         const annualPremium = activePolicies.reduce((sum, p) => {
             const premium = parseFloat(p.premium);
             if (p.frequency === 'monthly') return sum + (premium * 12);
@@ -34,38 +101,20 @@ async function renderInsuranceStats() {
             if (p.frequency === 'half-yearly') return sum + (premium * 2);
             return sum + premium; // yearly
         }, 0);
-        console.log('🐛 DEBUG: Calculated annual premium', { amount: annualPremium });
-
-        // Use safe DOM access
+        
         const totalPoliciesElement = safeGetElementById('totalPolicies');
         const activePoliciesElement = safeGetElementById('activePolicies');
         const totalPremiumElement = safeGetElementById('totalPremium');
         const expiringSoonElement = safeGetElementById('expiringSoon');
         
-        console.log('🐛 DEBUG: Found DOM elements', {
-            totalPolicies: !!totalPoliciesElement,
-            activePolicies: !!activePoliciesElement,
-            totalPremium: !!totalPremiumElement,
-            expiringSoon: !!expiringSoonElement
-        });
-
         if (totalPoliciesElement) totalPoliciesElement.textContent = allPolicies.length;
         if (activePoliciesElement) activePoliciesElement.textContent = activePolicies.length;
         if (totalPremiumElement) totalPremiumElement.textContent = `Rs. ${annualPremium.toLocaleString()}`;
         if (expiringSoonElement) expiringSoonElement.textContent = expiringSoon.length;
         
-        console.log('🐛 DEBUG: Updated DOM elements with stats');
-        
     } catch (error) {
-        console.error('🐛 DEBUG: Error in renderInsuranceStats', error);
-        console.error('🐛 DEBUG: Stats error details', {
-            message: error.message,
-            stack: error.stack,
-            name: error.name
-        });
+        console.error('Error in renderInsuranceStats:', error);
     }
-    
-    console.log('🐛 DEBUG: renderInsuranceStats completed');
 }
 
 /**
@@ -231,54 +280,32 @@ function showInsuranceForm(policy = null) {
  * Render insurance list
  */
 async function renderInsuranceList() {
-    console.log('🐛 DEBUG: renderInsuranceList called');
-    
     try {
         const container = document.getElementById('insuranceList');
-        console.log('🐛 DEBUG: Found insuranceList container', { exists: !!container });
         
         if (!container) {
-            console.error('🐛 DEBUG: insuranceList container not found');
             return;
         }
         
-        console.log('🐛 DEBUG: Container element:', container);
-        console.log('🐛 DEBUG: Container innerHTML before:', container.innerHTML);
-        
         const activeFilter = document.querySelector('#insuranceModule .filter-btn.active');
         const filter = activeFilter ? activeFilter.dataset.filter : 'all';
-        console.log('🐛 DEBUG: Current filter', { filter, activeFilter: !!activeFilter });
 
         let policies = await enhancedInsuranceDB.getAll();
-        console.log('🐛 DEBUG: Retrieved policies from DB', { count: policies.length, policies: policies });
 
         // Apply filter
         if (filter !== 'all') {
-            const beforeFilter = policies.length;
             policies = policies.filter(p => p.type === filter);
-            console.log('🐛 DEBUG: Applied filter', { 
-                beforeFilter, 
-                afterFilter: policies.length, 
-                filter 
-            });
         }
 
-        console.log('🐛 DEBUG: Final policies to display:', { count: policies.length });
-
         if (policies.length === 0) {
-            console.log('🐛 DEBUG: No policies to display, showing empty message');
             container.innerHTML = '<div class="loading">No insurance policies found</div>';
-            console.log('🐛 DEBUG: Container innerHTML after empty:', container.innerHTML);
             return;
         }
 
         const today = getCurrentNepaliDate();
         const todayStr = formatBsDate(today.year, today.month, today.day);
-        console.log('🐛 DEBUG: Today date for comparison', { todayStr });
 
-        console.log('🐛 DEBUG: Generating HTML for policies', { count: policies.length });
         const html = policies.map(policy => {
-            console.log('🐛 DEBUG: Processing policy:', policy);
             const isExpiringSoon = policy.expiryDate >= todayStr && policy.expiryDate <= addDaysToBsDate(todayStr, 15);
             const isExpired = policy.expiryDate < todayStr;
 
@@ -357,24 +384,15 @@ async function renderInsuranceList() {
         }).join('');
         
         container.innerHTML = html;
-        console.log('🐛 DEBUG: Container innerHTML after render:', container.innerHTML);
-        console.log('🐛 DEBUG: Successfully rendered insurance list');
         
     } catch (error) {
-        console.error('🐛 DEBUG: Error in renderInsuranceList', error);
-        console.error('🐛 DEBUG: List render error details', {
-            message: error.message,
-            stack: error.stack,
-            name: error.name
-        });
+        console.error('Error in renderInsuranceList', error);
         
         const container = document.getElementById('insuranceList');
         if (container) {
             container.innerHTML = '<div class="error">Error loading insurance policies</div>';
         }
     }
-    
-    console.log('🐛 DEBUG: renderInsuranceList completed');
 }
 
 /**
@@ -479,16 +497,11 @@ function addDaysToBsDate(bsDateStr, days) {
 
 // Initialize insurance list when DOM is ready
 document.addEventListener('DOMContentLoaded', async () => {
-    console.log('🐛 DEBUG: DOMContentLoaded, checking if insurance view needs initialization');
-    
     // Check if we're on the insurance view
     const insuranceModule = safeGetElementById('insuranceModule');
     if (insuranceModule && insuranceModule.classList.contains('active')) {
-        console.log('🐛 DEBUG: Insurance module is active, initializing renderInsuranceList');
         await renderInsuranceList();
         await renderInsuranceStats();
-    } else {
-        console.log('🐛 DEBUG: Insurance module is not active, skipping initialization');
     }
 });
 

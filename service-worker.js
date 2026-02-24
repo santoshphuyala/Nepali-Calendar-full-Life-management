@@ -29,47 +29,40 @@ const urlsToCache = [
 
 // Install event - cache files
 self.addEventListener('install', (event) => {
-    console.log('Service Worker: Installing...');
     event.waitUntil(
         caches.open(CACHE_NAME)
             .then((cache) => {
-                console.log('Opened cache v2.1');
                 // Cache files one by one to avoid failure on missing files
                 return Promise.allSettled(
                     urlsToCache.map(url => 
                         cache.add(url).catch(err => {
-                            console.warn(`Failed to cache ${url}:`, err.message);
-                            return null;
+                            // Silently ignore missing files
                         })
                     )
                 );
             })
             .then(() => {
-                console.log('✅ Service Worker: Installed');
                 return self.skipWaiting();
             })
             .catch((error) => {
-                console.error('❌ Service Worker: Install failed', error);
+                console.error('Service Worker installation failed:', error);
             })
     );
 });
 
 // Activate event - clean old caches
 self.addEventListener('activate', (event) => {
-    console.log('Service Worker: Activating...');
     event.waitUntil(
         caches.keys().then((cacheNames) => {
             return Promise.all(
                 cacheNames.map((cacheName) => {
                     if (cacheName !== CACHE_NAME) {
-                        console.log('Service Worker: Deleting old cache', cacheName);
                         return caches.delete(cacheName);
                     }
                 })
             );
         })
         .then(() => {
-            console.log('✅ Service Worker: Activated');
             return self.clients.claim();
         })
     );
@@ -110,5 +103,3 @@ self.addEventListener('fetch', (event) => {
             })
     );
 });
-
-console.log('✅ Service Worker script loaded');
