@@ -2,45 +2,25 @@
  * Check insurance renewal status and send notifications
  */
 async function checkInsuranceRenewalStatus() {
-    console.log('🔍 checkInsuranceRenewalStatus() started');
     try {
-        console.log('📊 Fetching insurance policies from database...');
         const allPolicies = await enhancedInsuranceDB.getAll();
-        console.log(`📋 Found ${allPolicies.length} total policies:`, allPolicies);
-        
         const activePolicies = allPolicies.filter(p => p.status === 'active');
-        console.log(`✅ Filtered ${activePolicies.length} active policies:`, activePolicies);
-        
         const today = getCurrentNepaliDate();
         const todayStr = formatBsDate(today.year, today.month, today.day);
-        console.log(`📅 Today's date (BS): ${todayStr}`);
-        
         const in15Days = addDaysToBsDate(todayStr, 15);
-        console.log(`⏰ 15 days from today (BS): ${in15Days}`);
-        
         const expiringSoon = activePolicies.filter(p => {
-            const isExpiring = p.expiryDate >= todayStr && p.expiryDate <= in15Days;
-            console.log(`🔍 Policy "${p.name}": expiry=${p.expiryDate}, expiring=${isExpiring}`);
-            return isExpiring;
+            return p.expiryDate >= todayStr && p.expiryDate <= in15Days;
         });
-        console.log(`⚠️ Found ${expiringSoon.length} policies expiring soon:`, expiringSoon);
-        
         const expired = activePolicies.filter(p => {
-            const isExpired = p.expiryDate < todayStr;
-            console.log(`🔴 Policy "${p.name}": expiry=${p.expiryDate}, expired=${isExpired}`);
-            return isExpired;
+            return p.expiryDate < todayStr;
         });
-        console.log(`❌ Found ${expired.length} expired policies:`, expired);
         
         // Send notifications for expiring policies
-        console.log('📣 Sending notifications for expiring policies...');
         for (const policy of expiringSoon) {
             const daysUntil = _daysUntil(policy.expiryDate);
             if (daysUntil !== null && daysUntil >= 0 && daysUntil <= 15) {
                 const title = `🛡️ Insurance Renewal Reminder`;
                 const body = `${policy.name || 'Insurance Policy'} expires in ${daysUntil} day(s)\nProvider: ${policy.company || '—'}\nPremium: Rs.${policy.premium}`;
-                
-                console.log(`📣 Sending notification for policy "${policy.name}"`);
                 
                 // Use notification manager if available
                 if (typeof NotificationManager !== 'undefined' && NotificationManager.showNotification) {
@@ -52,13 +32,10 @@ async function checkInsuranceRenewalStatus() {
         }
         
         // Send notifications for expired policies
-        console.log('📣 Sending notifications for expired policies...');
         for (const policy of expired) {
             const daysExpired = Math.abs(_daysUntil(policy.expiryDate) || 0);
             const title = `⚠️ Insurance Expired`;
             const body = `${policy.name || 'Insurance Policy'} expired ${daysExpired} day(s) ago\nProvider: ${policy.company || '—'}\nPlease renew immediately`;
-            
-            console.log(`📣 Sending notification for policy "${policy.name}"`);
             
             if (typeof NotificationManager !== 'undefined' && NotificationManager.showNotification) {
                 NotificationManager.showNotification(title, body, 'error');
@@ -68,7 +45,6 @@ async function checkInsuranceRenewalStatus() {
         }
         
         // Calculate annual premium
-        console.log('💰 Calculating annual premium...');
         const annualPremium = activePolicies.reduce((sum, p) => {
             const premium = parseFloat(p.premium) || 0;
             let annualAmount = premium;
@@ -81,66 +57,35 @@ async function checkInsuranceRenewalStatus() {
                 annualAmount = premium * 2;
             }
             
-            console.log(`💵 Policy "${p.name}": premium=${premium}, frequency=${p.frequency}, annual=${annualAmount}`);
             return sum + annualAmount;
         }, 0);
-        console.log(`💰 Total annual premium calculated: Rs. ${annualPremium.toLocaleString()}`);
         
         // Update UI with counts
-        console.log('🔄 Updating UI elements...');
-        
         const expiringSoonElement = document.getElementById('expiringSoon');
-        console.log('🔍 expiringSoon element:', expiringSoonElement);
+        const totalPremiumElement = document.getElementById('totalPremium');
+        const totalPoliciesElement = document.getElementById('totalPolicies');
+        const activePoliciesElement = document.getElementById('activePolicies');
+        const expiredPoliciesElement = document.getElementById('expiredPolicies');
+        
         if (expiringSoonElement) {
             expiringSoonElement.textContent = expiringSoon.length;
-            console.log(`✅ Updated expiringSoon: ${expiringSoon.length}`);
-        } else {
-            console.error('❌ expiringSoon element not found!');
         }
         
-        const totalPremiumElement = document.getElementById('totalPremium');
-        console.log('🔍 totalPremium element:', totalPremiumElement);
         if (totalPremiumElement) {
             totalPremiumElement.textContent = `Rs. ${annualPremium.toLocaleString()}`;
-            console.log(`✅ Updated totalPremium: Rs. ${annualPremium.toLocaleString()}`);
-        } else {
-            console.error('❌ totalPremium element not found!');
         }
         
-        const totalPoliciesElement = document.getElementById('totalPolicies');
-        console.log('🔍 totalPolicies element:', totalPoliciesElement);
         if (totalPoliciesElement) {
             totalPoliciesElement.textContent = allPolicies.length;
-            console.log(`✅ Updated totalPolicies: ${allPolicies.length}`);
-        } else {
-            console.error('❌ totalPolicies element not found!');
         }
         
-        const activePoliciesElement = document.getElementById('activePolicies');
-        console.log('🔍 activePolicies element:', activePoliciesElement);
         if (activePoliciesElement) {
             activePoliciesElement.textContent = activePolicies.length;
-            console.log(`✅ Updated activePolicies: ${activePolicies.length}`);
-        } else {
-            console.error('❌ activePolicies element not found!');
         }
         
-        const expiredPoliciesElement = document.getElementById('expiredPolicies');
-        console.log('🔍 expiredPolicies element:', expiredPoliciesElement);
         if (expiredPoliciesElement) {
             expiredPoliciesElement.textContent = expired.length;
-            console.log(`✅ Updated expiredPolicies: ${expired.length}`);
-        } else {
-            console.error('❌ expiredPolicies element not found!');
         }
-        
-        console.log('🎯 Final summary:', {
-            total: allPolicies.length,
-            active: activePolicies.length,
-            expiringSoon: expiringSoon.length,
-            expired: expired.length,
-            annualPremium: annualPremium
-        });
         
         return {
             total: activePolicies.length,
