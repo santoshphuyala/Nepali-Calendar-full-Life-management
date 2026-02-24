@@ -515,7 +515,7 @@ async function deleteVehicle(id) {
 // Initialize vehicle grid when main app is ready
 async function initializeVehicleModule() {
     // Check if we're on the vehicle view
-    const vehicleModule = safeGetElementById('vehicleModule');
+    const vehicleModule = safeGetElementById('vehiclesModule');
     if (vehicleModule && vehicleModule.classList.contains('active')) {
         await renderVehicleGrid();
     }
@@ -523,7 +523,7 @@ async function initializeVehicleModule() {
 
 // Also try to initialize after a short delay to ensure everything is loaded
 setTimeout(async () => {
-    const vehicleModule = safeGetElementById('vehicleModule');
+    const vehicleModule = safeGetElementById('vehiclesModule');
     if (vehicleModule && vehicleModule.classList.contains('active')) {
         await renderVehicleGrid();
     }

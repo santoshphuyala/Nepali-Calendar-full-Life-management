@@ -23,15 +23,16 @@
  * ============================================================
  */
 
-// Debug: Comprehensive Error Logging
+// Debug: Critical Error Logging Only
 window.debugLog = function(message, data = null) {
+    // Only log critical errors in production
     const timestamp = new Date().toISOString();
-    const logEntry = `[${timestamp}] ${message}`;
-    console.log(logEntry, data || '');
+    const logEntry = `[CRITICAL ${timestamp}] ${message}`;
+    console.error(logEntry, data || '');
     
-    // Also log to a global debug array for inspection
+    // Also log to global array for inspection
     if (!window.debugLogs) window.debugLogs = [];
-    window.debugLogs.push({ timestamp, message, data });
+    window.debugLogs.push({ timestamp, message, data, level: 'critical' });
 };
 
 // Debug: Error tracking
@@ -142,9 +143,9 @@ window.debugCheckDOM = function() {
         'billsView': document.getElementById('billsView'),
         'goalsView': document.getElementById('goalsView'),
         'insuranceView': document.getElementById('insuranceView'),
-        'vehicleView': document.getElementById('vehicleView'),
+        'vehiclesModule': document.getElementById('vehiclesModule'),
         'subscriptionView': document.getElementById('subscriptionView'),
-        'customView': document.getElementById('customView'),
+        'customModule': document.getElementById('customModule'),
         'shoppingView': document.getElementById('shoppingView'),
         'notesView': document.getElementById('notesView'),
         'settingsView': document.getElementById('settingsView'),
@@ -168,7 +169,7 @@ window.debugCheckDOM = function() {
 
 // Debug: Comprehensive Feature Verification
 window.debugCheckAllFeatures = async function() {
-    console.log('🔍 === COMPREHENSIVE FEATURE VERIFICATION ===');
+        console.error('🔍 === COMPREHENSIVE FEATURE VERIFICATION ===');
     
     const results = {
         timestamp: new Date().toISOString(),
@@ -282,8 +283,8 @@ window.debugCheckAllFeatures = async function() {
         status: passedChecks === totalChecks ? '✅ ALL CHECKS PASSED' : '⚠️ SOME CHECKS FAILED'
     };
     
-    console.log('📊 Feature Verification Results:', results);
-    console.log('📊 Summary:', results.summary);
+        console.error('📊 Feature Verification Results:', results);
+        console.error('📊 Summary:', results.summary);
     
     // Store results for inspection
     window.lastDebugCheck = results;
@@ -293,7 +294,7 @@ window.debugCheckAllFeatures = async function() {
 
 // Debug: Quick Health Check
 window.debugHealthCheck = function() {
-    console.log('🏥 === QUICK HEALTH CHECK ===');
+        console.error('🏥 === QUICK HEALTH CHECK ===');
     
     const health = {
         timestamp: new Date().toISOString(),
@@ -320,7 +321,7 @@ window.debugHealthCheck = function() {
         }
     };
     
-    console.log('🏥 Health Status:', health);
+        console.error('🏥 Health Status:', health);
     
     const issues = [];
     
@@ -331,9 +332,9 @@ window.debugHealthCheck = function() {
     if (!health.features.importExport) issues.push('Import/Export functions missing');
     
     if (issues.length === 0) {
-        console.log('✅ All core systems operational');
+            console.error('✅ All core systems operational');
     } else {
-        console.warn('⚠️ Issues found:', issues);
+            console.error('⚠️ Issues found:', issues);
     }
     
     return health;
@@ -341,7 +342,7 @@ window.debugHealthCheck = function() {
 
 // Debug: Test Import/Export Functions
 window.debugTestImportExport = async function() {
-    console.log('🔄 === TESTING IMPORT/EXPORT FUNCTIONS ===');
+        console.error('🔄 === TESTING IMPORT/EXPORT FUNCTIONS ===');
     
     const testResults = {
         timestamp: new Date().toISOString(),
@@ -350,7 +351,7 @@ window.debugTestImportExport = async function() {
     
     // Test Calendar Export
     try {
-        console.log('📅 Testing calendar export...');
+        console.error('📅 Testing calendar export...');
         await window.exportCalendarData('monthly');
         testResults.tests.calendarExportMonthly = '✅ Success';
     } catch (error) {
@@ -359,7 +360,7 @@ window.debugTestImportExport = async function() {
     
     // Test Tracker Export
     try {
-        console.log('💰 Testing tracker export...');
+        console.error('💰 Testing tracker export...');
         await window.exportTrackerData('income');
         testResults.tests.trackerExportIncome = '✅ Success';
     } catch (error) {
@@ -368,20 +369,20 @@ window.debugTestImportExport = async function() {
     
     // Test Backup
     try {
-        console.log('💾 Testing backup...');
+        console.error('💾 Testing backup...');
         await window.backupData();
         testResults.tests.backup = '✅ Success';
     } catch (error) {
         testResults.tests.backup = `❌ Error: ${error.message}`;
     }
     
-    console.log('📊 Import/Export Test Results:', testResults);
+        console.error('📊 Import/Export Test Results:', testResults);
     return testResults;
 };
 
 // Debug: Test Core Functions
 window.debugTestCoreFunctions = function() {
-    console.log('🔧 === TESTING CORE FUNCTIONS ===');
+        console.error('🔧 === TESTING CORE FUNCTIONS ===');
     
     const coreTests = {
         timestamp: new Date().toISOString(),
@@ -393,7 +394,7 @@ window.debugTestCoreFunctions = function() {
         const bsDate = bsToAd(2082, 10, 14);
         const adDate = adToBs(2025, 4, 14);
         coreTests.tests.dateConversion = '✅ Success';
-        console.log('📅 Date Conversion Test:', bsDate, adDate);
+        console.error('📅 Date Conversion Test:', bsDate, adDate);
     } catch (error) {
         coreTests.tests.dateConversion = `❌ Error: ${error.message}`;
     }
@@ -402,7 +403,7 @@ window.debugTestCoreFunctions = function() {
     try {
         const formatted = formatBsDate(2082, 10, 14);
         coreTests.tests.dateFormatting = '✅ Success';
-        console.log('📅 Date Formatting Test:', formatted);
+        console.error('📅 Date Formatting Test:', formatted);
     } catch (error) {
         coreTests.tests.dateFormatting = `❌ Error: ${error.message}`;
     }
@@ -411,18 +412,18 @@ window.debugTestCoreFunctions = function() {
     try {
         const current = getCurrentNepaliDate();
         coreTests.tests.currentDate = '✅ Success';
-        console.log('📅 Current Date Test:', current);
+        console.error('📅 Current Date Test:', current);
     } catch (error) {
         coreTests.tests.currentDate = `❌ Error: ${error.message}`;
     }
     
-    console.log('📊 Core Function Test Results:', coreTests);
+    console.error('📊 Core Function Test Results:', coreTests);
     return coreTests;
 };
 
 // Debug: Test Database Operations
 window.debugTestDatabase = async function() {
-    console.log('💾 === TESTING DATABASE OPERATIONS ===');
+        console.error('💾 === TESTING DATABASE OPERATIONS ===');
     
     const dbTests = {
         timestamp: new Date().toISOString(),
@@ -445,13 +446,13 @@ window.debugTestDatabase = async function() {
         }
     }
     
-    console.log('📊 Database Test Results:', dbTests);
+        console.error('📊 Database Test Results:', dbTests);
     return dbTests;
 };
 
 // Debug: Test UI Rendering
 window.debugTestUI = async function() {
-    console.log('🎨 === TESTING UI RENDERING ===');
+        console.error('🎨 === TESTING UI RENDERING ===');
     
     const uiTests = {
         timestamp: new Date().toISOString(),
@@ -462,7 +463,7 @@ window.debugTestUI = async function() {
     try {
         await renderCalendar();
         uiTests.tests.calendar = '✅ Success';
-        console.log('📅 Calendar rendering test passed');
+        console.error('📅 Calendar rendering test passed');
     } catch (error) {
         uiTests.tests.calendar = `❌ Error: ${error.message}`;
     }
@@ -471,7 +472,7 @@ window.debugTestUI = async function() {
     try {
         await renderNotes();
         uiTests.tests.notes = '✅ Success';
-        console.log('📝 Notes rendering test passed');
+        console.error('📝 Notes rendering test passed');
     } catch (error) {
         uiTests.tests.notes = `❌ Error: ${error.message}`;
     }
@@ -480,18 +481,18 @@ window.debugTestUI = async function() {
     try {
         await renderTrackerList();
         uiTests.tests.tracker = '✅ Success';
-        console.log('💰 Tracker rendering test passed');
+        console.error('💰 Tracker rendering test passed');
     } catch (error) {
         uiTests.tests.tracker = `❌ Error: ${error.message}`;
     }
     
-    console.log('📊 UI Test Results:', uiTests);
+        console.error('📊 UI Test Results:', uiTests);
     return uiTests;
 };
 
 // Debug: Test Event Listeners
 window.debugTestEventListeners = function() {
-    console.log('🎯 === TESTING EVENT LISTENERS ===');
+        console.error('🎯 === TESTING EVENT LISTENERS ===');
     
     const eventTests = {
         timestamp: new Date().toISOString(),
@@ -520,13 +521,13 @@ window.debugTestEventListeners = function() {
         }
     });
     
-    console.log('📊 Event Listener Test Results:', eventTests);
+        console.error('📊 Event Listener Test Results:', eventTests);
     return eventTests;
 };
 
 // Debug: Run All Tests
 window.debugRunAllTests = async function() {
-    console.log('🚀 === RUNNING ALL DEBUG TESTS ===');
+        console.error('🚀 === RUNNING ALL DEBUG TESTS ===');
     
     const allResults = {
         timestamp: new Date().toISOString(),
@@ -549,14 +550,14 @@ window.debugRunAllTests = async function() {
     
     const failedTests = totalTests - passedTests;
     
-    console.log('📊 === ALL TESTS COMPLETE ===');
-    console.log(`📊 Total Tests: ${totalTests}`);
-    console.log(`✅ Passed: ${passedTests}`);
-    console.log(`❌ Failed: ${failedTests}`);
-    console.log(`📊 Success Rate: ${totalTests > 0 ? (passedTests / totalTests * 100).toFixed(1) + '%' : '0%'}`);
+    console.error('📊 === ALL TESTS COMPLETE ===');
+        console.error(`📊 Total Tests: ${totalTests}`);
+    console.error(`✅ Passed: ${passedTests}`);
+    console.error(`❌ Failed: ${failedTests}`);
+    console.error(`📊 Success Rate: ${totalTests > 0 ? (passedTests / totalTests * 100).toFixed(1) + '%' : '0%'}`);
     
     if (failedTests > 0) {
-        console.log('⚠️ Failed Tests:', Object.entries(allResults).filter(([key, result]) => {
+        console.error('⚠️ Failed Tests:', Object.entries(allResults).filter(([key, result]) => {
             if (typeof result === 'object' && result.tests) {
                 return Object.entries(result.tests).filter(([key, test]) => test.includes('❌'));
             }
@@ -567,17 +568,17 @@ window.debugRunAllTests = async function() {
 };
 
 // Add debug commands to console
-console.log('🔧 Debug Commands Available:');
-console.log('  debugCheckAllFeatures() - Comprehensive feature verification');
-console.log('  debugHealthCheck() - Quick health check');
-console.log('  debugTestImportExport() - Test import/export functions');
-console.log('  debugTestCoreFunctions() - Test core date functions');
-console.log('  debugTestDatabase() - Test database connections');
-console.log('  debugTestUI() - Test UI rendering');
-console.log('  debugTestEventListeners() - Test event listeners');
-console.log('  debugRunAllTests() - Run all tests');
+console.error('🔧 Debug Commands Available:');
+console.error('  debugCheckAllFeatures() - Comprehensive feature verification');
+console.error('  debugHealthCheck() - Quick health check');
+console.error('  debugTestImportExport() - Test import/export functions');
+console.error('  debugTestCoreFunctions() - Test core date functions');
+console.error('  debugTestDatabase() - Test database connections');
+console.error('  debugTestUI() - Test UI rendering');
+console.error('  debugTestEventListeners() - Test event listeners');
+console.error('  debugRunAllTests() - Run all tests');
 
-console.log('✅ app.js loading...');
+console.error('✅ app.js loading...');
 
-console.log('🔧 debug.js loaded — debug tools active.');
-console.log('  Run window.debugRunAllTests() to run all diagnostics.');
+console.error('🔧 debug.js loaded — debug tools active.');
+console.error('  Run window.debugRunAllTests() to run all diagnostics.');

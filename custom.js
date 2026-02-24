@@ -277,7 +277,7 @@ async function deleteCustomItem(id) {
 // Initialize custom types when main app is ready
 async function initializeCustomModule() {
     // Check if we're on the custom view
-    const customModule = safeGetElementById('customView');
+    const customModule = safeGetElementById('customModule');
     if (customModule && customModule.classList.contains('active')) {
         await renderCustomTypes();
         await renderCustomItems();
@@ -286,7 +286,7 @@ async function initializeCustomModule() {
 
 // Also try to initialize after a short delay to ensure everything is loaded
 setTimeout(async () => {
-    const customModule = safeGetElementById('customView');
+    const customModule = safeGetElementById('customModule');
     if (customModule && customModule.classList.contains('active')) {
         await initializeCustomModule();
     }
