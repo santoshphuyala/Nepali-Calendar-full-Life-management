@@ -1598,7 +1598,8 @@ function toggleDropdown(menuId) {
 }
 
 function closeAllDropdowns() {
-    document.querySelectorAll('.dropdown-menu.show').forEach(menu => {
+    // Standardized dropdown closing method
+    document.querySelectorAll('.dropdown-menu.show, .import-export-dropdown.show').forEach(menu => {
         menu.classList.remove('show');
     });
 }

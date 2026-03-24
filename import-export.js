@@ -176,10 +176,12 @@ class ImportExportManager {
     }
 
     _initDropdowns() {
+        // Only handle import-export-dropdown buttons to avoid conflicts with app.js
         document.addEventListener('click', (e) => {
             if (e.target.classList.contains('import-export-btn')) {
                 this._toggleDropdown(e.target);
-            } else if (!e.target.closest('.import-export-dropdown')) {
+            } else if (!e.target.closest('.import-export-dropdown') && !e.target.closest('.dropdown-container')) {
+                // Close dropdowns when clicking outside both dropdown types
                 this._closeAllDropdowns();
             }
         });
@@ -192,16 +194,17 @@ class ImportExportManager {
         const dropdown = button.nextElementSibling;
         if (!dropdown || !dropdown.classList.contains('dropdown-menu')) return;
         
-        // Close all other dropdowns
-        this._closeAllDropdowns();
+        // Close all other dropdowns using the standardized method
+        closeAllDropdowns();
         
-        // Toggle current dropdown
-        dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
+        // Toggle current dropdown using CSS class
+        dropdown.classList.toggle('show');
     }
 
     _closeAllDropdowns() {
-        document.querySelectorAll('.dropdown-menu').forEach(menu => {
-            menu.style.display = 'none';
+        // Use the same method as app.js for consistency
+        document.querySelectorAll('.dropdown-menu.show').forEach(menu => {
+            menu.classList.remove('show');
         });
     }
 

@@ -1205,8 +1205,8 @@
                                     <input type="file" id="assetsModuleImport" accept=".json,.xlsx,.xls" style="display: none;" onchange="importModuleData('assets', this)">
                                 </div>
                             </div>
-                       
-                            	                            <div class="import-export-dropdown">
+                            
+                            <div class="import-export-dropdown">
                                 <button class="import-export-btn small" id="medicineDataBtn">
                                     💊 Medicine Manager
                                 </button>
@@ -1288,21 +1288,18 @@
     <script src="performance-optimizer.js"></script>
     <script src="charts.js"></script>
     <script src="budget.js"></script>
+    <script>
+        // Medicine tracker initialization
+        if (typeof initMedicineTracker === 'function') {
+            initMedicineTracker();
+        }
+    </script>
     <script src="insurance.js"></script>
     <script src="vehicle.js"></script>
     <script src="subscription.js"></script>
     <script src="custom.js"></script>
     <script src="import-export.js"></script>
     <script src="medicine-tracker.js"></script>
-                    if (_orig) _orig.call(this, e);
-                    if (typeof initMedicineTracker === 'function' && !this._medInit) {
-                        this._medInit = true;
-                        initMedicineTracker();
-                    }
-                };
-            }
-        });
-    </script>
     <script src="nepali-date-picker.js"></script>
     <script src="app.js"></script>
     <script src="notification.js"></script>
@@ -1314,7 +1311,7 @@
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('service-worker.js')
                     .then(reg => {
-                        console.error('✅ Service Worker Registered', reg.scope);
+                        console.log('✅ Service Worker Registered', reg.scope);
                     })
                     .catch(err => {
                         console.error('❌ Service Worker Registration Failed', err);
@@ -1335,4 +1332,7 @@
                 <span class="developer">Developed by: Santosh Phuyal</span>
                 <span class="contact">📧 <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="86eeeff5e7e8f2e9f5eef6eef3ffe7eac6e1ebe7efeaa8e5e9eb">[email&#160;protected]</a></span>
             </div>
-        </div
+        </div>
+    </footer>
+</body>
+</html>
