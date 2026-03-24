@@ -745,12 +745,16 @@ async function renderHolidayList() {
         return;
     }
     
-    holidayList.innerHTML = holidays.sort((a, b) => a.date_bs.localeCompare(b.date_bs)).map(holiday => `
+    holidayList.innerHTML = holidays.sort((a, b) => {
+        const normalizedA = a.date_bs.replace(/-/g, '/');
+        const normalizedB = b.date_bs.replace(/-/g, '/');
+        return normalizedA.localeCompare(normalizedB);
+    }).map(holiday => `
         <div class="holiday-item ${holiday.type}">
             <div class="holiday-info">
                 <strong>${holiday.name}</strong>
                 <div class="holiday-dates">
-                    <span>BS: ${holiday.date_bs}</span>
+                    <span>BS: ${holiday.date_bs.replace(/-/g, '/')}</span>
                     ${holiday.date_ad ? `<span>AD: ${holiday.date_ad}</span>` : ''}
                 </div>
                 <span class="holiday-type">${holiday.type}</span>
@@ -871,6 +875,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Initialize database with error tracking
         try {
             await initDB();
+            // Migrate existing holiday dates to correct format
+            await migrateHolidayDates();
         } catch (dbError) {
             return;
         }
@@ -1498,6 +1504,17 @@ function initializeEventListeners() {
     const removeDuplicateHolidaysBtn = document.getElementById('removeDuplicateHolidaysBtn');
     if (removeDuplicateHolidaysBtn) removeDuplicateHolidaysBtn.addEventListener('click', removeDuplicateHolidays);
 
+    // Migrate Holiday Dates Button
+    const migrateHolidayDatesBtn = document.getElementById('migrateHolidayDatesBtn');
+    if (migrateHolidayDatesBtn) migrateHolidayDatesBtn.addEventListener('click', async () => {
+        if (confirm('Fix holiday date format? This will convert all holiday dates from YYYY-MM-DD to YYYY/MM/DD format.')) {
+            await migrateHolidayDates();
+            renderHolidayList();
+            renderCalendar();
+            safeShowNotification('✅ Holiday date format migration completed', 'success');
+        }
+    });
+
     // Global Duplicate Scan Button
     const globalDuplicateScanBtn = document.getElementById('globalDuplicateScanBtn');
     if (globalDuplicateScanBtn) globalDuplicateScanBtn.addEventListener('click', scanAllModulesForDuplicates);
@@ -1758,6 +1775,31 @@ function switchCalendarView(viewType) {
 /**
  * Display Monthly Holidays Below Calendar
  */
+/**
+ * Migrate existing holiday dates to correct format (slashes instead of hyphens)
+ */
+async function migrateHolidayDates() {
+    try {
+        const holidays = await enhancedHolidayDB.getAll();
+        let migratedCount = 0;
+        
+        for (const holiday of holidays) {
+            if (holiday.date_bs && holiday.date_bs.includes('-')) {
+                // Convert hyphens to slashes
+                holiday.date_bs = holiday.date_bs.replace(/-/g, '/');
+                await enhancedHolidayDB.update(holiday);
+                migratedCount++;
+            }
+        }
+        
+        if (migratedCount > 0) {
+            console.log(`✅ Migrated ${migratedCount} holidays to correct date format`);
+        }
+    } catch (error) {
+        console.error('Error migrating holiday dates:', error);
+    }
+}
+
 async function displayMonthlyHolidays() {
     try {
         const holidayContent = document.getElementById('monthlyHolidayContent');
@@ -1766,9 +1808,11 @@ async function displayMonthlyHolidays() {
         // Get all holidays
         const allHolidays = await enhancedHolidayDB.getAll();
         
-        // Filter holidays for current month
+        // Normalize dates and filter holidays for current month
         const currentMonthHolidays = allHolidays.filter(holiday => {
-            const [year, month] = holiday.date_bs.split('/').map(Number);
+            // Normalize date format to ensure slashes
+            const normalizedDate = holiday.date_bs.replace(/-/g, '/');
+            const [year, month] = normalizedDate.split('/').map(Number);
             return year === currentBsYear && month === currentBsMonth;
         });
 
@@ -1777,13 +1821,17 @@ async function displayMonthlyHolidays() {
             return;
         }
 
-        // Sort holidays by date
-        currentMonthHolidays.sort((a, b) => a.date_bs.localeCompare(b.date_bs));
+        // Sort holidays by date (normalized for comparison)
+        currentMonthHolidays.sort((a, b) => {
+            const normalizedA = a.date_bs.replace(/-/g, '/');
+            const normalizedB = b.date_bs.replace(/-/g, '/');
+            return normalizedA.localeCompare(normalizedB);
+        });
 
         // Display holidays in red color
         holidayContent.innerHTML = currentMonthHolidays.map(holiday => `
             <div class="monthly-holiday-item">
-                <span class="holiday-date">${holiday.date_bs}</span>
+                <span class="holiday-date">${holiday.date_bs.replace(/-/g, '/')}</span>
                 <span class="holiday-name">${holiday.name}</span>
                 <span class="holiday-type">${holiday.type}</span>
             </div>

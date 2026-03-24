@@ -702,7 +702,14 @@ async function importHolidaysCSV(event) {
             for (const line of dataLines) {
                 const [date_bs, date_ad, name, type] = line.split(',').map(s => s.trim());
                 if (date_bs && date_ad && name) {
-                    await window.enhancedHolidayDB.add({ date_bs, date_ad, name, type: type || 'public' });
+                    // Convert date format from hyphens to slashes for proper display
+                    const formattedDate_bs = date_bs.replace(/-/g, '/');
+                    await window.enhancedHolidayDB.add({ 
+                        date_bs: formattedDate_bs, 
+                        date_ad, 
+                        name, 
+                        type: type || 'public' 
+                    });
                     count++;
                 }
             }
